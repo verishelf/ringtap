@@ -1,52 +1,9 @@
+import { Header } from "@/components/Header";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border-light/50 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <a href="#" className="text-xl font-bold tracking-tight text-foreground">
-            RingTap
-          </a>
-          <nav className="flex items-center gap-6">
-            <a
-              href="#features"
-              className="text-sm font-medium text-muted-light hover:text-foreground transition-colors"
-            >
-              Features
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-sm font-medium text-muted-light hover:text-foreground transition-colors"
-            >
-              How it works
-            </a>
-            <a
-              href="/store"
-              className="text-sm font-medium text-muted-light hover:text-foreground transition-colors"
-            >
-              Store
-            </a>
-            <a
-              href="#pricing"
-              className="text-sm font-medium text-muted-light hover:text-foreground transition-colors"
-            >
-              Pricing
-            </a>
-            <a
-              href="#faq"
-              className="text-sm font-medium text-muted-light hover:text-foreground transition-colors"
-            >
-              FAQ
-            </a>
-            <a
-              href="#download"
-              className="rounded-full bg-surface-elevated px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-background transition-colors"
-            >
-              Download
-            </a>
-          </nav>
-        </div>
-      </header>
+      <Header variant="home" />
 
       {/* Hero */}
       <section className="relative pt-32 pb-24 px-6 md:pt-40 md:pb-32">

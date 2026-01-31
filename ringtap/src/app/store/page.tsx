@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Header } from "@/components/Header";
 
 const RING_SIZES = [
   "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12", "13",
@@ -51,34 +52,7 @@ export default function StorePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <header className="sticky top-0 left-0 right-0 z-50 border-b border-border-light/50 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="text-xl font-bold tracking-tight text-foreground">
-            RingTap
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/#features"
-              className="text-sm font-medium text-muted-light hover:text-foreground transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href="/store"
-              className="text-sm font-medium text-accent"
-            >
-              Store
-            </Link>
-            <Link
-              href="/#download"
-              className="rounded-full bg-surface-elevated px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-background transition-colors"
-            >
-              Download
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <Header variant="store" />
 
       {/* Store hero */}
       <section className="border-b border-border-light/50 py-16 px-6">
