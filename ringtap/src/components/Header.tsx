@@ -86,7 +86,7 @@ export function Header({ variant = "home" }: { variant?: HeaderVariant }) {
               href={link.href}
               label={link.label}
               active={"active" in link && link.active}
-              cta={link.cta}
+              cta={"cta" in link && link.cta}
             />
           ))}
         </nav>
@@ -125,7 +125,7 @@ export function Header({ variant = "home" }: { variant?: HeaderVariant }) {
                   href={link.href}
                   label={link.label}
                   active={"active" in link && link.active}
-                  cta={link.cta}
+                  cta={"cta" in link && link.cta}
                   onClick={() => setMenuOpen(false)}
                 />
               </span>
