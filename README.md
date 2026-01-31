@@ -1,50 +1,97 @@
-# Welcome to your Expo app 👋
+# RingTap
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+NFC-powered digital business card platform — a modern competitor to Dot.cards. Built with **Expo**, **TypeScript**, **Expo Router**, **Supabase**, and **Stripe**.
+
+## Features
+
+- **Auth**: Email/password, magic links, persistent session (Expo Secure Store)
+- **Profile**: Name, title, bio, avatar, video intro (Pro), contact & social links, custom buttons, theme (Pro), profile URL `https://ringtap.me/{username}`
+- **Links**: Social, websites, custom buttons, payment links — Free: 2 links, Pro: unlimited
+- **Share**: NFC instructions + test, QR code generation & share
+- **Analytics**: Profile views, link clicks, NFC taps, QR scans, 7/30/90-day activity (Pro)
+- **Subscriptions**: Free & Pro plans; Stripe checkout/portal (wire via your backend + Supabase webhooks)
 
 ## Get started
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Install dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Supabase
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run the migration: **SQL Editor** → paste and run `supabase/migrations/001_initial.sql`.
+3. Copy **Project URL** and **anon public** key into `.env` (see below).
+
+### 3. Environment
+
+Copy `.env.example` to `.env` and set:
+
+```bash
+cp .env.example .env
+```
+
+- `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL  
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key  
+
+### 4. Start the app
+
+```bash
+npx expo start
+```
+
+Then open in iOS Simulator, Android emulator, or Expo Go.
+
+## Project structure
+
+```
+app/
+  index.tsx           # Auth redirect
+  (auth)/             # Login, signup
+  (tabs)/             # Home, Profile, Links, Analytics, Settings
+  share/              # NFC, QR
+components/
+contexts/             # AuthContext
+hooks/                # useSession, useProfile, useSubscription
+lib/
+  api.ts              # Backend API (profiles, links, analytics, storage)
+  supabase/           # supabaseClient, types, database.types
+utils/
+supabase/
+  migrations/         # 001_initial.sql
+```
+
+## Stripe (subscriptions)
+
+The app includes **Pricing**, **Upgrade**, and **Manage subscription** screens. To go live:
+
+1. Create Stripe products/prices for Free and Pro.
+2. Add a backend (e.g. Supabase Edge Functions) to:
+   - Create Stripe Checkout sessions for upgrade.
+   - Create Stripe Customer Portal sessions for manage.
+   - Handle Stripe webhooks and write to `subscriptions` (and optionally `profiles`/plan flags).
+3. Point the Upgrade and Manage screens to your API so they open the returned Stripe URLs (e.g. `Linking.openURL(url)`).
+
+## Public profile URL
+
+Each user gets `https://ringtap.me/{username}`. You need to host a small web app or redirect at `ringtap.me` that loads the profile by `username` (e.g. query Supabase `profiles` by `username`) and renders the card. This repo contains only the **Expo app**; the public profile page is a separate deploy.
+
+## Tech stack
+
+- **Expo** ~54, **Expo Router** (file-based), **TypeScript**
+- **Supabase**: Auth, Postgres, Storage, RLS
+- **expo-secure-store**: Session persistence
+- **expo-image-picker**, **expo-file-system**, **expo-sharing**: Avatar/video upload, QR share
+- **react-native-qrcode-svg**, **react-native-view-shot**: QR generation and image capture
+- **@shopify/flash-list**: Link list
+- **dayjs**: Dates
+- **Stripe**: Billing (integrate via your backend + webhooks)
 
 ## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Expo](https://expo.dev)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [Supabase](https://supabase.com/docs)
+- [Stripe Billing](https://stripe.com/docs/billing)

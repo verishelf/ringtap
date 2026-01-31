@@ -1,53 +1,159 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Futuristic monochrome luxury theme
+ * Deep blacks, zinc/silver grays, crisp whites, geometric fonts
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// Monochrome luxury palette
+const black = '#0A0A0B';
+const surface = '#141416';
+const surfaceElevated = '#1A1A1D';
+const border = '#27272A';
+const borderLight = '#3F3F46';
+const zinc = '#71717A';
+const zincLight = '#A1A1AA';
+const silver = '#D4D4D8';
+const white = '#FAFAFA';
+const pureWhite = '#FFFFFF';
+const accent = '#E4E4E7'; // silver highlight for interactive
+const muted = '#52525B';
+
+/** Monochrome luxury tokens for use in StyleSheet (dark-first) */
+export const Tokens = {
+  primary: black,
+  background: black,
+  surface: surface,
+  surfaceElevated: surfaceElevated,
+  border: border,
+  borderLight: borderLight,
+  text: white,
+  textSecondary: zincLight,
+  muted: zinc,
+  accent: silver,
+  destructive: '#EF4444',
+  inputBorder: borderLight,
+  card: surfaceElevated,
+  cardBorder: border,
+} as const;
+
+/** Layout: spacing, radii, typography — use everywhere for congruence */
+export const Layout = {
+  // Spacing
+  screenPadding: 20,
+  screenPaddingBottom: 40,
+  sectionGap: 24,
+  cardPadding: 20,
+  inputGap: 12,
+  rowGap: 12,
+  tightGap: 8,
+  // Radii
+  radiusSm: 8,
+  radiusMd: 12,
+  radiusLg: 16,
+  radiusXl: 24,
+  radiusPill: 999,
+  // Inputs / buttons
+  inputHeight: 48,
+  buttonHeight: 48,
+  // Typography
+  titleSection: 17,
+  titleSectionMarginBottom: 6,
+  subtitleSection: 13,
+  subtitleSectionMarginBottom: 12,
+  body: 16,
+  bodySmall: 14,
+  caption: 13,
+  labelMarginBottom: 8,
+  inputMarginBottom: 10,
+} as const;
+
+// Light theme: light backgrounds, dark text
+const lightBg = '#FAFAFA';
+const lightSurface = '#F4F4F5';
+const lightSurfaceElevated = '#E4E4E7';
+const lightBorder = '#D4D4D8';
+const lightBorderLight = '#A1A1AA';
+const darkText = '#18181B';
+const darkTextSecondary = '#3F3F46';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: darkText,
+    textSecondary: darkTextSecondary,
+    background: lightBg,
+    surface: lightSurface,
+    surfaceElevated: lightSurfaceElevated,
+    border: lightBorder,
+    borderLight: lightBorderLight,
+    tint: darkText,
+    primary: black,
+    accent: zinc,
+    icon: darkTextSecondary,
+    tabIconDefault: zinc,
+    tabIconSelected: darkText,
+    tabBarBackground: lightSurface,
+    tabBarBorder: lightBorder,
+    inputBackground: lightSurfaceElevated,
+    inputBorder: lightBorderLight,
+    card: lightSurfaceElevated,
+    cardBorder: lightBorder,
+    destructive: '#EF4444',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: white,
+    textSecondary: zincLight,
+    background: black,
+    surface: surface,
+    surfaceElevated: surfaceElevated,
+    border: border,
+    borderLight: borderLight,
+    tint: pureWhite,
+    primary: black,
+    accent: silver,
+    icon: zincLight,
+    tabIconDefault: zincLight,
+    tabIconSelected: pureWhite,
+    tabBarBackground: surface,
+    tabBarBorder: border,
+    inputBackground: surfaceElevated,
+    inputBorder: borderLight,
+    card: surfaceElevated,
+    cardBorder: border,
+    destructive: '#EF4444',
   },
+};
+
+/** Futuristic geometric — load via @expo-google-fonts/space-grotesk; falls back to system when not loaded */
+export const FontFamily = {
+  heading: 'SpaceGrotesk_700Bold',
+  headingMedium: 'SpaceGrotesk_600SemiBold',
+  body: 'SpaceGrotesk_400Regular',
+  bodyMedium: 'SpaceGrotesk_500Medium',
+  mono: Platform.select({
+    ios: 'Menlo',
+    android: 'monospace',
+    default: 'monospace',
+  }),
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    sans: FontFamily.body,
+    serif: 'Georgia',
+    rounded: 'System',
+    mono: FontFamily.mono ?? 'Menlo',
   },
   default: {
-    sans: 'normal',
+    sans: FontFamily.body,
     serif: 'serif',
     rounded: 'normal',
-    mono: 'monospace',
+    mono: FontFamily.mono ?? 'monospace',
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans: `"Space Grotesk", system-ui, -apple-system, sans-serif`,
     serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    rounded: `"Space Grotesk", system-ui, sans-serif`,
+    mono: "ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace",
   },
 });

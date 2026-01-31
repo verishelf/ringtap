@@ -1,0 +1,931 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing';
+import { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { ProfileScanPreview } from '@/components/ProfileScanPreview';
+import { ThemedView } from '@/components/themed-view';
+import { Layout, Tokens } from '@/constants/theme';
+import { useProfile } from '@/hooks/useProfile';
+import { useSession } from '@/hooks/useSession';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { createScannedContact, deleteScannedContact, getLinks, getProfileUrl, getScannedContacts, uploadAvatar, uploadVideoIntro } from '@/lib/api';
+import type { ProfileTheme, ScannedContact, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
+import * as Clipboard from 'expo-clipboard';
+
+const SOCIAL_PLATFORMS: { key: SocialPlatform; label: string }[] = [
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'youtube', label: 'YouTube' },
+  { key: 'threads', label: 'Threads' },
+  { key: 'x', label: 'X / Twitter' },
+];
+
+const ACCENT_COLORS = [Tokens.accent, '#71717A', '#A1A1AA', '#D4D4D8', '#E4E4E7', '#52525B', '#3F3F46', '#27272A', '#1A1A1D', Tokens.text];
+
+type EditForm = Pick<UserProfile, 'username' | 'name' | 'title' | 'bio' | 'avatarUrl' | 'videoIntroUrl' | 'email' | 'phone' | 'website' | 'socialLinks' | 'theme'>;
+
+function initEditForm(profile: UserProfile): EditForm {
+  return {
+    username: profile.username,
+    name: profile.name,
+    title: profile.title,
+    bio: profile.bio,
+    avatarUrl: profile.avatarUrl,
+    videoIntroUrl: profile.videoIntroUrl,
+    email: profile.email,
+    phone: profile.phone,
+    website: profile.website,
+    socialLinks: { ...profile.socialLinks },
+    theme: { ...profile.theme },
+  };
+}
+
+export default function ProfileEditorScreen() {
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
+  const { profile, loading: profileLoading, refresh, updateProfile } = useProfile();
+  const { user } = useSession();
+  const { isPro } = useSubscription();
+  const [isEditing, setIsEditing] = useState(false);
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [previewLinks, setPreviewLinks] = useState<UserLink[]>([]);
+  const [contacts, setContacts] = useState<ScannedContact[]>([]);
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    title: '',
+    company: '',
+    email: '',
+    phone: '',
+    website: '',
+  });
+  const [savingContact, setSavingContact] = useState(false);
+
+  // Sync editForm when entering edit mode
+  useEffect(() => {
+    if (isEditing && profile) {
+      setEditForm(initEditForm(profile));
+    } else {
+      setEditForm(null);
+    }
+  }, [isEditing, profile?.id]);
+
+  const pickImage = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to photos to set a profile picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !user?.id) return;
+    setUploadingImage(true);
+    try {
+      const url = await uploadAvatar(user.id, result.assets[0].uri);
+      if (url) {
+        if (isEditing && editForm) setEditForm((f) => ({ ...f, avatarUrl: url }));
+        else await updateProfile({ avatarUrl: url });
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [user?.id, updateProfile, isEditing, editForm]);
+
+  const pickVideo = useCallback(async () => {
+    if (!isPro) {
+      Alert.alert('Pro feature', 'Video intro is available on the Pro plan.');
+      return;
+    }
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to photos to add a video intro.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: true,
+      videoMaxDuration: 20,
+      quality: 0.8,
+    });
+    if (result.canceled || !user?.id) return;
+    setUploadingVideo(true);
+    try {
+      const url = await uploadVideoIntro(user.id, result.assets[0].uri);
+      if (url) {
+        if (isEditing && editForm) setEditForm((f) => ({ ...f, videoIntroUrl: url }));
+        else await updateProfile({ videoIntroUrl: url });
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to upload video (max ~20 seconds)');
+    } finally {
+      setUploadingVideo(false);
+    }
+  }, [user?.id, updateProfile, isPro, isEditing, editForm]);
+
+  const startEditing = useCallback(() => {
+    if (profile) setEditForm(initEditForm(profile));
+    setIsEditing(true);
+  }, [profile]);
+
+  const cancelEditing = useCallback(() => {
+    setIsEditing(false);
+    setEditForm(null);
+  }, []);
+
+  const saveEditing = useCallback(async () => {
+    if (!editForm) return;
+    setSaving(true);
+    try {
+      await updateProfile(editForm);
+      await refresh();
+      setIsEditing(false);
+      setEditForm(null);
+    } catch (e) {
+      Alert.alert('Error', 'Could not save profile.');
+    } finally {
+      setSaving(false);
+    }
+  }, [editForm, updateProfile, refresh]);
+
+  const copyProfileLink = useCallback(async () => {
+    if (!profile?.username) {
+      Alert.alert('Set username', 'Add a username in your profile first.');
+      return;
+    }
+    const url = getProfileUrl(profile.username);
+    await Clipboard.setStringAsync(url);
+    Alert.alert('Copied', 'Profile link copied to clipboard.');
+  }, [profile?.username]);
+
+  const shareProfile = useCallback(async () => {
+    if (!profile?.username) {
+      Alert.alert('Set username', 'Add a username in your profile first.');
+      return;
+    }
+    const url = getProfileUrl(profile.username);
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      await Sharing.shareAsync(url);
+    } else {
+      await Clipboard.setStringAsync(url);
+      Alert.alert('Link copied', 'Profile link copied to clipboard.');
+    }
+  }, [profile?.username]);
+
+  const updateTheme = useCallback(
+    (themeUpdates: Partial<ProfileTheme>) => {
+      if (isEditing && editForm) {
+        setEditForm((f) => ({ ...f, theme: { ...f.theme, ...themeUpdates } }));
+      } else if (profile) {
+        updateProfile({ theme: { ...profile.theme, ...themeUpdates } });
+      }
+    },
+    [profile, updateProfile, isEditing, editForm]
+  );
+
+  // Create default profile if none exists
+  useEffect(() => {
+    if (!profileLoading && !profile && user?.id) {
+      updateProfile({
+        username: (user.email?.split('@')[0]?.replace(/[^a-z0-9]/gi, '')?.slice(0, 20)) || 'user',
+        name: '',
+        title: '',
+        bio: '',
+        email: user.email ?? '',
+        phone: '',
+        website: '',
+      }).then((updated) => updated && refresh());
+    }
+  }, [profileLoading, profile, user?.id, user?.email, updateProfile, refresh]);
+
+  // Load links and scanned contacts when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id) return;
+      getLinks(user.id).then(setPreviewLinks);
+      getScannedContacts(user.id).then(setContacts);
+    }, [user?.id])
+  );
+
+  const openAddContact = useCallback(() => {
+    setContactForm({ name: '', title: '', company: '', email: '', phone: '', website: '' });
+    setContactModalVisible(true);
+  }, []);
+
+  const saveContact = useCallback(async () => {
+    if (!user?.id) return;
+    const { name, title, company, email, phone, website } = contactForm;
+    if (!name.trim()) {
+      Alert.alert('Name required', 'Enter at least a name for this contact.');
+      return;
+    }
+    setSavingContact(true);
+    try {
+      const created = await createScannedContact(user.id, {
+        name: name.trim(),
+        title: title.trim(),
+        company: company.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        website: website.trim(),
+        avatarUrl: null,
+        profileUrl: null,
+        source: 'manual',
+      });
+      if (created) {
+        setContacts((prev) => [created, ...prev]);
+        setContactModalVisible(false);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Could not save contact.');
+    } finally {
+      setSavingContact(false);
+    }
+  }, [user?.id, contactForm]);
+
+  const removeContact = useCallback(
+    (contact: ScannedContact) => {
+      Alert.alert('Remove contact', `Remove ${contact.name} from your contacts?`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await deleteScannedContact(contact.id);
+            if (ok) setContacts((prev) => prev.filter((c) => c.id !== contact.id));
+          },
+        },
+      ]);
+    },
+    []
+  );
+
+  if (profileLoading || !profile) {
+    return (
+      <ThemedView style={styles.centered}>
+        <ActivityIndicator size="large" />
+      </ThemedView>
+    );
+  }
+
+  const displayProfile = isEditing && editForm ? { ...profile, ...editForm } : profile;
+
+  return (
+    <ThemedView style={styles.container}>
+      {/* Header: Edit / Preview in view mode, Cancel / Save in edit mode */}
+      <View style={[styles.headerRow, { borderBottomColor: colors.borderLight }]}>
+        {isEditing ? (
+          <>
+            <Pressable onPress={cancelEditing} style={[styles.headerButton, { minWidth: 72 }]}>
+              <Text style={[styles.headerButtonText, { color: colors.accent }]}>Cancel</Text>
+            </Pressable>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Edit profile</Text>
+            <Pressable onPress={saveEditing} style={[styles.headerButton, { minWidth: 72 }]} disabled={saving}>
+              {saving ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <Text style={[styles.headerButtonText, { color: colors.accent, fontWeight: '700' }]}>Save</Text>
+              )}
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <View style={styles.headerSpacer} />
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+            <View style={styles.headerActions}>
+              <Pressable onPress={() => setPreviewModalVisible(true)} style={styles.headerButton}>
+                <Ionicons name="eye-outline" size={22} color={colors.accent} />
+                <Text style={[styles.headerButtonText, { color: colors.accent }]}>Preview</Text>
+              </Pressable>
+              <Pressable onPress={startEditing} style={styles.headerButton}>
+                <Ionicons name="pencil" size={22} color={colors.accent} />
+                <Text style={[styles.headerButtonText, { color: colors.accent }]}>Edit</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.sectionGap }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {isEditing && editForm ? (
+          /* ---------- Edit mode: form ---------- */
+          <>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Profile picture</Text>
+              <Pressable onPress={pickImage} disabled={uploadingImage} style={styles.avatarWrap}>
+                {editForm.avatarUrl ? (
+                  <Image source={{ uri: editForm.avatarUrl }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatarPlaceholder, { backgroundColor: colors.borderLight }]}>
+                    <Ionicons name="person" size={48} color={colors.textSecondary} />
+                  </View>
+                )}
+                {uploadingImage && (
+                  <View style={styles.avatarOverlay}>
+                    <ActivityIndicator color={colors.text} />
+                  </View>
+                )}
+              </Pressable>
+            </View>
+            {isPro && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Video intro (Pro)</Text>
+                <Pressable onPress={pickVideo} disabled={uploadingVideo} style={[styles.videoButton, { borderColor: colors.accent }]}>
+                  {uploadingVideo ? (
+                    <ActivityIndicator color={colors.accent} />
+                  ) : (
+                    <Text style={[styles.videoButtonText, { color: colors.accent }]}>
+                      {editForm.videoIntroUrl ? 'Change video' : 'Add video (~20 sec)'}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            )}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic info</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Username (for ringtap.me/username)"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.username}
+                onChangeText={(v) => setEditForm((f) => (f ? { ...f, username: v } : f))}
+                autoCapitalize="none"
+              />
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Name"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.name}
+                onChangeText={(v) => setEditForm((f) => (f ? { ...f, name: v } : f))}
+              />
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Title"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.title}
+                onChangeText={(v) => setEditForm((f) => (f ? { ...f, title: v } : f))}
+              />
+              <TextInput
+                style={[styles.input, styles.bio, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Bio"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.bio}
+                onChangeText={(v) => setEditForm((f) => (f ? { ...f, bio: v } : f))}
+                multiline
+              />
+            </View>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Email"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.email}
+                onChangeText={(v) => setEditForm((f) => (f ? { ...f, email: v } : f))}
+                keyboardType="email-address"
+              />
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Phone"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.phone}
+                onChangeText={(v) => setEditForm((f) => (f ? { ...f, phone: v } : f))}
+                keyboardType="phone-pad"
+              />
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Website"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.website}
+                onChangeText={(v) => setEditForm((f) => (f ? { ...f, website: v } : f))}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+            </View>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Social links</Text>
+              {SOCIAL_PLATFORMS.map(({ key, label }) => (
+                <TextInput
+                  key={key}
+                  style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                  placeholder={label}
+                  placeholderTextColor={colors.textSecondary}
+                  value={editForm.socialLinks[key] ?? ''}
+                  onChangeText={(v) =>
+                    setEditForm((f) => (f ? { ...f, socialLinks: { ...f.socialLinks, [key]: v } } : f))
+                  }
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+              ))}
+            </View>
+            {isPro && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Theme</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Accent color</Text>
+                <View style={styles.colorRow}>
+                  {ACCENT_COLORS.map((color) => (
+                    <Pressable
+                      key={color}
+                      style={[
+                        styles.colorDot,
+                        { backgroundColor: color },
+                        editForm.theme.accentColor === color && styles.colorDotSelected,
+                      ]}
+                      onPress={() => updateTheme({ accentColor: color })}
+                    />
+                  ))}
+                </View>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Button shape</Text>
+                <View style={styles.row}>
+                  {(['rounded', 'pill', 'square'] as const).map((shape) => (
+                    <Pressable
+                      key={shape}
+                      style={[
+                        styles.shapeButton,
+                        { borderColor: colors.borderLight },
+                        editForm.theme.buttonShape === shape && { borderColor: colors.accent, backgroundColor: colors.surface },
+                      ]}
+                      onPress={() => updateTheme({ buttonShape: shape })}
+                    >
+                      <Text style={[styles.shapeButtonText, { color: colors.text }]}>{shape}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
+        ) : (
+          /* ---------- View mode: read-only profile ---------- */
+          <>
+            <View style={[styles.viewCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+              <View style={styles.viewCardHeader}>
+                {profile.avatarUrl ? (
+                  <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatarPlaceholder, { backgroundColor: colors.borderLight }]}>
+                    <Ionicons name="person" size={48} color={colors.textSecondary} />
+                  </View>
+                )}
+                <View style={styles.viewCardHeadline}>
+                  <Text style={[styles.viewCardName, { color: colors.text }]} numberOfLines={1}>
+                    {profile.name?.trim() || 'Your name'}
+                  </Text>
+                  {profile.title?.trim() ? (
+                    <Text style={[styles.viewCardTitle, { color: colors.textSecondary }]} numberOfLines={1}>{profile.title}</Text>
+                  ) : null}
+                  {profile.username ? (
+                    <Text style={[styles.viewCardUsername, { color: colors.textSecondary }]} numberOfLines={1}>
+                      ringtap.me/{profile.username}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+              {profile.bio?.trim() ? (
+                <Text style={[styles.viewCardBio, { color: colors.textSecondary }]}>{profile.bio}</Text>
+              ) : null}
+              {(profile.email?.trim() || profile.phone?.trim() || profile.website?.trim()) ? (
+                <View style={[styles.viewCardContact, { borderTopColor: colors.borderLight }]}>
+                  {profile.email?.trim() ? (
+                    <View style={styles.contactRow}>
+                      <Ionicons name="mail-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.email}</Text>
+                    </View>
+                  ) : null}
+                  {profile.phone?.trim() ? (
+                    <View style={styles.contactRow}>
+                      <Ionicons name="call-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.phone}</Text>
+                    </View>
+                  ) : null}
+                  {profile.website?.trim() ? (
+                    <View style={styles.contactRow}>
+                      <Ionicons name="globe-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.website}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+              {Object.entries(profile.socialLinks || {}).some(([, v]) => v?.trim()) ? (
+                <View style={[styles.viewCardSocial, { borderTopColor: colors.borderLight }]}>
+                  {SOCIAL_PLATFORMS.map(({ key, label }) => {
+                    const url = profile.socialLinks?.[key]?.trim();
+                    if (!url) return null;
+                    return (
+                      <View key={key} style={styles.contactRow}>
+                        <Ionicons name="link" size={16} color={colors.textSecondary} />
+                        <Text style={[styles.contactDetailText, { color: colors.accent }]} numberOfLines={1}>{label}: {url}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Profile link</Text>
+              {profile.username ? (
+                <Text style={[styles.profileUrl, { color: colors.textSecondary }]}>{getProfileUrl(profile.username)}</Text>
+              ) : (
+                <Text style={[styles.hint, { color: colors.textSecondary }]}>Edit profile and set a username to get your link.</Text>
+              )}
+              <View style={styles.row}>
+                <Pressable style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={copyProfileLink}>
+                  <Ionicons name="copy-outline" size={20} color={colors.primary} />
+                  <Text style={[styles.primaryButtonText, { color: colors.primary }]}>Copy link</Text>
+                </Pressable>
+                <Pressable style={[styles.secondaryButton, { borderColor: colors.accent }]} onPress={shareProfile}>
+                  <Ionicons name="share-outline" size={20} color={colors.accent} />
+                  <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>Share</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Scanned contacts</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>People you've scanned — business cards & contact info</Text>
+              <Pressable
+                style={[styles.addContactButton, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+                onPress={openAddContact}
+              >
+                <Ionicons name="person-add-outline" size={22} color={colors.accent} />
+                <Text style={[styles.addContactButtonText, { color: colors.text }]}>Add contact</Text>
+              </Pressable>
+              {contacts.length === 0 ? (
+                <View style={[styles.contactsEmpty, { backgroundColor: colors.surface }]}>
+                  <Ionicons name="people-outline" size={40} color={colors.textSecondary} />
+                  <Text style={[styles.contactsEmptyText, { color: colors.textSecondary }]}>No contacts yet</Text>
+                  <Text style={[styles.contactsEmptyHint, { color: colors.textSecondary }]}>Add someone you met or scanned</Text>
+                </View>
+              ) : (
+                <View style={styles.contactsList}>
+                  {contacts.map((contact) => (
+                    <View key={contact.id} style={[styles.contactCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                      <View style={styles.contactCardHeader}>
+                        {contact.avatarUrl ? (
+                          <Image source={{ uri: contact.avatarUrl }} style={styles.contactAvatar} />
+                        ) : (
+                          <View style={[styles.contactAvatarPlaceholder, { backgroundColor: colors.borderLight }]}>
+                            <Ionicons name="person" size={24} color={colors.textSecondary} />
+                          </View>
+                        )}
+                        <View style={styles.contactCardHeadline}>
+                          <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{contact.name}</Text>
+                          {(contact.title || contact.company) ? (
+                            <Text style={[styles.contactTitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                              {[contact.title, contact.company].filter(Boolean).join(' · ')}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Pressable onPress={() => removeContact(contact)} style={styles.contactDelete}>
+                          <Ionicons name="trash-outline" size={20} color={colors.destructive} />
+                        </Pressable>
+                      </View>
+                      {(contact.email || contact.phone || contact.website) ? (
+                        <View style={[styles.contactDetails, { borderTopColor: colors.borderLight }]}>
+                          {contact.email ? (
+                            <View style={styles.contactRow}>
+                              <Ionicons name="mail-outline" size={14} color={colors.textSecondary} />
+                              <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{contact.email}</Text>
+                            </View>
+                          ) : null}
+                          {contact.phone ? (
+                            <View style={styles.contactRow}>
+                              <Ionicons name="call-outline" size={14} color={colors.textSecondary} />
+                              <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{contact.phone}</Text>
+                            </View>
+                          ) : null}
+                          {contact.website ? (
+                            <View style={styles.contactRow}>
+                              <Ionicons name="globe-outline" size={14} color={colors.textSecondary} />
+                              <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{contact.website}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
+
+      {/* Preview profile modal */}
+      <Modal visible={previewModalVisible} animationType="slide" transparent statusBarTranslucent>
+        <View style={[styles.previewModalOverlay, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
+          <View style={styles.previewModalHeader}>
+            <Text style={[styles.previewModalTitle, { color: colors.text }]}>Preview profile</Text>
+            <Pressable onPress={() => setPreviewModalVisible(false)} hitSlop={12}>
+              <Ionicons name="close" size={28} color={colors.text} />
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={[styles.previewModalContent, { paddingBottom: insets.bottom + 24 }]}>
+            <ProfileScanPreview profile={displayProfile} links={previewLinks} />
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Add contact modal */}
+      <Modal visible={contactModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modal, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Add contact</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>Business card / contact info</Text>
+            <TextInput
+              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Name *"
+              placeholderTextColor={colors.textSecondary}
+              value={contactForm.name}
+              onChangeText={(v) => setContactForm((f) => ({ ...f, name: v }))}
+            />
+            <TextInput
+              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Title"
+              placeholderTextColor={colors.textSecondary}
+              value={contactForm.title}
+              onChangeText={(v) => setContactForm((f) => ({ ...f, title: v }))}
+            />
+            <TextInput
+              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Company"
+              placeholderTextColor={colors.textSecondary}
+              value={contactForm.company}
+              onChangeText={(v) => setContactForm((f) => ({ ...f, company: v }))}
+            />
+            <TextInput
+              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Email"
+              placeholderTextColor={colors.textSecondary}
+              value={contactForm.email}
+              onChangeText={(v) => setContactForm((f) => ({ ...f, email: v }))}
+              keyboardType="email-address"
+            />
+            <TextInput
+              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Phone"
+              placeholderTextColor={colors.textSecondary}
+              value={contactForm.phone}
+              onChangeText={(v) => setContactForm((f) => ({ ...f, phone: v }))}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Website"
+              placeholderTextColor={colors.textSecondary}
+              value={contactForm.website}
+              onChangeText={(v) => setContactForm((f) => ({ ...f, website: v }))}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+            <View style={styles.modalActions}>
+              <Pressable style={[styles.modalCancel, { borderColor: colors.borderLight }]} onPress={() => setContactModalVisible(false)}>
+                <Text style={[styles.modalCancelText, { color: colors.text }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalSave, { backgroundColor: colors.accent }]}
+                onPress={saveContact}
+                disabled={savingContact}
+              >
+                {savingContact ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Text style={[styles.modalSaveText, { color: colors.primary }]}>Save contact</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scroll: { padding: Layout.screenPadding },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Layout.screenPadding,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerButton: { padding: Layout.tightGap, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  headerButtonText: { fontSize: Layout.body },
+  headerSpacer: { width: 80 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  viewCard: {
+    padding: Layout.cardPadding,
+    borderRadius: Layout.radiusXl,
+    borderWidth: 1,
+    marginBottom: Layout.sectionGap,
+  },
+  viewCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Layout.rowGap },
+  viewCardHeadline: { flex: 1, marginLeft: Layout.rowGap, minWidth: 0 },
+  viewCardName: { fontSize: 20, fontWeight: '700' },
+  viewCardTitle: { fontSize: Layout.body, marginTop: 2 },
+  viewCardUsername: { fontSize: Layout.caption, marginTop: 2 },
+  viewCardBio: { fontSize: Layout.bodySmall, lineHeight: 22, marginTop: Layout.tightGap },
+  viewCardContact: { marginTop: Layout.rowGap, paddingTop: Layout.rowGap, borderTopWidth: 1 },
+  viewCardSocial: { marginTop: Layout.rowGap, paddingTop: Layout.rowGap, borderTopWidth: 1 },
+  previewModalOverlay: {
+    flex: 1,
+  },
+  previewModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Layout.screenPadding,
+    paddingVertical: 12,
+  },
+  previewModalTitle: { fontSize: 18, fontWeight: '700' },
+  previewModalContent: { padding: Layout.screenPadding, paddingBottom: 40 },
+  section: { marginBottom: Layout.sectionGap },
+  sectionTitle: { fontSize: Layout.titleSection, fontWeight: '600', marginBottom: Layout.titleSectionMarginBottom },
+  sectionSubtitle: { fontSize: Layout.subtitleSection, marginBottom: Layout.subtitleSectionMarginBottom },
+  label: { fontSize: Layout.bodySmall, marginBottom: Layout.labelMarginBottom },
+  input: {
+    height: Layout.inputHeight,
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+    paddingHorizontal: 16,
+    fontSize: Layout.body,
+    marginBottom: Layout.inputMarginBottom,
+  },
+  bio: { height: 80, textAlignVertical: 'top', paddingTop: 12 },
+  avatarWrap: { alignSelf: 'flex-start', position: 'relative' },
+  avatar: { width: 100, height: 100, borderRadius: 50 },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoButton: {
+    height: Layout.inputHeight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+  },
+  videoButtonText: { fontWeight: '600' },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.inputGap, marginBottom: Layout.rowGap },
+  colorDot: { width: 36, height: 36, borderRadius: 18 },
+  colorDotSelected: { borderWidth: 3, borderColor: '#000' },
+  row: { flexDirection: 'row', gap: Layout.rowGap, marginBottom: Layout.rowGap },
+  shapeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: Layout.radiusSm,
+    borderWidth: 1,
+  },
+  shapeButtonText: { fontSize: Layout.bodySmall },
+  profileUrl: { fontSize: Layout.bodySmall, marginBottom: Layout.inputGap },
+  hint: { fontSize: Layout.bodySmall, marginBottom: Layout.inputGap },
+  primaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Layout.tightGap,
+    height: Layout.buttonHeight,
+    borderRadius: Layout.radiusMd,
+  },
+  primaryButtonText: { fontWeight: '600' },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Layout.tightGap,
+    height: Layout.buttonHeight,
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+  },
+  secondaryButtonText: { fontWeight: '600' },
+  addContactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Layout.inputGap,
+    height: Layout.buttonHeight,
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+    marginBottom: Layout.rowGap,
+  },
+  addContactButtonText: { fontSize: Layout.body, fontWeight: '600' },
+  contactsEmpty: {
+    padding: Layout.cardPadding,
+    borderRadius: Layout.radiusLg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  contactsEmptyText: { fontSize: Layout.body, fontWeight: '600', marginTop: Layout.rowGap },
+  contactsEmptyHint: { fontSize: Layout.caption, marginTop: 4 },
+  contactsList: { gap: Layout.inputGap },
+  contactCard: {
+    padding: 16,
+    borderRadius: Layout.radiusLg,
+    borderWidth: 1,
+  },
+  contactCardHeader: { flexDirection: 'row', alignItems: 'center' },
+  contactAvatar: { width: 44, height: 44, borderRadius: 22 },
+  contactAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactCardHeadline: { flex: 1, marginLeft: Layout.rowGap, minWidth: 0 },
+  contactName: { fontSize: Layout.body, fontWeight: '600' },
+  contactTitle: { fontSize: Layout.caption, marginTop: 2 },
+  contactDelete: { padding: Layout.tightGap },
+  contactDetails: { marginTop: Layout.rowGap, paddingTop: Layout.rowGap, borderTopWidth: 1 },
+  contactRow: { flexDirection: 'row', alignItems: 'center', gap: Layout.tightGap, marginBottom: 4 },
+  contactDetailText: { fontSize: Layout.caption, flex: 1 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modal: {
+    borderTopLeftRadius: Layout.radiusXl,
+    borderTopRightRadius: Layout.radiusXl,
+    padding: Layout.cardPadding,
+    paddingBottom: Layout.screenPaddingBottom,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  modalSubtitle: { fontSize: Layout.caption, marginBottom: 20 },
+  modalInput: {
+    height: Layout.inputHeight,
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+    paddingHorizontal: 16,
+    fontSize: Layout.body,
+    marginBottom: Layout.rowGap,
+  },
+  modalActions: { flexDirection: 'row', gap: Layout.rowGap, marginTop: Layout.tightGap },
+  modalCancel: {
+    flex: 1,
+    height: Layout.buttonHeight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+  },
+  modalCancelText: { fontSize: Layout.body, fontWeight: '600' },
+  modalSave: {
+    flex: 1,
+    height: Layout.buttonHeight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: Layout.radiusMd,
+  },
+  modalSaveText: { fontSize: Layout.body, fontWeight: '600' },
+});

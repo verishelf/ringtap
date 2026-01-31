@@ -1,98 +1,151 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Link, useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Layout } from '@/constants/theme';
+import { useProfile } from '@/hooks/useProfile';
+import { useSession } from '@/hooks/useSession';
+import { useThemeColors } from '@/hooks/useThemeColors';
+
+const RING_SIZE = 140;
+const RING_STROKE = 3;
+const INNER_CIRCLE = 64;
 
 export default function HomeScreen() {
+  const { user } = useSession();
+  const { profile, loading } = useProfile();
+  const colors = useThemeColors();
+  const router = useRouter();
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
+    <ThemedView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <Text style={[styles.greeting, { color: colors.text }]}>
+            Hi{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''}
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Manage your RingTap card</Text>
+        </View>
+
+        {/* Scan ring — tap to share */}
+        <Link href="/share/nfc" asChild>
+          <Pressable style={styles.scanRingWrap}>
+            <View style={[styles.scanRingContainer, { width: RING_SIZE, height: RING_SIZE }]}>
+              <View style={[styles.scanRingOuter, { width: RING_SIZE, height: RING_SIZE, borderRadius: RING_SIZE / 2, borderColor: colors.borderLight }]} />
+              <View style={[styles.scanRingMid, { width: RING_SIZE - 24, height: RING_SIZE - 24, borderRadius: (RING_SIZE - 24) / 2, borderColor: colors.accent, left: 12, top: 12 }]} />
+              <View style={[styles.scanRingInner, { width: INNER_CIRCLE, height: INNER_CIRCLE, borderRadius: INNER_CIRCLE / 2, backgroundColor: colors.surface, left: (RING_SIZE - INNER_CIRCLE) / 2, top: (RING_SIZE - INNER_CIRCLE) / 2 }]}>
+                <Ionicons name="phone-portrait-outline" size={28} color={colors.accent} />
+              </View>
+            </View>
+            <Text style={[styles.scanRingLabel, { color: colors.text }]}>Tap to share</Text>
+            <Text style={[styles.scanRingHint, { color: colors.textSecondary }]}>NFC or QR — your card, one tap</Text>
+          </Pressable>
         </Link>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <View style={styles.cards}>
+          <Link href="/(tabs)/profile" asChild>
+            <Pressable style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Ionicons name="person-circle-outline" size={36} color={colors.accent} />
+              <View style={styles.cardTextWrap}>
+                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>Edit profile</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>Name, photo, bio, theme</Text>
+              </View>
+            </Pressable>
+          </Link>
+
+          <Link href="/(tabs)/links" asChild>
+            <Pressable style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Ionicons name="link-outline" size={36} color={colors.accent} />
+              <View style={styles.cardTextWrap}>
+                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>Links</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>Social, websites, buttons</Text>
+              </View>
+            </Pressable>
+          </Link>
+
+          <Link href="/share/nfc" asChild>
+            <Pressable style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Ionicons name="phone-portrait-outline" size={36} color={colors.accent} />
+              <View style={styles.cardTextWrap}>
+                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>NFC Share</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>Tap to share your card</Text>
+              </View>
+            </Pressable>
+          </Link>
+
+          <Link href="/share/qr" asChild>
+            <Pressable style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Ionicons name="qr-code-outline" size={36} color={colors.accent} />
+              <View style={[styles.cardTextWrap]}>
+                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>QR Code</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>Generate & share QR</Text>
+              </View>
+            </Pressable>
+          </Link>
+
+          <Link href="/(tabs)/analytics" asChild>
+            <Pressable style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Ionicons name="stats-chart-outline" size={36} color={colors.accent} />
+              <View style={styles.cardTextWrap}>
+                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>Analytics</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>Views, clicks, scans</Text>
+              </View>
+            </Pressable>
+          </Link>
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: { flex: 1 },
+  scroll: { padding: Layout.screenPadding, paddingBottom: Layout.screenPaddingBottom },
+  header: { marginBottom: Layout.sectionGap },
+  greeting: { fontSize: 28, fontWeight: '700' },
+  subtitle: { fontSize: Layout.body, marginTop: 4 },
+  scanRingWrap: {
+    alignItems: 'center',
+    marginBottom: Layout.sectionGap,
+    paddingVertical: Layout.cardPadding,
+  },
+  scanRingContainer: {
+    position: 'relative',
+  },
+  scanRingOuter: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    borderWidth: RING_STROKE,
+  },
+  scanRingMid: {
+    position: 'absolute',
+    borderWidth: RING_STROKE,
+  },
+  scanRingInner: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanRingLabel: { fontSize: Layout.titleSection + 1, fontWeight: '700', marginTop: 14 },
+  scanRingHint: { fontSize: Layout.caption, marginTop: 4 },
+  cards: {
+    gap: Layout.rowGap,
+    alignItems: 'center',
+  },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 16,
+    paddingVertical: 18,
+    paddingHorizontal: Layout.cardPadding,
+    borderRadius: Layout.radiusXl,
+    width: '100%',
+    maxWidth: 400,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  cardTextWrap: { flex: 1, justifyContent: 'center', minWidth: 0 },
+  cardTitle: { fontSize: Layout.titleSection, fontWeight: '600' },
+  cardSubtitle: { fontSize: Layout.caption, marginTop: 2 },
 });
