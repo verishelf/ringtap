@@ -5,20 +5,27 @@ import { useState } from "react";
 
 type HeaderVariant = "home" | "store";
 
-const homeLinks = [
+type NavLinkItem = {
+  href: string;
+  label: string;
+  active?: boolean;
+  cta?: boolean;
+};
+
+const homeLinks: NavLinkItem[] = [
   { href: "#features", label: "Features" },
   { href: "#how-it-works", label: "How it works" },
   { href: "/store", label: "Store" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
   { href: "#download", label: "Download", cta: true },
-] as const;
+];
 
-const storeLinks = [
+const storeLinks: NavLinkItem[] = [
   { href: "/#features", label: "Features" },
   { href: "/store", label: "Store", active: true },
   { href: "/#download", label: "Download", cta: true },
-] as const;
+];
 
 function NavLink({
   href,
@@ -85,8 +92,8 @@ export function Header({ variant = "home" }: { variant?: HeaderVariant }) {
               key={link.label}
               href={link.href}
               label={link.label}
-              active={"active" in link && link.active}
-              cta={"cta" in link && link.cta}
+              active={link.active}
+              cta={link.cta}
             />
           ))}
         </nav>
