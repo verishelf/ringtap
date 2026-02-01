@@ -91,8 +91,8 @@ export function Header({ variant = "home" }: { variant?: HeaderVariant }) {
               key={link.label}
               href={link.href}
               label={link.label}
-              active={link.active}
-              cta={link.cta}
+              active={"active" in link && link.active}
+              cta={"cta" in link && link.cta}
             />
           ))}
         </nav>
