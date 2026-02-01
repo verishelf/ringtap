@@ -17,7 +17,6 @@ const homeLinks: NavLinkItem[] = [
   { href: "#how-it-works", label: "How it works" },
   { href: "/store", label: "Store" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
   { href: "#download", label: "Download", cta: true },
 ];
 

@@ -1,8 +1,8 @@
 "use client";
 
+import { Header } from "@/components/Header";
 import Link from "next/link";
 import { useState } from "react";
-import { Header } from "@/components/Header";
 
 const RING_SIZES = [
   "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12", "13",
@@ -165,12 +165,18 @@ export default function StorePage() {
           <Link href="/" className="text-sm font-bold text-foreground">
             RingTap
           </Link>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-6">
             <Link href="/#features" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Features
             </Link>
             <Link href="/store" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Store
+            </Link>
+            <Link href="/#faq" className="text-sm text-muted-light hover:text-foreground transition-colors">
+              FAQ
+            </Link>
+            <Link href="/privacy" className="text-sm text-muted-light hover:text-foreground transition-colors">
+              Privacy Policy
             </Link>
             <Link href="/#download" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Download
@@ -180,6 +186,11 @@ export default function StorePage() {
         <p className="mx-auto mt-6 max-w-6xl text-center text-xs text-muted">
           Your digital business card. One tap. ringtap.me
         </p>
+        <div className="mx-auto mt-4 max-w-6xl flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted">
+          <Link href="/#faq" className="hover:text-foreground transition-colors">FAQ</Link>
+          <span className="text-border-light">·</span>
+          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+        </div>
       </footer>
     </div>
   );

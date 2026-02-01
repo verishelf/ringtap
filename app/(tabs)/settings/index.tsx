@@ -63,15 +63,6 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Subscription</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Link href="/(tabs)/settings/pricing" asChild>
-              <Pressable style={[styles.menuItem, styles.rowBorder, { borderBottomColor: colors.borderLight }]}>
-                <View style={styles.menuItemLeft}>
-                  <Ionicons name="pricetag-outline" size={22} color={colors.accent} />
-                  <Text style={[styles.menuText, { color: colors.text }]}>Pricing</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-              </Pressable>
-            </Link>
             {isPro ? (
               <Link href="/(tabs)/settings/manage" asChild>
                 <Pressable style={styles.menuItem}>
@@ -79,7 +70,9 @@ export default function SettingsScreen() {
                     <Ionicons name="card-outline" size={22} color={colors.accent} />
                     <Text style={[styles.menuText, { color: colors.text }]}>Manage subscription</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                  <View style={styles.menuItemRight}>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                  </View>
                 </Pressable>
               </Link>
             ) : (
@@ -89,7 +82,9 @@ export default function SettingsScreen() {
                     <Ionicons name="rocket-outline" size={22} color={colors.accent} />
                     <Text style={[styles.menuText, { color: colors.text }]}>Upgrade to Pro</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                  <View style={styles.menuItemRight}>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                  </View>
                 </Pressable>
               </Link>
             )}
@@ -137,13 +132,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: Layout.cardPadding,
     paddingHorizontal: Layout.cardPadding,
+    flexWrap: 'nowrap',
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     flex: 1,
+    minWidth: 0,
   },
-  menuText: { fontSize: Layout.body },
+  menuItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+    marginLeft: 8,
+  },
+  menuText: { fontSize: Layout.body, flexShrink: 1 },
   signOutText: {},
 });

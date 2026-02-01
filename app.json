@@ -1,25 +1,43 @@
 {
   "expo": {
-    "name": "ringtap",
+    "name": "RingTap",
     "slug": "ringtap",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ringtap",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "me.ringtap.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "RingTap uses your photo library to set your profile picture and add a video intro.",
+        "NSMicrophoneUsageDescription": "RingTap may use the microphone when recording a video intro.",
+        "NSCameraUsageDescription": "RingTap may use the camera to take a profile photo or record a video intro.",
+        "UIBackgroundModes": []
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "me.ringtap.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0A0A0B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -37,6 +55,14 @@
           "dark": {
             "backgroundColor": "#0A0A0B"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "RingTap uses your photo library to set your profile picture and add a video intro.",
+          "cameraPermission": "RingTap uses the camera to take a profile photo or record a video intro.",
+          "microphonePermission": "RingTap uses the microphone when recording a video intro."
         }
       ]
     ],

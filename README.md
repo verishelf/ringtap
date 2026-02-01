@@ -89,9 +89,26 @@ Each user gets `https://ringtap.me/{username}`. You need to host a small web app
 - **dayjs**: Dates
 - **Stripe**: Billing (integrate via your backend + webhooks)
 
+## Building for App Store & Google Play
+
+The app is configured for store submission:
+
+- **iOS:** `me.ringtap.app` (bundle ID), buildNumber in `app.json`
+- **Android:** `me.ringtap.app` (package), versionCode in `app.json`
+- **EAS Build:** `eas.json` includes `production` profile; set `EXPO_PUBLIC_SUPABASE_*` in EAS env or use `--local` with `.env`
+
+```bash
+npm install -g eas-cli
+eas login
+eas build --platform all --profile production
+```
+
+Full checklist (prerequisites, Store Connect / Play Console, screenshots, privacy policy): **[docs/APP_STORE_CHECKLIST.md](docs/APP_STORE_CHECKLIST.md)**.
+
 ## Learn more
 
 - [Expo](https://expo.dev)
 - [Expo Router](https://docs.expo.dev/router/introduction/)
+- [EAS Build](https://docs.expo.dev/build/introduction/)
 - [Supabase](https://supabase.com/docs)
 - [Stripe Billing](https://stripe.com/docs/billing)

@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Layout, Tokens } from '@/constants/theme';
+import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ButtonShape, UserLink, UserProfile } from '@/lib/supabase/types';
 
@@ -56,22 +56,22 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.card, { borderColor: Tokens.borderLight }]}>
+      <View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
         {/* Avatar + name block */}
         <View style={styles.header}>
           {profile.avatarUrl ? (
             <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
           ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={32} color={Tokens.muted} />
+            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.borderLight }]}>
+              <Ionicons name="person" size={32} color={colors.textSecondary} />
             </View>
           )}
           <View style={styles.headerText}>
-            <Text style={styles.name} numberOfLines={1}>
+            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
               {profile.name?.trim() || 'Your name'}
             </Text>
             {profile.title?.trim() ? (
-              <Text style={styles.title} numberOfLines={1}>
+              <Text style={[styles.title, { color: colors.textSecondary }]} numberOfLines={1}>
                 {profile.title}
               </Text>
             ) : null}
@@ -79,7 +79,7 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
         </View>
 
         {profile.bio?.trim() ? (
-          <Text style={styles.bio} numberOfLines={4}>
+          <Text style={[styles.bio, { color: colors.textSecondary }]} numberOfLines={4}>
             {profile.bio}
           </Text>
         ) : null}
@@ -88,24 +88,24 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
           <View style={styles.contact}>
             {profile.email?.trim() ? (
               <View style={styles.contactRow}>
-                <Ionicons name="mail-outline" size={14} color={Tokens.muted} />
-                <Text style={styles.contactText} numberOfLines={1}>
+                <Ionicons name="mail-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
                   {profile.email}
                 </Text>
               </View>
             ) : null}
             {profile.phone?.trim() ? (
               <View style={styles.contactRow}>
-                <Ionicons name="call-outline" size={14} color={Tokens.muted} />
-                <Text style={styles.contactText} numberOfLines={1}>
+                <Ionicons name="call-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
                   {profile.phone}
                 </Text>
               </View>
             ) : null}
             {profile.website?.trim() ? (
               <View style={styles.contactRow}>
-                <Ionicons name="globe-outline" size={14} color={Tokens.muted} />
-                <Text style={styles.contactText} numberOfLines={1}>
+                <Ionicons name="globe-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
                   {profile.website}
                 </Text>
               </View>
@@ -116,8 +116,8 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
         {socialWithUrls.length > 0 && (
           <View style={styles.socialRow}>
             {socialWithUrls.map(({ key, label }) => (
-              <View key={key} style={[styles.socialChip, { backgroundColor: Tokens.surface }]}>
-                <Text style={styles.socialChipText}>{label}</Text>
+              <View key={key} style={[styles.socialChip, { backgroundColor: colors.surfaceElevated }]}>
+                <Text style={[styles.socialChipText, { color: colors.text }]}>{label}</Text>
               </View>
             ))}
           </View>
@@ -133,17 +133,17 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
                   { backgroundColor: accent, borderRadius: radius },
                 ]}
               >
-                <Text style={styles.linkButtonText} numberOfLines={1}>
+                <Text style={[styles.linkButtonText, { color: colors.primary }]} numberOfLines={1}>
                   {link.title || link.url}
                 </Text>
-                <Ionicons name="open-outline" size={16} color={Tokens.primary} />
+                <Ionicons name="open-outline" size={16} color={colors.primary} />
               </View>
             ))}
           </View>
         )}
 
         {links.length === 0 && socialWithUrls.length === 0 && !profile.bio?.trim() && !hasContact && (
-          <Text style={styles.placeholder}>Add info and links to see your card here.</Text>
+          <Text style={[styles.placeholder, { color: colors.textSecondary }]}>Add info and links to see your card here.</Text>
         )}
       </View>
     </View>
