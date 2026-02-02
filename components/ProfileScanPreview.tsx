@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import type { ButtonShape, UserLink, UserProfile } from '@/lib/supabase/types';
+import type { ButtonShape, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',
@@ -17,6 +18,24 @@ const SOCIAL_LABELS: Record<string, string> = {
   x: 'X',
   other: 'Link',
 };
+
+const SOCIAL_ICONS: Record<SocialPlatform, keyof typeof Ionicons.glyphMap> = {
+  instagram: 'logo-instagram',
+  facebook: 'logo-facebook',
+  linkedin: 'logo-linkedin',
+  youtube: 'logo-youtube',
+  tiktok: 'logo-tiktok',
+  threads: 'logo-instagram',
+  x: 'logo-twitter',
+  other: 'link',
+};
+
+function openSocialUrl(url: string) {
+  const u = url.trim();
+  if (!u) return;
+  const withProtocol = /^https?:\/\//i.test(u) ? u : `https://${u}`;
+  Linking.openURL(withProtocol).catch(() => {});
+}
 
 function buttonRadius(shape: ButtonShape): number {
   switch (shape) {
@@ -115,10 +134,19 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
 
         {socialWithUrls.length > 0 && (
           <View style={styles.socialRow}>
-            {socialWithUrls.map(({ key, label }) => (
-              <View key={key} style={[styles.socialChip, { backgroundColor: colors.surfaceElevated }]}>
-                <Text style={[styles.socialChipText, { color: colors.text }]}>{label}</Text>
-              </View>
+            {socialWithUrls.map(({ key, label, url }) => (
+              <Pressable
+                key={key}
+                style={[styles.socialChip, { backgroundColor: colors.surfaceElevated }]}
+                onPress={() => openSocialUrl(url)}
+              >
+                <Ionicons
+                  name={SOCIAL_ICONS[key as SocialPlatform] ?? 'link'}
+                  size={22}
+                  color={colors.accent}
+                />
+                <Text style={[styles.socialChipText, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+              </Pressable>
             ))}
           </View>
         )}
@@ -174,8 +202,15 @@ const styles = StyleSheet.create({
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: Layout.tightGap, marginBottom: 4 },
   contactText: { fontSize: Layout.caption, flex: 1 },
   socialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.tightGap, marginBottom: Layout.rowGap },
-  socialChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: Layout.radiusSm },
-  socialChipText: { fontSize: Layout.caption - 1 },
+  socialChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: Layout.radiusMd,
+  },
+  socialChipText: { fontSize: Layout.caption, flex: 1 },
   links: { gap: Layout.inputGap },
   linkButton: {
     flexDirection: 'row',

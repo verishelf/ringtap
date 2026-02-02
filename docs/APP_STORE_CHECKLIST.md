@@ -26,7 +26,12 @@ Use this checklist to submit RingTap to the App Store and Google Play.
 
 ## 3. EAS Build setup
 
+**Important:** Run all `eas build` and `eas submit` commands from this repo (the Expo app root—the folder that contains `app.json` and `eas.json`).
+
 ```bash
+# From the Expo app root (folder with app.json + eas.json)
+cd /path/to/ringtap    # e.g. cd ~/Desktop/ringtap
+
 # Link or create EAS project (first time)
 eas init
 

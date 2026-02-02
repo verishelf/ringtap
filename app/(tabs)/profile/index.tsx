@@ -27,16 +27,35 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { createScannedContact, deleteScannedContact, getLinks, getProfileUrl, getScannedContacts, uploadAvatar, uploadVideoIntro } from '@/lib/api';
 import type { ProfileTheme, ScannedContact, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking';
 
-const SOCIAL_PLATFORMS: { key: SocialPlatform; label: string }[] = [
-  { key: 'instagram', label: 'Instagram' },
-  { key: 'tiktok', label: 'TikTok' },
-  { key: 'facebook', label: 'Facebook' },
-  { key: 'linkedin', label: 'LinkedIn' },
-  { key: 'youtube', label: 'YouTube' },
-  { key: 'threads', label: 'Threads' },
-  { key: 'x', label: 'X / Twitter' },
+const SOCIAL_PLATFORMS: { key: SocialPlatform; label: string; placeholder: string }[] = [
+  { key: 'instagram', label: 'Instagram', placeholder: 'instagram.com/username' },
+  { key: 'tiktok', label: 'TikTok', placeholder: 'tiktok.com/@username' },
+  { key: 'facebook', label: 'Facebook', placeholder: 'facebook.com/yourpage' },
+  { key: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/in/yourprofile' },
+  { key: 'youtube', label: 'YouTube', placeholder: 'youtube.com/@channel' },
+  { key: 'threads', label: 'Threads', placeholder: 'threads.net/@username' },
+  { key: 'x', label: 'X / Twitter', placeholder: 'x.com/username' },
 ];
+
+const SOCIAL_ICONS: Record<SocialPlatform, keyof typeof Ionicons.glyphMap> = {
+  instagram: 'logo-instagram',
+  facebook: 'logo-facebook',
+  linkedin: 'logo-linkedin',
+  youtube: 'logo-youtube',
+  tiktok: 'logo-tiktok',
+  threads: 'logo-instagram',
+  x: 'logo-twitter',
+  other: 'link',
+};
+
+function openSocialUrl(url: string) {
+  const u = url?.trim();
+  if (!u) return;
+  const withProtocol = /^https?:\/\//i.test(u) ? u : `https://${u}`;
+  Linking.openURL(withProtocol).catch(() => {});
+}
 
 const ACCENT_COLORS = [Tokens.accent, '#71717A', '#A1A1AA', '#D4D4D8', '#E4E4E7', '#52525B', '#3F3F46', '#27272A', '#1A1A1D', Tokens.text];
 
@@ -435,19 +454,24 @@ export default function ProfileEditorScreen() {
             </View>
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Social links</Text>
-              {SOCIAL_PLATFORMS.map(({ key, label }) => (
-                <TextInput
-                  key={key}
-                  style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
-                  placeholder={label}
-                  placeholderTextColor={colors.textSecondary}
-                  value={editForm.socialLinks[key] ?? ''}
-                  onChangeText={(v) =>
-                    setEditForm((f) => (f ? { ...f, socialLinks: { ...f.socialLinks, [key]: v } } : f))
-                  }
-                  autoCapitalize="none"
-                  keyboardType="url"
-                />
+              <Text style={[styles.hint, { color: colors.textSecondary, marginBottom: Layout.rowGap }]}>
+                Add full URLs (e.g. facebook.com/yourpage). Tappable icons will show on your card.
+              </Text>
+              {SOCIAL_PLATFORMS.map(({ key, label, placeholder }) => (
+                <View key={key} style={styles.socialInputRow}>
+                  <Ionicons name={SOCIAL_ICONS[key]} size={20} color={colors.textSecondary} style={styles.socialInputIcon} />
+                  <TextInput
+                    style={[styles.input, styles.socialInput, { borderColor: colors.borderLight, color: colors.text }]}
+                    placeholder={placeholder}
+                    placeholderTextColor={colors.textSecondary}
+                    value={editForm.socialLinks[key] ?? ''}
+                    onChangeText={(v) =>
+                      setEditForm((f) => (f ? { ...f, socialLinks: { ...f.socialLinks, [key]: v } } : f))
+                    }
+                    autoCapitalize="none"
+                    keyboardType="url"
+                  />
+                </View>
               ))}
             </View>
             {isPro && (
@@ -455,9 +479,9 @@ export default function ProfileEditorScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Theme</Text>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>Accent color</Text>
                 <View style={styles.colorRow}>
-                  {ACCENT_COLORS.map((color) => (
+                  {ACCENT_COLORS.map((color, index) => (
                     <Pressable
-                      key={color}
+                      key={`accent-${index}`}
                       style={[
                         styles.colorDot,
                         { backgroundColor: color },
@@ -543,10 +567,11 @@ export default function ProfileEditorScreen() {
                     const url = profile.socialLinks?.[key]?.trim();
                     if (!url) return null;
                     return (
-                      <View key={key} style={styles.contactRow}>
-                        <Ionicons name="link" size={16} color={colors.textSecondary} />
-                        <Text style={[styles.contactDetailText, { color: colors.accent }]} numberOfLines={1}>{label}: {url}</Text>
-                      </View>
+                      <Pressable key={key} style={styles.contactRow} onPress={() => openSocialUrl(url)}>
+                        <Ionicons name={SOCIAL_ICONS[key]} size={18} color={colors.accent} />
+                        <Text style={[styles.contactDetailText, { color: colors.accent }]} numberOfLines={1}>{label}</Text>
+                        <Ionicons name="open-outline" size={14} color={colors.textSecondary} />
+                      </Pressable>
                     );
                   })}
                 </View>
@@ -788,6 +813,13 @@ const styles = StyleSheet.create({
     fontSize: Layout.body,
     marginBottom: Layout.inputMarginBottom,
   },
+  socialInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Layout.inputMarginBottom,
+  },
+  socialInputIcon: { marginRight: 10 },
+  socialInput: { flex: 1, marginBottom: 0 },
   bio: { height: 80, textAlignVertical: 'top', paddingTop: 12 },
   avatarWrap: { alignSelf: 'flex-start', position: 'relative' },
   avatar: { width: 100, height: 100, borderRadius: 50 },

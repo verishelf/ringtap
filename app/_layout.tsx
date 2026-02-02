@@ -79,6 +79,8 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="activate" />
+        <Stack.Screen name="profile" />
         <Stack.Screen name="share" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

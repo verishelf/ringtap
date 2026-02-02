@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ringtap",
     "userInterfaceStyle": "automatic",
+    "deeplinks": ["ringtap://activate", "ringtap://profile"],
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -16,7 +17,18 @@
         "NSPhotoLibraryUsageDescription": "RingTap uses your photo library to set your profile picture and add a video intro.",
         "NSMicrophoneUsageDescription": "RingTap may use the microphone when recording a video intro.",
         "NSCameraUsageDescription": "RingTap may use the camera to take a profile photo or record a video intro.",
-        "UIBackgroundModes": []
+        "UIBackgroundModes": [],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "supabase.co": {
+              "NSIncludesSubdomains": true,
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSExceptionRequiresForwardSecrecy": false,
+              "NSRequiresCertificateTransparency": false
+            }
+          }
+        }
       },
       "config": {
         "usesNonExemptEncryption": false
@@ -34,9 +46,10 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VIDEO",
-        "READ_EXTERNAL_STORAGE"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -69,6 +82,14 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "63c87f6c-9296-48ee-ad7b-373c05cd4db1"
+      },
+      "supabaseUrl": "https://wdffdlznfthxwjhumacs.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkZmZkbHpuZnRoeHdqaHVtYWNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4MTA5OTcsImV4cCI6MjA4NTM4Njk5N30.F9e_2swJPefLU_VLZw8LX05hwbqlhSzs-qaEWOT3YDA"
     }
   }
 }

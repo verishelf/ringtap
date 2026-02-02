@@ -39,15 +39,21 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (mode === 'magic') {
-        const { error } = await supabase.auth.signInWithOtp({ email: email.trim() });
+        const { data, error } = await supabase.auth.signInWithOtp({
+          email: email.trim(),
+          options: { emailRedirectTo: 'me.ringtap.app://auth/callback' },
+        });
+        console.log('LOGIN OTP:', data, error);
         if (error) throw error;
         setMagicLinkSent(true);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        console.log('LOGIN PASSWORD:', data, error);
         if (error) throw error;
         router.replace('/(tabs)');
       }
     } catch (e: unknown) {
+      console.log('LOGIN CRASH:', e);
       Alert.alert('Error', e instanceof Error ? e.message : 'Sign in failed');
     } finally {
       setLoading(false);
@@ -58,16 +64,16 @@ export default function LoginScreen() {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.card}>
-          <Ionicons name="mail-open-outline" size={48} color={Tokens.accent} />
-          <Text style={styles.title}>Check your email</Text>
-          <Text style={styles.subtitle}>
+          <Ionicons name="mail-open-outline" size={48} color={colors.accent} />
+          <Text style={[styles.title, { color: colors.text }]}>Check your email</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             We sent a magic link to {email}. Tap the link to sign in.
           </Text>
           <Pressable
-            style={styles.button}
+            style={[styles.button, { backgroundColor: colors.accent }]}
             onPress={() => { setMagicLinkSent(false); setEmail(''); }}
           >
-            <Text style={styles.buttonText}>Use a different email</Text>
+            <Text style={[styles.buttonText, { color: colors.text }]}>Use a different email</Text>
           </Pressable>
         </View>
       </ThemedView>

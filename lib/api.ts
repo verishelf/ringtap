@@ -1,11 +1,46 @@
 import { supabase } from '@/lib/supabase/supabaseClient';
-import type { UserProfile, UserLink, ProfileTheme, AnalyticsSummary, ScannedContact, ScannedContactSource } from '@/lib/supabase/types';
+import type { AnalyticsSummary, ProfileTheme, ScannedContact, ScannedContactSource, UserLink, UserProfile } from '@/lib/supabase/types';
 import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
 
 const PROFILE_URL_BASE = 'https://ringtap.me';
+const RING_API_BASE = 'https://www.ringtap.me';
 
 export function getProfileUrl(username: string): string {
   return `${PROFILE_URL_BASE}/${username}`;
+}
+
+// --- Ring (NFC activation) — calls Next.js API ---
+export type RingStatus = {
+  status: 'unclaimed' | 'claimed';
+  chip_uid: string;
+  ring_model: string;
+  model_url: string | null;
+  owner_user_id: string | null;
+};
+
+export async function getRingStatus(chipUid: string): Promise<RingStatus | null> {
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/ring/status?uid=${encodeURIComponent(chipUid.trim())}`);
+    if (!res.ok) return null;
+    return (await res.json()) as RingStatus;
+  } catch {
+    return null;
+  }
+}
+
+export async function claimRing(chipUid: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/ring/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: chipUid.trim(), user_id: userId }),
+    });
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok) return { success: false, error: data.error ?? 'Claim failed' };
+    return { success: data.success ?? true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Claim failed' };
+  }
 }
 
 // --- Profile ---

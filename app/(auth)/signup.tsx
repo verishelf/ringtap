@@ -35,7 +35,14 @@ export default function SignupScreen() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({ email: email.trim(), password });
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          emailRedirectTo: 'me.ringtap.app://auth/callback',
+        },
+      });
+      console.log('SIGNUP:', data, error);
       if (error) throw error;
       Alert.alert(
         'Check your email',
@@ -43,6 +50,7 @@ export default function SignupScreen() {
         [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
       );
     } catch (e: unknown) {
+      console.log('SIGNUP CRASH:', e);
       Alert.alert('Error', e instanceof Error ? e.message : 'Sign up failed');
     } finally {
       setLoading(false);
@@ -56,13 +64,13 @@ export default function SignupScreen() {
         style={styles.keyboard}
       >
         <View style={styles.card}>
-          <Text style={styles.logo}>RingTap</Text>
-          <Text style={styles.subtitle}>Create your account</Text>
+          <Text style={[styles.logo, { color: colors.text }]}>RingTap</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Create your account</Text>
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
             placeholder="Email"
-            placeholderTextColor={Tokens.muted}
+            placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -70,9 +78,9 @@ export default function SignupScreen() {
             autoComplete="email"
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
             placeholder="Password (min 6 characters)"
-            placeholderTextColor={Tokens.muted}
+            placeholderTextColor={colors.textSecondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -80,20 +88,20 @@ export default function SignupScreen() {
           />
 
           <Pressable
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
             onPress={signUp}
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color={Tokens.primary} />
+              <ActivityIndicator color={colors.text} size="small" />
             ) : (
-              <Text style={styles.buttonText}>Sign up</Text>
+              <Text style={[styles.buttonText, { color: colors.text }]}>Sign up</Text>
             )}
           </Pressable>
 
           <Link href="/(auth)/login" asChild>
             <Pressable style={styles.linkButton}>
-              <Text style={styles.linkText}>Already have an account? Sign in</Text>
+              <Text style={[styles.linkText, { color: colors.accent }]}>Already have an account? Sign in</Text>
             </Pressable>
           </Link>
         </View>
