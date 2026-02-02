@@ -74,9 +74,9 @@ The app includes **Pricing**, **Upgrade**, and **Manage subscription** screens. 
    - Handle Stripe webhooks and write to `subscriptions` (and optionally `profiles`/plan flags).
 3. Point the Upgrade and Manage screens to your API so they open the returned Stripe URLs (e.g. `Linking.openURL(url)`).
 
-## Public profile URL
+## Public profile URL & marketing site
 
-Each user gets `https://ringtap.me/{username}`. You need to host a small web app or redirect at `ringtap.me` that loads the profile by `username` (e.g. query Supabase `profiles` by `username`) and renders the card. This repo contains only the **Expo app**; the public profile page is a separate deploy.
+Each user gets `https://ringtap.me/{username}`. The **Next.js marketing site** (landing, store, profile pages, activate flow) lives in the **`website/`** folder. Deploy it to Vercel or similar and point `ringtap.me` at it. This repo root is the **Expo app**; run the web app from `website/` (`cd website && npm run dev`).
 
 ## Tech stack
 

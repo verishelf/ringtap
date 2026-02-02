@@ -1,6 +1,6 @@
 # RingTap — Marketing Website
 
-Next.js marketing site for [RingTap](https://ringtap.me): your digital business card. Theme matches the mobile app (futuristic monochrome).
+Next.js marketing site for [RingTap](https://ringtap.me): your digital business card. Lives in the **`website/`** folder in the repo. Theme matches the mobile app (futuristic monochrome).
 
 ## Stack
 
