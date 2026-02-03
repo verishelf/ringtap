@@ -8,9 +8,23 @@ Next.js marketing site for [RingTap](https://ringtap.me): your digital business 
 - **Tailwind CSS v4**
 - **TypeScript**
 
+## Environment variables
+
+Required for `/api/activate`, `/api/ring/*`, and profile APIs:
+
+| Variable | Required | Where to get it |
+|----------|----------|------------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase → **Project Settings** → **API** → Project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes (for activate/claim) | Same page → **service_role** (secret; server-only) |
+
+Copy `.env.example` to `.env.local` and fill in the values. Never commit `.env.local` or the service role key.
+
 ## Run locally
 
 ```bash
+cp .env.example .env.local
+# Edit .env.local with your Supabase URL and service_role key
+
 npm install
 npm run dev
 ```
