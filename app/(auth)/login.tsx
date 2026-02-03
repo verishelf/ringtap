@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { ResizeMode, Video } from 'expo-av';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -13,7 +14,6 @@ import {
     View,
 } from 'react-native';
 
-import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { supabase } from '@/lib/supabase/supabaseClient';
@@ -21,11 +21,16 @@ import { supabase } from '@/lib/supabase/supabaseClient';
 export default function LoginScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const videoRef = useRef<Video>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'password' | 'magic'>('password');
+
+  useEffect(() => {
+    videoRef.current?.playAsync().catch(() => {});
+  }, []);
 
   async function signInWithPassword() {
     if (!email.trim()) {
@@ -60,93 +65,124 @@ export default function LoginScreen() {
     }
   }
 
+  const videoBackground = (
+    <>
+      <Video
+        ref={videoRef}
+        source={require('../../assets/ringtap.mp4')}
+        style={styles.videoBackground}
+        resizeMode={ResizeMode.COVER}
+        isLooping
+        isMuted
+        shouldPlay
+      />
+      <View style={styles.videoOverlay} />
+    </>
+  );
+
   if (magicLinkSent) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.card}>
-          <Ionicons name="mail-open-outline" size={48} color={colors.accent} />
-          <Text style={[styles.title, { color: colors.text }]}>Check your email</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            We sent a magic link to {email}. Tap the link to sign in.
-          </Text>
-          <Pressable
-            style={[styles.button, { backgroundColor: colors.accent }]}
-            onPress={() => { setMagicLinkSent(false); setEmail(''); }}
-          >
-            <Text style={[styles.buttonText, { color: colors.text }]}>Use a different email</Text>
-          </Pressable>
+      <View style={styles.screen}>
+        {videoBackground}
+        <View style={styles.container}>
+          <View style={[styles.card, { backgroundColor: colors.surface + 'E6' }]}>
+            <Ionicons name="mail-open-outline" size={48} color={colors.accent} />
+            <Text style={[styles.title, { color: colors.text }]}>Check your email</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              We sent a magic link to {email}. Tap the link to sign in.
+            </Text>
+            <Pressable
+              style={[styles.button, { backgroundColor: colors.accent }]}
+              onPress={() => { setMagicLinkSent(false); setEmail(''); }}
+            >
+              <Text style={[styles.buttonText, { color: colors.text }]}>Use a different email</Text>
+            </Pressable>
+          </View>
         </View>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboard}
-      >
-        <View style={styles.card}>
-          <Text style={[styles.logo, { color: colors.text }]}>RingTap</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your digital business card</Text>
+    <View style={styles.screen}>
+      {videoBackground}
+      <View style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboard}
+        >
+          <View style={[styles.card, { backgroundColor: colors.surface + 'E6' }]}>
+            <Text style={[styles.logo, { color: colors.text }]}>RingTap</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your digital business card</Text>
 
-          <TextInput
-            style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
-            placeholder="Email"
-            placeholderTextColor={colors.textSecondary}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          {mode === 'password' && (
             <TextInput
               style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Password"
+              placeholder="Email"
               placeholderTextColor={colors.textSecondary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="password"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
             />
-          )}
-
-          <Pressable
-            style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
-            onPress={signInWithPassword}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.text} size="small" />
-            ) : (
-              <Text style={[styles.buttonText, { color: colors.text }]}>
-                {mode === 'password' ? 'Sign in' : 'Send magic link'}
-              </Text>
+            {mode === 'password' && (
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Password"
+                placeholderTextColor={colors.textSecondary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoComplete="password"
+              />
             )}
-          </Pressable>
 
-          <Pressable
-            style={styles.linkButton}
-            onPress={() => setMode(mode === 'password' ? 'magic' : 'password')}
-          >
-            <Text style={[styles.linkText, { color: colors.accent }]}>
-              {mode === 'password' ? 'Use magic link instead' : 'Use password instead'}
-            </Text>
-          </Pressable>
-
-          <Link href="/(auth)/signup" asChild>
-            <Pressable style={styles.linkButton}>
-              <Text style={[styles.linkText, { color: colors.accent }]}>Don't have an account? Sign up</Text>
+            <Pressable
+              style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
+              onPress={signInWithPassword}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.text} size="small" />
+              ) : (
+                <Text style={[styles.buttonText, { color: colors.text }]}>
+                  {mode === 'password' ? 'Sign in' : 'Send magic link'}
+                </Text>
+              )}
             </Pressable>
-          </Link>
-        </View>
-      </KeyboardAvoidingView>
-    </ThemedView>
+
+            <Pressable
+              style={styles.linkButton}
+              onPress={() => setMode(mode === 'password' ? 'magic' : 'password')}
+            >
+              <Text style={[styles.linkText, { color: colors.accent }]}>
+                {mode === 'password' ? 'Use magic link instead' : 'Use password instead'}
+              </Text>
+            </Pressable>
+
+            <Link href="/(auth)/signup" asChild>
+              <Pressable style={styles.linkButton}>
+                <Text style={[styles.linkText, { color: colors.accent }]}>Don't have an account? Sign up</Text>
+              </Pressable>
+            </Link>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  videoBackground: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  videoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 10, 11, 0.65)',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -158,6 +194,8 @@ const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     gap: 16,
+    padding: Layout.sectionGap,
+    borderRadius: Layout.radiusLg,
   },
   logo: {
     fontSize: 32,
