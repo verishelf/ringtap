@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ringtap",
     "userInterfaceStyle": "automatic",
-    "deeplinks": ["ringtap://activate", "ringtap://profile"],
+    "deeplinks": ["ringtap://", "ringtap://activate", "ringtap://profile"],
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,

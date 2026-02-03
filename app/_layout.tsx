@@ -15,6 +15,7 @@ import { Colors } from '@/constants/theme';
 import { AppearanceProvider } from '@/contexts/AppearanceContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useActivation } from '@/hooks/useActivation';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +46,7 @@ const LuxuryLightTheme = {
 };
 
 function RootLayoutNav() {
+  useActivation();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? LuxuryDarkTheme : LuxuryLightTheme;
 

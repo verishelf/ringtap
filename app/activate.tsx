@@ -19,8 +19,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { claimRing, getRingStatus, type RingStatus } from '@/lib/api';
 
 export default function ActivateScreen() {
-  const params = useLocalSearchParams<{ uid?: string }>();
-  const uid = params.uid ?? '';
+  const params = useLocalSearchParams<{ uid?: string; r?: string }>();
+  const uid = (params.r ?? params.uid ?? '').trim();
   const router = useRouter();
   const colors = useThemeColors();
   const { user } = useSession();
