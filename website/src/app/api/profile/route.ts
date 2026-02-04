@@ -55,16 +55,29 @@ export async function GET(request: NextRequest) {
 
     if (username?.trim()) {
       const slug = username.trim().toLowerCase();
-      const { data, error } = await supabase
+      // Case-insensitive lookup: try exact match first, then ilike (handles any stored casing)
+      const { data: exact } = await supabase
         .from('profiles')
         .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, email, phone, website, theme, custom_buttons, social_links')
         .eq('username', slug)
         .maybeSingle();
-      profile = data as ProfileRow | null;
-      profileError = error;
-      if (profileError || !profile) {
+      if (exact) {
+        profile = exact as ProfileRow;
+      } else {
+        const pattern = slug.replace(/%/g, '\\%').replace(/_/g, '\\_');
+        const { data: fuzzy, error: fuzzyErr } = await supabase
+          .from('profiles')
+          .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, email, phone, website, theme, custom_buttons, social_links')
+          .ilike('username', pattern)
+          .maybeSingle();
+        profile = fuzzy as ProfileRow | null;
+        profileError = fuzzyErr;
+      }
+      if (!profile) {
         return NextResponse.json(
-          { error: `Profile not found for username "${slug}". Check the username in the app and that the profile is saved.` },
+          {
+            error: `No profile with username "${slug}". In the RingTap app: Profile → Edit → set Username to "${slug}" → Save. Ensure the app and website use the same Supabase project.`,
+          },
           { status: 404 }
         );
       }

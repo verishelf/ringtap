@@ -6,6 +6,17 @@ import { useCallback, useEffect, useState } from 'react';
 
 const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api']);
 
+const SOCIAL_LABELS: Record<string, string> = {
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  facebook: 'Facebook',
+  linkedin: 'LinkedIn',
+  youtube: 'YouTube',
+  threads: 'Threads',
+  x: 'X',
+  other: 'Link',
+};
+
 type ProfileData = {
   id: string;
   username: string;
@@ -47,7 +58,6 @@ export default function UsernameProfilePage() {
     setLoading(true);
     setError(null);
     try {
-      // Relative URL so it always hits the same host (ringtap.me or www.ringtap.me)
       const res = await fetch(`/api/profile?username=${encodeURIComponent(slug)}`);
       const text = await res.text();
       if (!res.ok) {
@@ -88,8 +98,8 @@ export default function UsernameProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-4">
-        <p className="text-destructive text-center">{error ?? 'Profile not found'}</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-4 max-w-md">
+        <p className="text-destructive text-center text-sm">{error ?? 'Profile not found'}</p>
         <div className="flex flex-wrap gap-3 justify-center">
           <button
             type="button"
@@ -108,79 +118,125 @@ export default function UsernameProfilePage() {
     ? Object.entries(profile.social_links).filter(([, v]) => v && String(v).trim())
     : [];
   const links = Array.isArray(profile.links) ? profile.links : [];
+  const hasContact = !!(profile.email?.trim() || profile.phone?.trim() || profile.website?.trim());
 
   return (
-    <div className="min-h-screen bg-background py-12 px-6">
+    <div className="min-h-screen bg-background py-10 px-4 sm:px-6">
       <div className="max-w-lg mx-auto">
-        <div className="rounded-2xl border border-border-light bg-surface p-6 space-y-6">
-          <div className="flex items-center gap-4">
+        {/* Card — same structure as app ProfileScanPreview */}
+        <div className="rounded-2xl border border-border-light bg-surface overflow-hidden">
+          {/* Centered header: avatar, name, title, tagline */}
+          <div className="pt-8 pb-4 px-6 text-center">
             {profile.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt=""
-                className="w-20 h-20 rounded-full object-cover bg-surface-elevated"
+                className="mx-auto rounded-full object-cover bg-surface-elevated border border-border-light mb-4 w-[88px] h-[88px]"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-surface-elevated flex items-center justify-center text-2xl text-muted">
+              <div className="w-[88px] h-[88px] mx-auto rounded-full bg-surface-elevated border border-border-light flex items-center justify-center text-3xl text-muted-light mb-4">
                 {profile.name?.charAt(0) ?? '?'}
               </div>
             )}
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{profile.name || 'No name'}</h1>
-              {profile.title ? <p className="text-muted-light">{profile.title}</p> : null}
-              <p className="text-sm text-muted">ringtap.me/{profile.username}</p>
-            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+              {profile.name?.trim() || 'No name'}
+            </h1>
+            {profile.title?.trim() ? (
+              <p className="text-muted-light mt-1">{profile.title}</p>
+            ) : null}
+            {profile.bio?.trim() ? (
+              <p className="text-muted-light text-sm mt-2 max-w-md mx-auto line-clamp-2">
+                {profile.bio}
+              </p>
+            ) : null}
+            <p className="text-muted text-xs mt-2">ringtap.me/{profile.username}</p>
           </div>
-          {profile.bio ? (
-            <p className="text-foreground">{profile.bio}</p>
-          ) : null}
-          {(profile.email || profile.phone || profile.website) ? (
-            <div className="space-y-2 border-t border-border-light pt-4">
-              <p className="text-sm font-semibold text-foreground">Contact</p>
-              {profile.email ? (
-                <a href={`mailto:${profile.email}`} className="block text-accent hover:underline">{profile.email}</a>
+
+          {(profile.bio?.trim() || hasContact || socialLinks.length > 0 || links.length > 0) && (
+            <div className="border-t border-border-light px-6 py-4 space-y-4">
+              {profile.bio?.trim() ? (
+                <>
+                  <h2 className="text-foreground font-bold text-base">About Me</h2>
+                  <p className="text-muted-light text-sm leading-relaxed">{profile.bio}</p>
+                  <div className="border-t border-border-light my-3" />
+                </>
               ) : null}
-              {profile.phone ? (
-                <a href={`tel:${profile.phone}`} className="block text-accent hover:underline">{profile.phone}</a>
+
+              {hasContact ? (
+                <>
+                  <h2 className="text-foreground font-bold text-base">Contact</h2>
+                  <div className="space-y-2 text-sm">
+                    {profile.email?.trim() ? (
+                      <a
+                        href={`mailto:${profile.email}`}
+                        className="flex items-center gap-2 text-muted-light hover:text-accent transition-colors"
+                      >
+                        <span className="text-muted" aria-hidden>✉</span>
+                        {profile.email}
+                      </a>
+                    ) : null}
+                    {profile.website?.trim() ? (
+                      <a
+                        href={ensureUrl(profile.website)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-muted-light hover:text-accent transition-colors"
+                      >
+                        <span className="text-muted" aria-hidden>◇</span>
+                        {profile.website}
+                      </a>
+                    ) : null}
+                    {profile.phone?.trim() ? (
+                      <a
+                        href={`tel:${profile.phone}`}
+                        className="flex items-center gap-2 text-muted-light hover:text-accent transition-colors"
+                      >
+                        <span className="text-muted" aria-hidden>☎</span>
+                        {profile.phone}
+                      </a>
+                    ) : null}
+                  </div>
+                  {(socialLinks.length > 0 || links.length > 0) && (
+                    <div className="border-t border-border-light pt-3" />
+                  )}
+                </>
               ) : null}
-              {profile.website ? (
-                <a href={ensureUrl(profile.website)} target="_blank" rel="noopener noreferrer" className="block text-accent hover:underline">{profile.website}</a>
+
+              {socialLinks.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {socialLinks.map(([key, url]) => (
+                    <a
+                      key={key}
+                      href={ensureUrl(url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border-light bg-surface-elevated px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors"
+                    >
+                      {SOCIAL_LABELS[key] ?? key}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+
+              {links.length > 0 ? (
+                <div className="space-y-2">
+                  {links.map((link) => (
+                    <a
+                      key={link.id}
+                      href={ensureUrl(link.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-xl bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity"
+                    >
+                      {link.title || link.url}
+                    </a>
+                  ))}
+                </div>
               ) : null}
             </div>
-          ) : null}
-          {socialLinks.length > 0 ? (
-            <div className="border-t border-border-light pt-4">
-              <div className="flex flex-wrap gap-2">
-                {socialLinks.map(([key, url]) => (
-                  <a
-                    key={key}
-                    href={ensureUrl(url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-lg bg-surface-elevated px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-background transition-colors"
-                  >
-                    {key}
-                  </a>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          {links.length > 0 ? (
-            <div className="border-t border-border-light pt-4 space-y-2">
-              {links.map((link) => (
-                <a
-                  key={link.id}
-                  href={ensureUrl(link.url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-xl bg-accent text-background px-4 py-3 text-center font-semibold hover:opacity-90 transition-opacity"
-                >
-                  {link.title || link.url}
-                </a>
-              ))}
-            </div>
-          ) : null}
+          )}
         </div>
+
         <p className="mt-8 text-center text-sm text-muted">
           <Link href="/" className="text-accent hover:underline">RingTap</Link>
         </p>

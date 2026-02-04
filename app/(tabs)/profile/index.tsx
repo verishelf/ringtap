@@ -401,6 +401,9 @@ export default function ProfileEditorScreen() {
                 onChangeText={(v) => setEditForm((f) => (f ? { ...f, username: v } : f))}
                 autoCapitalize="none"
               />
+              <Text style={[styles.hint, { color: colors.textSecondary }]}>
+                Save to publish your profile at ringtap.me/{editForm.username || 'username'}
+              </Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
                 placeholder="Name"
