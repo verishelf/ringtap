@@ -47,19 +47,28 @@ export default function UsernameProfilePage() {
     setLoading(true);
     setError(null);
     try {
-      // Use same origin so ringtap.me/mrposada and www.ringtap.me/mrposada both work
-      const base = typeof window !== 'undefined' ? window.location.origin : '';
-      const res = await fetch(`${base}/api/profile?username=${encodeURIComponent(slug)}`);
+      // Relative URL so it always hits the same host (ringtap.me or www.ringtap.me)
+      const res = await fetch(`/api/profile?username=${encodeURIComponent(slug)}`);
+      const text = await res.text();
       if (!res.ok) {
-        if (res.status === 404) setError('Profile not found');
-        else setError('Failed to load');
+        let msg = 'Failed to load';
+        if (res.status === 404) msg = 'Profile not found';
+        else {
+          try {
+            const body = JSON.parse(text);
+            if (body?.error && typeof body.error === 'string') msg = body.error;
+          } catch {
+            if (res.status >= 500) msg = 'Server error. Try again in a moment.';
+          }
+        }
+        setError(msg);
         setLoading(false);
         return;
       }
-      const json = await res.json();
+      const json = JSON.parse(text);
       setProfile(json);
     } catch {
-      setError('Failed to load');
+      setError('Failed to load. Check your connection or try www.ringtap.me/' + slug);
     } finally {
       setLoading(false);
     }
@@ -80,8 +89,17 @@ export default function UsernameProfilePage() {
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-4">
-        <p className="text-destructive">{error ?? 'Profile not found'}</p>
-        <Link href="/" className="text-accent hover:underline">Back to RingTap</Link>
+        <p className="text-destructive text-center">{error ?? 'Profile not found'}</p>
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button
+            type="button"
+            onClick={() => fetchProfile()}
+            className="rounded-xl bg-accent px-5 py-2.5 text-background font-semibold hover:opacity-90"
+          >
+            Retry
+          </button>
+          <Link href="/" className="text-accent hover:underline py-2.5">Back to RingTap</Link>
+        </div>
       </div>
     );
   }
