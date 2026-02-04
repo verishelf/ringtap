@@ -65,6 +65,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
     const userId = profile.user_id;
 
     // Fetch user's links (anon needs RLS "public read links" - run migration 005 if needed)
