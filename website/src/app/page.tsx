@@ -1,13 +1,37 @@
 import { Header } from "@/components/Header";
+import type { Metadata } from "next";
 import Link from "next/link";
+
+const SITE_URL = "https://www.ringtap.me";
+
+export const metadata: Metadata = {
+  title: "RingTap — Your Digital Business Card | NFC & QR Sharing",
+  description:
+    "RingTap is your digital business card. Share your profile instantly with NFC rings, QR codes, or your personal link—ringtap.me/you. Free to start, works on iPhone and Android.",
+  keywords: [
+    "digital business card",
+    "NFC business card",
+    "NFC ring",
+    "QR code business card",
+    "ringtap",
+    "contact sharing",
+  ],
+  openGraph: {
+    title: "RingTap — Your Digital Business Card. One Tap.",
+    description: "Share your profile instantly with NFC and QR. Your link: ringtap.me/you. Free to start.",
+    url: SITE_URL,
+    type: "website",
+  },
+  alternates: { canonical: SITE_URL },
+};
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Header variant="home" />
 
-      {/* Hero */}
-      <section className="relative pt-32 pb-24 px-6 md:pt-40 md:pb-32">
+      {/* Hero — clear H1 and intro for SEO */}
+      <section className="relative pt-32 pb-24 px-6 md:pt-40 md:pb-32" aria-label="Introduction">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
             Your digital business card.
@@ -21,15 +45,15 @@ export default function Home() {
           </p>
           <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-muted-light">
             <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
               Free to start
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
               Works with NFC rings & cards
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
               Your link: ringtap.me/you
             </li>
           </ul>
@@ -118,106 +142,29 @@ export default function Home() {
             Built for how you network
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
-            One profile. NFC and QR. Share everything from a ring tap or a scan.
+            One link for your portfolio, socials, and contact. Update anytime—your ringtap.me link stays the same.
           </p>
           <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                title: "NFC & QR",
-                description:
-                  "Tap your NFC ring or card to someone's phone, or let them scan your QR code. Your profile opens in their browser instantly—no typing, no searching. Works with any NFC-capable ring or card you program with your ringtap.me URL.",
-                icon: "📱",
-              },
-              {
                 title: "One link, everything",
                 description:
                   "ringtap.me/you—your name, photo, title, bio, social links, contact info, and custom buttons. One URL for your whole presence. Recipients can save your contact, follow your socials, or visit your site without opening the app.",
-                icon: "🔗",
               },
               {
-                title: "Scanned contacts",
+                title: "NFC & QR",
                 description:
-                  "Save who you meet in one place. Add business cards and contacts from scans or enter them manually. Keep names, titles, companies, email, phone, and website so you never lose a connection.",
-                icon: "👥",
+                  "Tap your NFC ring or card to someone's phone, or let them scan your QR code. Your profile opens in their browser instantly—no typing, no searching. Works with any NFC-capable ring or card you program with your ringtap.me URL.",
               },
               {
-                title: "Custom links",
+                title: "Free & Pro",
                 description:
-                  "Add social links (Instagram, LinkedIn, X, TikTok, etc.), websites, custom buttons, and payment links. Free plan includes 2 links; Pro unlocks unlimited links and full customization.",
-                icon: "⚡",
+                  "Free: profile, 2 links, QR, NFC sharing. Pro: unlimited links, themes, video intro, and analytics. Billing via Stripe; cancel anytime.",
               },
-              {
-                title: "Analytics (Pro)",
-                description:
-                  "See profile views, link clicks, NFC taps, and QR scans over 7, 30, or 90 days. Understand how often your card gets seen and which links get the most action.",
-                icon: "📊",
-              },
-              {
-                title: "Themes & video (Pro)",
-                description:
-                  "Customize accent color and button shape (rounded, pill, square). Add a short video intro (~20 sec) so people see and hear you before they tap through—great for personal branding.",
-                icon: "🎨",
-              },
-            ].map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-2xl border border-border-light bg-surface p-6 transition-colors hover:border-accent/50"
-              >
-                <div className="text-2xl">{feature.icon}</div>
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 text-sm text-muted-light leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Who it's for / Use cases */}
-      <section className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
-            Who it's for
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
-            Anyone who shares their contact and links—at events, in meetings, or online.
-          </p>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                title: "Events & conferences",
-                description:
-                  "Swap details in seconds. Tap or scan instead of typing names and handles. Stand out with a clean, modern profile.",
-              },
-              {
-                title: "Freelancers & creators",
-                description:
-                  "One link for your portfolio, socials, and booking or payment. Update it anytime—your ringtap.me link stays the same.",
-              },
-              {
-                title: "Sales & biz dev",
-                description:
-                  "Leave a lasting impression. Share your profile from your phone or NFC card; follow up is easier when they have everything in one place.",
-              },
-              {
-                title: "Job seekers",
-                description:
-                  "Put your LinkedIn, portfolio, and contact on one page. Hand it to recruiters via QR or NFC—no paper resumes required.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-border-light bg-surface p-6 transition-colors hover:border-accent/50"
-              >
-                <h3 className="text-lg font-semibold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-muted-light leading-relaxed">
-                  {item.description}
-                </p>
+            ].map((f) => (
+              <div key={f.title} className="rounded-2xl border border-border-light bg-surface p-6">
+                <h3 className="text-lg font-semibold text-foreground">{f.title}</h3>
+                <p className="mt-2 text-sm text-muted-light leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
@@ -231,22 +178,21 @@ export default function Home() {
             Simple pricing
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
-            Start free. Upgrade when you need more links and insights.
+            Free forever for your profile and 2 links. Upgrade to Pro for unlimited links, themes, and analytics.
           </p>
           <div className="mt-16 grid gap-8 sm:grid-cols-2">
-            {/* Free */}
             <div className="rounded-2xl border border-border-light bg-surface p-8">
               <h3 className="text-xl font-bold text-foreground">Free</h3>
-              <p className="mt-2 text-3xl font-bold text-accent">$0</p>
-              <p className="mt-1 text-sm text-muted-light">forever</p>
+              <p className="mt-2 text-3xl font-bold text-foreground">$0</p>
+              <p className="mt-1 text-sm text-muted-light">/ forever</p>
               <ul className="mt-6 space-y-3 text-sm text-muted-light">
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
-                  2 links
+                  Profile & ringtap.me/you URL
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
-                  Basic profile & ringtap.me/you URL
+                  Up to 2 links
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
@@ -264,7 +210,6 @@ export default function Home() {
                 Get started free
               </a>
             </div>
-            {/* Pro */}
             <div className="rounded-2xl border-2 border-accent bg-surface-elevated p-8 relative">
               <span className="absolute -top-3 left-6 rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-background">
                 Pro
@@ -392,16 +337,16 @@ export default function Home() {
           <a href="#" className="text-sm font-bold text-foreground">
             RingTap
           </a>
-          <div className="flex flex-wrap items-center justify-center gap-6">
+          <nav className="flex flex-wrap items-center justify-center gap-6" aria-label="Footer navigation">
             <a href="#features" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Features
             </a>
             <a href="#how-it-works" className="text-sm text-muted-light hover:text-foreground transition-colors">
               How it works
             </a>
-            <a href="/store" className="text-sm text-muted-light hover:text-foreground transition-colors">
+            <Link href="/store" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Store
-            </a>
+            </Link>
             <a href="#pricing" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Pricing
             </a>
@@ -414,7 +359,7 @@ export default function Home() {
             <a href="#download" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Download
             </a>
-          </div>
+          </nav>
         </div>
         <p className="mx-auto mt-8 max-w-6xl text-center text-xs text-muted">
           Your digital business card. One tap. ringtap.me

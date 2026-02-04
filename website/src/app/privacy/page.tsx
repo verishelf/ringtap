@@ -2,10 +2,20 @@ import { Header } from "@/components/Header";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const SITE_URL = "https://www.ringtap.me";
+
 export const metadata: Metadata = {
   title: "Privacy Policy — RingTap",
   description:
     "RingTap privacy policy: how we collect, use, and protect your data when you use the RingTap app and website.",
+  openGraph: {
+    title: "Privacy Policy — RingTap",
+    description: "How RingTap collects, uses, and protects your data.",
+    url: `${SITE_URL}/privacy`,
+    type: "website",
+  },
+  twitter: { card: "summary", title: "Privacy Policy — RingTap", description: "How RingTap collects, uses, and protects your data." },
+  alternates: { canonical: `${SITE_URL}/privacy` },
 };
 
 export default function PrivacyPage() {
