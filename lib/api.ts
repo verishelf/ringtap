@@ -43,6 +43,22 @@ export async function claimRing(chipUid: string, userId: string): Promise<{ succ
   }
 }
 
+/** First-tap flow: create a new ring and assign to user (no ring ID in URL). Returns chip_uid. */
+export async function createAndClaimRing(userId: string): Promise<{ success: boolean; chip_uid?: string; already_linked?: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/ring/create-and-claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    });
+    const data = (await res.json()) as { success?: boolean; chip_uid?: string; already_linked?: boolean; error?: string };
+    if (!res.ok) return { success: false, error: data.error ?? 'Failed to link ring' };
+    return { success: true, chip_uid: data.chip_uid, already_linked: data.already_linked };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to link ring' };
+  }
+}
+
 // --- Profile ---
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   const { data, error } = await supabase

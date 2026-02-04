@@ -11,12 +11,15 @@ function ActivateContent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
+    // No ring ID: redirect to app so user can "create & link" a ring on first tap
     if (!ringId) {
-      setStatus("no-id");
+      setStatus("redirecting");
+      window.location.href = "ringtap://activate";
       return;
     }
 
-    let cancelled = false;
     const run = async () => {
       try {
         const base = typeof window !== "undefined" ? window.location.origin : "";
@@ -61,15 +64,21 @@ function ActivateContent() {
     };
   }, [ringId]);
 
-  const deepLink = ringId ? `ringtap://activate?r=${encodeURIComponent(ringId)}` : "";
+  const deepLink = ringId ? `ringtap://activate?r=${encodeURIComponent(ringId)}` : "ringtap://activate";
 
   if (status === "no-id") {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-4">
-        <h1 className="text-xl font-bold text-foreground">Missing ring ID</h1>
+        <h1 className="text-xl font-bold text-foreground">Open in app</h1>
         <p className="text-muted-light text-center">
-          This link should include a ring ID (e.g. ringtap.me/activate?r=...). If you tapped an NFC ring, try again.
+          Open the RingTap app to link your ring to your profile.
         </p>
+        <a
+          href={deepLink}
+          className="inline-flex items-center justify-center rounded-xl bg-accent px-6 py-4 text-background font-semibold hover:opacity-90"
+        >
+          Open in App
+        </a>
         <Link href="/" className="text-accent hover:underline">
           Back to RingTap
         </Link>

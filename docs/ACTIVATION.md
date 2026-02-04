@@ -2,33 +2,38 @@
 
 ## NFC payload format
 
-Write all NFC tags with this URL so taps open the activation flow:
+**Recommended (no ring ID needed):** Program all NFC rings with this URL:
 
 ```
-https://ringtap.me/activate?r=<RING_ID>
+https://www.ringtap.me/activate
 ```
 
-or (if you have redirect or network issues with the non-www domain):
+- User taps ring → browser opens that URL → redirects to app (`ringtap://activate`).  
+- In the app, user taps **Create & link ring** → a ring ID is created and assigned to their profile. No manual ID in the link.
+
+**Optional (with ring ID):** If you want to pre-associate a ring with an ID (e.g. chip UID):
 
 ```
 https://www.ringtap.me/activate?r=<RING_ID>
 ```
 
-- `<RING_ID>` = unique identifier for the ring (e.g. chip UID or serial).
-- User taps ring → browser opens that URL → Next.js redirects to app deep link → Expo opens activate screen.
-- If the page shows "Network error", ensure Vercel env vars are set for the API, or program the ring with `https://www.ringtap.me/activate?r=<RING_ID>` and try again.
+- `<RING_ID>` = unique identifier (e.g. chip UID).  
+- Flow: web creates/ensures ring in DB, redirects to `ringtap://activate?r=<RING_ID>`, app shows claim UI.
 
 ## Flow
 
-1. **Web (ringtap.me)**  
-   - `GET /activate?r=<RING_ID>` → page calls `GET /api/activate?r=<RING_ID>`.  
-   - API ensures ring exists in Supabase (creates with `status: unclaimed` if missing), returns `{ deepLink: "ringtap://activate?r=<RING_ID>" }`.  
-   - Page redirects to `deepLink`.
+### First-tap (no ring ID in URL)
 
-2. **Expo app**  
-   - Opens via `ringtap://activate?r=<RING_ID>`.  
-   - `useActivation` hook handles URL and navigates to `/activate?r=<RING_ID>`.  
-   - Activate screen loads ring status, shows claim UI if unclaimed.
+1. **Web** — `GET /activate` (no `r`) → page redirects to `ringtap://activate`.
+2. **Expo app** — Opens activate screen with no ring ID. User sees **Link your ring** and **Create & link ring**.  
+   - If signed in: tap creates a new ring (server-generated ID) and assigns it to their profile. One ring per user; if they already have one, shows "Already linked".
+   - If not signed in: prompt to sign in first.
+
+### With ring ID in URL
+
+1. **Web** — `GET /activate?r=<RING_ID>` → page calls `GET /api/activate?r=<RING_ID>`.  
+   API ensures ring exists (creates with `status: unclaimed` if missing), returns `{ deepLink: "ringtap://activate?r=<RING_ID>" }`. Page redirects to deep link.
+2. **Expo app** — Opens via `ringtap://activate?r=<RING_ID>`. Activate screen loads ring status, shows claim UI if unclaimed.
 
 ## Supabase: `rings` table
 
@@ -46,7 +51,9 @@ For the simple activation API, `r` in the URL is stored/queried as `chip_uid`.
 
 ## Environment (website / Vercel)
 
-For `/api/activate` to create rings when missing, set:
+For activation and “could not load ring” to work, set in Vercel:
 
 - `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` (required for insert; do not expose to client)
+- `SUPABASE_SERVICE_ROLE_KEY` (required for `/api/activate` and `/api/ring/status`; do not expose to client)
+
+The app loads ring info via `GET /api/ring/status?uid=<RING_ID>`. That route uses the service role when available so it can always read (and if needed create) the ring. If you see “Could not load ring” in the app, confirm these env vars are set in Vercel and redeploy.

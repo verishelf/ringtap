@@ -51,9 +51,13 @@ function buttonRadius(shape: ButtonShape): number {
 interface ProfileScanPreviewProps {
   profile: UserProfile;
   links: UserLink[];
+  /** Called when "Save Contact" is pressed (e.g. copy profile link). If provided, the Save Contact button is shown. */
+  onSaveContact?: () => void;
+  /** Optional footer line(s) shown below the main CTA. */
+  footerText?: string;
 }
 
-export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) {
+export function ProfileScanPreview({ profile, links, onSaveContact, footerText }: ProfileScanPreviewProps) {
   const colors = useThemeColors();
   const accent = profile.theme?.accentColor ?? colors.accent;
   const shape = profile.theme?.buttonShape ?? 'rounded';
@@ -72,105 +76,152 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
   }, [profile.socialLinks]);
 
   const hasContact = !!(profile.email?.trim() || profile.phone?.trim() || profile.website?.trim());
+  const hasContent =
+    profile.bio?.trim() ||
+    hasContact ||
+    socialWithUrls.length > 0 ||
+    links.length > 0;
 
   return (
     <View style={styles.wrapper}>
       <View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
-        {/* Avatar + name block */}
-        <View style={styles.header}>
+        {/* Centered header: avatar, name, title, tagline */}
+        <View style={styles.headerCentered}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+            <Image source={{ uri: profile.avatarUrl }} style={styles.avatarLarge} />
           ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.borderLight }]}>
-              <Ionicons name="person" size={32} color={colors.textSecondary} />
+            <View style={[styles.avatarLargePlaceholder, { backgroundColor: colors.borderLight }]}>
+              <Ionicons name="person" size={48} color={colors.textSecondary} />
             </View>
           )}
-          <View style={styles.headerText}>
-            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-              {profile.name?.trim() || 'Your name'}
+          <Text style={[styles.nameCentered, { color: colors.text }]} numberOfLines={1}>
+            {profile.name?.trim() || 'Your name'}
+          </Text>
+          {profile.title?.trim() ? (
+            <Text style={[styles.titleCentered, { color: colors.textSecondary }]} numberOfLines={1}>
+              {profile.title}
             </Text>
-            {profile.title?.trim() ? (
-              <Text style={[styles.title, { color: colors.textSecondary }]} numberOfLines={1}>
-                {profile.title}
-              </Text>
-            ) : null}
-          </View>
+          ) : null}
+          {profile.bio?.trim() ? (
+            <Text style={[styles.tagline, { color: colors.textSecondary }]} numberOfLines={2}>
+              {profile.bio}
+            </Text>
+          ) : null}
         </View>
 
-        {profile.bio?.trim() ? (
-          <Text style={[styles.bio, { color: colors.textSecondary }]} numberOfLines={4}>
-            {profile.bio}
-          </Text>
-        ) : null}
+        {hasContent ? (
+          <>
+            <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
 
-        {hasContact && (
-          <View style={styles.contact}>
-            {profile.email?.trim() ? (
-              <View style={styles.contactRow}>
-                <Ionicons name="mail-outline" size={14} color={colors.textSecondary} />
-                <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
-                  {profile.email}
+            {profile.bio?.trim() ? (
+              <>
+                <Text style={[styles.sectionHeading, { color: colors.text }]}>About Me</Text>
+                <Text style={[styles.bio, { color: colors.textSecondary }]}>
+                  {profile.bio}
                 </Text>
-              </View>
+                <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
+              </>
             ) : null}
-            {profile.phone?.trim() ? (
-              <View style={styles.contactRow}>
-                <Ionicons name="call-outline" size={14} color={colors.textSecondary} />
-                <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
-                  {profile.phone}
-                </Text>
-              </View>
-            ) : null}
-            {profile.website?.trim() ? (
-              <View style={styles.contactRow}>
-                <Ionicons name="globe-outline" size={14} color={colors.textSecondary} />
-                <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
-                  {profile.website}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        )}
 
-        {socialWithUrls.length > 0 && (
-          <View style={styles.socialRow}>
-            {socialWithUrls.map(({ key, label, url }) => (
+            {hasContact && (
+              <>
+                <Text style={[styles.sectionHeading, { color: colors.text }]}>Contact</Text>
+                <View style={styles.contact}>
+                  {profile.email?.trim() ? (
+                    <Pressable
+                      style={styles.contactRow}
+                      onPress={() => Linking.openURL(`mailto:${profile.email?.trim()}`)}
+                    >
+                      <Ionicons name="mail-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.contactText, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {profile.email}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  {profile.website?.trim() ? (
+                    <Pressable
+                      style={styles.contactRow}
+                      onPress={() => openSocialUrl(profile.website?.trim() ?? '')}
+                    >
+                      <Ionicons name="globe-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.contactText, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {profile.website}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  {profile.phone?.trim() ? (
+                    <Pressable
+                      style={styles.contactRow}
+                      onPress={() => Linking.openURL(`tel:${profile.phone?.trim()}`)}
+                    >
+                      <Ionicons name="call-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.contactText, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {profile.phone}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+                {(socialWithUrls.length > 0 || links.length > 0) ? (
+                  <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
+                ) : null}
+              </>
+            )}
+
+            {socialWithUrls.length > 0 && (
+              <View style={styles.socialRow}>
+                {socialWithUrls.map(({ key, label, url }) => (
+                  <Pressable
+                    key={key}
+                    style={[styles.socialChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
+                    onPress={() => openSocialUrl(url)}
+                  >
+                    <Ionicons
+                      name={SOCIAL_ICONS[key as SocialPlatform] ?? 'link'}
+                      size={20}
+                      color={colors.accent}
+                    />
+                    <Text style={[styles.socialChipText, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {links.length > 0 && (
+              <View style={styles.links}>
+                {links.map((link) => (
+                  <Pressable
+                    key={link.id}
+                    style={[
+                      styles.linkButton,
+                      { backgroundColor: accent, borderRadius: radius },
+                    ]}
+                    onPress={() => openSocialUrl(link.url)}
+                  >
+                    <Text style={[styles.linkButtonText, { color: colors.primary }]} numberOfLines={1}>
+                      {link.title || link.url}
+                    </Text>
+                    <Ionicons name="open-outline" size={16} color={colors.primary} />
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {onSaveContact && (
               <Pressable
-                key={key}
-                style={[styles.socialChip, { backgroundColor: colors.surfaceElevated }]}
-                onPress={() => openSocialUrl(url)}
+                style={[styles.saveContactButton, { backgroundColor: accent, borderRadius: radius }]}
+                onPress={onSaveContact}
               >
-                <Ionicons
-                  name={SOCIAL_ICONS[key as SocialPlatform] ?? 'link'}
-                  size={22}
-                  color={colors.accent}
-                />
-                <Text style={[styles.socialChipText, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+                <Ionicons name="qr-code-outline" size={22} color={colors.primary} />
+                <Text style={[styles.saveContactText, { color: colors.primary }]}>Save Contact</Text>
+                <Ionicons name="checkmark" size={20} color={colors.primary} />
               </Pressable>
-            ))}
-          </View>
-        )}
+            )}
 
-        {links.length > 0 && (
-          <View style={styles.links}>
-            {links.map((link) => (
-              <View
-                key={link.id}
-                style={[
-                  styles.linkButton,
-                  { backgroundColor: accent, borderRadius: radius },
-                ]}
-              >
-                <Text style={[styles.linkButtonText, { color: colors.primary }]} numberOfLines={1}>
-                  {link.title || link.url}
-                </Text>
-                <Ionicons name="open-outline" size={16} color={colors.primary} />
-              </View>
-            ))}
-          </View>
-        )}
-
-        {links.length === 0 && socialWithUrls.length === 0 && !profile.bio?.trim() && !hasContact && (
+            {footerText ? (
+              <Text style={[styles.footer, { color: colors.textSecondary }]}>{footerText}</Text>
+            ) : null}
+          </>
+        ) : (
           <Text style={[styles.placeholder, { color: colors.textSecondary }]}>Add info and links to see your card here.</Text>
         )}
       </View>
@@ -181,37 +232,41 @@ export function ProfileScanPreview({ profile, links }: ProfileScanPreviewProps) 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: Layout.tightGap },
   card: {
-    borderRadius: Layout.radiusLg,
+    borderRadius: Layout.radiusXl,
     borderWidth: 1,
     padding: Layout.cardPadding,
   },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: Layout.rowGap },
-  avatar: { width: 56, height: 56, borderRadius: 28 },
-  avatarPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  headerCentered: { alignItems: 'center', marginBottom: Layout.rowGap },
+  avatarLarge: { width: 88, height: 88, borderRadius: 44, marginBottom: Layout.rowGap },
+  avatarLargePlaceholder: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: Layout.rowGap,
   },
-  headerText: { flex: 1, marginLeft: 14 },
-  name: { fontSize: Layout.titleSection + 1, fontWeight: '700', marginTop: 0 },
-  title: { fontSize: Layout.bodySmall, marginTop: 2 },
-  bio: { fontSize: Layout.bodySmall, lineHeight: 20, marginBottom: Layout.rowGap },
+  nameCentered: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
+  titleCentered: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
+  tagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center', paddingHorizontal: 8 },
+  separator: { height: StyleSheet.hairlineWidth, marginVertical: Layout.rowGap },
+  sectionHeading: { fontSize: Layout.body, fontWeight: '700', marginBottom: Layout.tightGap },
+  bio: { fontSize: Layout.bodySmall, lineHeight: 22, marginBottom: Layout.rowGap },
   contact: { marginBottom: Layout.rowGap },
-  contactRow: { flexDirection: 'row', alignItems: 'center', gap: Layout.tightGap, marginBottom: 4 },
-  contactText: { fontSize: Layout.caption, flex: 1 },
+  contactRow: { flexDirection: 'row', alignItems: 'center', gap: Layout.tightGap, marginBottom: 8 },
+  contactText: { fontSize: Layout.bodySmall, flex: 1 },
   socialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.tightGap, marginBottom: Layout.rowGap },
   socialChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: Layout.radiusMd,
+    borderWidth: 1,
   },
-  socialChipText: { fontSize: Layout.caption, flex: 1 },
-  links: { gap: Layout.inputGap },
+  socialChipText: { fontSize: Layout.bodySmall, fontWeight: '500' },
+  links: { gap: Layout.inputGap, marginBottom: Layout.rowGap },
   linkButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,5 +275,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   linkButtonText: { fontSize: Layout.bodySmall + 1, fontWeight: '600', flex: 1 },
+  saveContactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    marginBottom: Layout.rowGap,
+  },
+  saveContactText: { fontSize: Layout.body, fontWeight: '700' },
+  footer: { fontSize: Layout.caption, textAlign: 'center', lineHeight: 18 },
   placeholder: { fontSize: Layout.caption, fontStyle: 'italic' },
 });

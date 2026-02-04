@@ -16,7 +16,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { claimRing, getRingStatus, type RingStatus } from '@/lib/api';
+import { claimRing, createAndClaimRing, getRingStatus, type RingStatus } from '@/lib/api';
 
 export default function ActivateScreen() {
   const params = useLocalSearchParams<{ uid?: string; r?: string }>();
@@ -27,6 +27,7 @@ export default function ActivateScreen() {
   const [ring, setRing] = useState<RingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [linking, setLinking] = useState(false);
 
   const load = useCallback(async () => {
     if (!uid.trim()) {
@@ -92,13 +93,67 @@ export default function ActivateScreen() {
     );
   }
 
+  // No ring ID: first-tap flow — create a ring and assign to profile
   if (!uid.trim()) {
+    const handleCreateAndLink = async () => {
+      if (!user?.id) {
+        Alert.alert('Sign in required', 'Sign in to link a ring to your profile.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign in', onPress: () => router.replace('/(auth)/login') },
+        ]);
+        return;
+      }
+      setLinking(true);
+      try {
+        const result = await createAndClaimRing(user.id);
+        if (result.success) {
+          Alert.alert(
+            result.already_linked ? 'Already linked' : 'Ring linked',
+            result.already_linked ? 'You already have a ring linked to your profile.' : 'Your ring is now linked to your profile.',
+            [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
+          );
+        } else {
+          Alert.alert('Error', result.error ?? 'Could not link ring');
+        }
+      } catch (_) {
+        Alert.alert('Error', 'Could not link ring');
+      } finally {
+        setLinking(false);
+      }
+    };
+
     return (
       <ThemedView style={styles.container}>
-        <Text style={[styles.errorText, { color: colors.text }]}>Missing ring ID</Text>
-        <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={() => router.replace('/')}>
-          <Text style={[styles.buttonText, { color: colors.primary }]}>Go home</Text>
-        </Pressable>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <Text style={[styles.title, { color: colors.text }]}>Link your ring</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Tap to create a ring and assign it to your profile. No ring ID needed — use the same link on any NFC ring.
+          </Text>
+          <View style={styles.modelWrap}>
+            <RingModelViewer modelUrl={null} />
+          </View>
+          <Pressable
+            style={[styles.claimButton, { backgroundColor: colors.accent }]}
+            onPress={handleCreateAndLink}
+            disabled={linking}
+          >
+            {linking ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <>
+                <Ionicons name="link" size={22} color={colors.primary} />
+                <Text style={[styles.claimButtonText, { color: colors.primary }]}>
+                  Create & link ring
+                </Text>
+              </>
+            )}
+          </Pressable>
+          {!user ? (
+            <Text style={[styles.hint, { color: colors.textSecondary }]}>
+              Sign in first to link a ring to your profile.
+            </Text>
+          ) : null}
+        </ScrollView>
       </ThemedView>
     );
   }

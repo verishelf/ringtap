@@ -511,70 +511,82 @@ export default function ProfileEditorScreen() {
             )}
           </>
         ) : (
-          /* ---------- View mode: read-only profile ---------- */
+          /* ---------- View mode: read-only profile (layout like scan preview) ---------- */
           <>
             <View style={[styles.viewCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-              <View style={styles.viewCardHeader}>
+              {/* Centered header: avatar, name, title, tagline */}
+              <View style={styles.viewCardHeaderCentered}>
                 {profile.avatarUrl ? (
-                  <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+                  <Image source={{ uri: profile.avatarUrl }} style={styles.viewCardAvatarLarge} />
                 ) : (
-                  <View style={[styles.avatarPlaceholder, { backgroundColor: colors.borderLight }]}>
+                  <View style={[styles.viewCardAvatarPlaceholder, { backgroundColor: colors.borderLight }]}>
                     <Ionicons name="person" size={48} color={colors.textSecondary} />
                   </View>
                 )}
-                <View style={styles.viewCardHeadline}>
-                  <Text style={[styles.viewCardName, { color: colors.text }]} numberOfLines={1}>
-                    {profile.name?.trim() || 'Your name'}
-                  </Text>
-                  {profile.title?.trim() ? (
-                    <Text style={[styles.viewCardTitle, { color: colors.textSecondary }]} numberOfLines={1}>{profile.title}</Text>
-                  ) : null}
-                  {profile.username ? (
-                    <Text style={[styles.viewCardUsername, { color: colors.textSecondary }]} numberOfLines={1}>
-                      ringtap.me/{profile.username}
-                    </Text>
-                  ) : null}
-                </View>
+                <Text style={[styles.viewCardName, { color: colors.text }]} numberOfLines={1}>
+                  {profile.name?.trim() || 'Your name'}
+                </Text>
+                {profile.title?.trim() ? (
+                  <Text style={[styles.viewCardTitle, { color: colors.textSecondary }]} numberOfLines={1}>{profile.title}</Text>
+                ) : null}
+                {profile.bio?.trim() ? (
+                  <Text style={[styles.viewCardTagline, { color: colors.textSecondary }]} numberOfLines={2}>{profile.bio}</Text>
+                ) : null}
               </View>
-              {profile.bio?.trim() ? (
-                <Text style={[styles.viewCardBio, { color: colors.textSecondary }]}>{profile.bio}</Text>
-              ) : null}
-              {(profile.email?.trim() || profile.phone?.trim() || profile.website?.trim()) ? (
-                <View style={[styles.viewCardContact, { borderTopColor: colors.borderLight }]}>
-                  {profile.email?.trim() ? (
-                    <View style={styles.contactRow}>
-                      <Ionicons name="mail-outline" size={16} color={colors.textSecondary} />
-                      <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.email}</Text>
+
+              {(profile.bio?.trim() || profile.email?.trim() || profile.phone?.trim() || profile.website?.trim() || Object.entries(profile.socialLinks || {}).some(([, v]) => v?.trim())) ? (
+                <>
+                  <View style={[styles.viewCardSeparator, { backgroundColor: colors.borderLight }]} />
+                  {profile.bio?.trim() ? (
+                    <>
+                      <Text style={[styles.viewCardSectionTitle, { color: colors.text }]}>About Me</Text>
+                      <Text style={[styles.viewCardBio, { color: colors.textSecondary }]}>{profile.bio}</Text>
+                      <View style={[styles.viewCardSeparator, { backgroundColor: colors.borderLight }]} />
+                    </>
+                  ) : null}
+                  {(profile.email?.trim() || profile.phone?.trim() || profile.website?.trim()) ? (
+                    <>
+                      <Text style={[styles.viewCardSectionTitle, { color: colors.text }]}>Contact</Text>
+                      <View style={styles.viewCardContact}>
+                        {profile.email?.trim() ? (
+                          <Pressable style={styles.contactRow} onPress={() => Linking.openURL(`mailto:${profile.email?.trim()}`)}>
+                            <Ionicons name="mail-outline" size={16} color={colors.textSecondary} />
+                            <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.email}</Text>
+                          </Pressable>
+                        ) : null}
+                        {profile.website?.trim() ? (
+                          <Pressable style={styles.contactRow} onPress={() => openSocialUrl(profile.website?.trim() ?? '')}>
+                            <Ionicons name="globe-outline" size={16} color={colors.textSecondary} />
+                            <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.website}</Text>
+                          </Pressable>
+                        ) : null}
+                        {profile.phone?.trim() ? (
+                          <Pressable style={styles.contactRow} onPress={() => Linking.openURL(`tel:${profile.phone?.trim()}`)}>
+                            <Ionicons name="call-outline" size={16} color={colors.textSecondary} />
+                            <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.phone}</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                      {Object.entries(profile.socialLinks || {}).some(([, v]) => v?.trim()) ? (
+                        <View style={[styles.viewCardSeparator, { backgroundColor: colors.borderLight }]} />
+                      ) : null}
+                    </>
+                  ) : null}
+                  {Object.entries(profile.socialLinks || {}).some(([, v]) => v?.trim()) ? (
+                    <View style={styles.viewCardSocial}>
+                      {SOCIAL_PLATFORMS.map(({ key, label }) => {
+                        const url = profile.socialLinks?.[key]?.trim();
+                        if (!url) return null;
+                        return (
+                          <Pressable key={key} style={[styles.viewCardSocialChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]} onPress={() => openSocialUrl(url)}>
+                            <Ionicons name={SOCIAL_ICONS[key]} size={20} color={colors.accent} />
+                            <Text style={[styles.viewCardSocialChipText, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+                          </Pressable>
+                        );
+                      })}
                     </View>
                   ) : null}
-                  {profile.phone?.trim() ? (
-                    <View style={styles.contactRow}>
-                      <Ionicons name="call-outline" size={16} color={colors.textSecondary} />
-                      <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.phone}</Text>
-                    </View>
-                  ) : null}
-                  {profile.website?.trim() ? (
-                    <View style={styles.contactRow}>
-                      <Ionicons name="globe-outline" size={16} color={colors.textSecondary} />
-                      <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{profile.website}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
-              {Object.entries(profile.socialLinks || {}).some(([, v]) => v?.trim()) ? (
-                <View style={[styles.viewCardSocial, { borderTopColor: colors.borderLight }]}>
-                  {SOCIAL_PLATFORMS.map(({ key, label }) => {
-                    const url = profile.socialLinks?.[key]?.trim();
-                    if (!url) return null;
-                    return (
-                      <Pressable key={key} style={styles.contactRow} onPress={() => openSocialUrl(url)}>
-                        <Ionicons name={SOCIAL_ICONS[key]} size={18} color={colors.accent} />
-                        <Text style={[styles.contactDetailText, { color: colors.accent }]} numberOfLines={1}>{label}</Text>
-                        <Ionicons name="open-outline" size={14} color={colors.textSecondary} />
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                </>
               ) : null}
             </View>
 
@@ -678,7 +690,12 @@ export default function ProfileEditorScreen() {
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={[styles.previewModalContent, { paddingBottom: insets.bottom + 24 }]}>
-            <ProfileScanPreview profile={displayProfile} links={previewLinks} />
+            <ProfileScanPreview
+              profile={displayProfile}
+              links={previewLinks}
+              onSaveContact={copyProfileLink}
+              footerText={profile.username ? 'Tap or scan the QR to connect instantly via RingTap.' : undefined}
+            />
           </ScrollView>
         </View>
       </Modal>
@@ -781,14 +798,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: Layout.sectionGap,
   },
-  viewCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Layout.rowGap },
-  viewCardHeadline: { flex: 1, marginLeft: Layout.rowGap, minWidth: 0 },
-  viewCardName: { fontSize: 20, fontWeight: '700' },
-  viewCardTitle: { fontSize: Layout.body, marginTop: 2 },
-  viewCardUsername: { fontSize: Layout.caption, marginTop: 2 },
-  viewCardBio: { fontSize: Layout.bodySmall, lineHeight: 22, marginTop: Layout.tightGap },
-  viewCardContact: { marginTop: Layout.rowGap, paddingTop: Layout.rowGap, borderTopWidth: 1 },
-  viewCardSocial: { marginTop: Layout.rowGap, paddingTop: Layout.rowGap, borderTopWidth: 1 },
+  viewCardHeaderCentered: { alignItems: 'center', marginBottom: Layout.rowGap },
+  viewCardAvatarLarge: { width: 88, height: 88, borderRadius: 44, marginBottom: Layout.rowGap },
+  viewCardAvatarPlaceholder: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Layout.rowGap,
+  },
+  viewCardName: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
+  viewCardTitle: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
+  viewCardTagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center' },
+  viewCardSeparator: { height: StyleSheet.hairlineWidth, marginVertical: Layout.rowGap },
+  viewCardSectionTitle: { fontSize: Layout.body, fontWeight: '700', marginBottom: Layout.tightGap },
+  viewCardBio: { fontSize: Layout.bodySmall, lineHeight: 22, marginBottom: Layout.rowGap },
+  viewCardContact: { marginBottom: Layout.rowGap },
+  viewCardSocial: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.tightGap },
+  viewCardSocialChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+  },
+  viewCardSocialChipText: { fontSize: Layout.bodySmall, fontWeight: '500' },
   previewModalOverlay: {
     flex: 1,
   },
