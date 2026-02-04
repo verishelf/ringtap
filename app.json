@@ -13,6 +13,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "me.ringtap.app",
       "buildNumber": "1",
+      "associatedDomains": ["applinks:ringtap.me", "applinks:www.ringtap.me"],
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "RingTap uses your photo library to set your profile picture and add a video intro.",
         "NSMicrophoneUsageDescription": "RingTap may use the microphone when recording a video intro.",
@@ -37,6 +38,19 @@
     "android": {
       "package": "me.ringtap.app",
       "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "ringtap.me", "pathPrefix": "/activate" },
+            { "scheme": "https", "host": "www.ringtap.me", "pathPrefix": "/activate" },
+            { "scheme": "https", "host": "ringtap.me", "pathPrefix": "/profile" },
+            { "scheme": "https", "host": "www.ringtap.me", "pathPrefix": "/profile" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

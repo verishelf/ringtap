@@ -21,7 +21,15 @@ function ActivateContent() {
       try {
         const base = typeof window !== "undefined" ? window.location.origin : "";
         const res = await fetch(`${base}/api/activate?r=${encodeURIComponent(ringId)}`);
-        const data = await res.json();
+        let data: { deepLink?: string; error?: string } = {};
+        try {
+          data = await res.json();
+        } catch {
+          if (cancelled) return;
+          setErrorMsg(`Server returned invalid response (${res.status}). Try again or use "Open in App" below.`);
+          setStatus("error");
+          return;
+        }
 
         if (cancelled) return;
 
@@ -41,7 +49,8 @@ function ActivateContent() {
         setStatus("error");
       } catch (e) {
         if (cancelled) return;
-        setErrorMsg("Network error. Check your connection.");
+        const msg = e instanceof Error ? e.message : "Request failed";
+        setErrorMsg(msg.toLowerCase().includes("fetch") ? "Network error. Check your connection or try again." : msg);
         setStatus("error");
       }
     };
@@ -70,10 +79,13 @@ function ActivateContent() {
 
   if (status === "error") {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-6">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-6 max-w-md">
         <h1 className="text-xl font-bold text-foreground">Couldn’t activate</h1>
         <p className="text-muted-light text-center">
           {errorMsg || "Something went wrong."} You can still open the app to claim this ring.
+        </p>
+        <p className="text-muted-light text-center text-sm">
+          The link <strong className="text-foreground">ringtap.me/activate?r=&lt;RING_ID&gt;</strong> is the correct format to write to your NFC ring. If you see this often, try using <strong className="text-foreground">www.ringtap.me</strong> in the URL when programming the ring.
         </p>
         {deepLink && (
           <a

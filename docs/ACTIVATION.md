@@ -8,8 +8,15 @@ Write all NFC tags with this URL so taps open the activation flow:
 https://ringtap.me/activate?r=<RING_ID>
 ```
 
+or (if you have redirect or network issues with the non-www domain):
+
+```
+https://www.ringtap.me/activate?r=<RING_ID>
+```
+
 - `<RING_ID>` = unique identifier for the ring (e.g. chip UID or serial).
 - User taps ring → browser opens that URL → Next.js redirects to app deep link → Expo opens activate screen.
+- If the page shows "Network error", ensure Vercel env vars are set for the API, or program the ring with `https://www.ringtap.me/activate?r=<RING_ID>` and try again.
 
 ## Flow
 

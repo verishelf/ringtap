@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Universal Links (iOS) and App Links (Android) — serve .well-known via rewrites
+  async rewrites() {
+    return [
+      { source: "/.well-known/apple-app-site-association", destination: "/api/well-known/aasa" },
+      { source: "/.well-known/assetlinks.json", destination: "/api/well-known/assetlinks" },
+    ];
+  },
   // SEO & performance: ensure HTML is compressed (Vercel does this by default)
   compress: true,
   // Prefer static output where possible for faster loads
