@@ -37,6 +37,39 @@ function ensureUrl(url: string): string {
   return /^https?:\/\//i.test(u) ? u : `https://${u}`;
 }
 
+/** Build a vCard 3.0 string for Save contact (.vcf) */
+function buildVCard(profile: ProfileData, baseUrl: string): string {
+  const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/\r/g, '');
+  const lines: string[] = ['BEGIN:VCARD', 'VERSION:3.0'];
+  const fn = profile.name?.trim() || 'Unknown';
+  lines.push('FN:' + escape(fn));
+  const parts = fn.split(/\s+/);
+  const family = parts.length > 1 ? parts.pop()! : '';
+  const given = parts.join(' ') || '';
+  lines.push('N:' + escape(family) + ';' + escape(given) + ';;;');
+  if (profile.title?.trim()) lines.push('TITLE:' + escape(profile.title.trim()));
+  if (profile.email?.trim()) lines.push('EMAIL:' + escape(profile.email.trim()));
+  if (profile.phone?.trim()) lines.push('TEL:' + escape(profile.phone.trim()));
+  if (profile.website?.trim()) lines.push('URL:' + escape(ensureUrl(profile.website)));
+  const profileUrl = `${baseUrl}/${profile.username}`;
+  lines.push('URL:' + escape(profileUrl));
+  if (profile.bio?.trim()) lines.push('NOTE:' + escape(profile.bio.trim()));
+  lines.push('END:VCARD');
+  return lines.join('\r\n');
+}
+
+function downloadVCard(profile: ProfileData): void {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ringtap.me';
+  const vcf = buildVCard(profile, baseUrl);
+  const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${profile.username || 'contact'}.vcf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function UsernameProfilePage() {
   const params = useParams();
   const router = useRouter();
@@ -235,6 +268,21 @@ export default function UsernameProfilePage() {
               ) : null}
             </div>
           )}
+
+          {/* Save contact .vcf — always shown */}
+          <div className="border-t border-border-light px-6 py-4">
+            <button
+              type="button"
+              onClick={() => downloadVCard(profile)}
+              className="w-full rounded-xl bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            >
+              <span aria-hidden>↓</span>
+              Save contact
+            </button>
+            <p className="text-xs text-muted-light mt-1.5 text-center">
+              Downloads a .vcf file to add to your phone contacts
+            </p>
+          </div>
         </div>
 
         <p className="mt-8 text-center text-sm text-muted">
