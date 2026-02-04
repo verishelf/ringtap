@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system';
 import { supabase } from '@/lib/supabase/supabaseClient';
 import type { AnalyticsSummary, ProfileTheme, ScannedContact, ScannedContactSource, UserLink, UserProfile } from '@/lib/supabase/types';
 import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
@@ -349,33 +350,55 @@ export async function getSubscription(userId: string): Promise<{ plan: string; s
 }
 
 // --- Storage (avatars, video) ---
-async function uriToBlob(uri: string): Promise<Blob> {
+/** Read local file as ArrayBuffer. Uses FileSystem for file:// (reliable on RN); fetch fallback for other URIs. */
+async function readFileAsArrayBuffer(uri: string, defaultMime = 'image/jpeg'): Promise<{ data: ArrayBuffer; mimeType: string }> {
+  const ext = uri.split('.').pop()?.split('?')[0]?.toLowerCase() ?? 'jpg';
+  const mimeType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'mp4' || ext === 'mov' ? 'video/mp4' : defaultMime;
+
+  if (uri.startsWith('file://')) {
+    const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+    return { data: bytes.buffer, mimeType };
+  }
+
   const res = await fetch(uri);
-  return res.blob();
+  const blob = await res.blob();
+  const data = await blob.arrayBuffer();
+  return { data, mimeType: blob.type || mimeType };
 }
 
 export async function uploadAvatar(userId: string, uri: string): Promise<string | null> {
   const ext = uri.split('.').pop()?.split('?')[0] ?? 'jpg';
   const path = `avatars/${userId}/${Date.now()}.${ext}`;
-  const blob = await uriToBlob(uri);
-  const { error: uploadError } = await supabase.storage.from('profiles').upload(path, blob, {
-    contentType: blob.type || `image/${ext}`,
-    upsert: true,
-  });
-  if (uploadError) return null;
-  const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
-  return urlData?.publicUrl ?? null;
+  try {
+    const { data, mimeType } = await readFileAsArrayBuffer(uri);
+    const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {
+      contentType: mimeType,
+      upsert: true,
+    });
+    if (uploadError) return null;
+    const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
+    return urlData?.publicUrl ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function uploadVideoIntro(userId: string, uri: string): Promise<string | null> {
   const ext = uri.split('.').pop()?.split('?')[0] ?? 'mp4';
   const path = `intros/${userId}/${Date.now()}.${ext}`;
-  const blob = await uriToBlob(uri);
-  const { error: uploadError } = await supabase.storage.from('profiles').upload(path, blob, {
-    contentType: blob.type || `video/${ext}`,
-    upsert: true,
-  });
-  if (uploadError) return null;
-  const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
-  return urlData?.publicUrl ?? null;
+  try {
+    const { data, mimeType } = await readFileAsArrayBuffer(uri, 'video/mp4');
+    const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {
+      contentType: ext === 'mov' ? 'video/quicktime' : mimeType,
+      upsert: true,
+    });
+    if (uploadError) return null;
+    const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
+    return urlData?.publicUrl ?? null;
+  } catch {
+    return null;
+  }
 }

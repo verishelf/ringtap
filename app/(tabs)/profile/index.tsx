@@ -129,14 +129,19 @@ export default function ProfileEditorScreen() {
       const url = await uploadAvatar(user.id, result.assets[0].uri);
       if (url) {
         if (isEditing && editForm) setEditForm((f) => ({ ...f, avatarUrl: url }));
-        else await updateProfile({ avatarUrl: url });
+        else {
+          await updateProfile({ avatarUrl: url });
+          await refresh();
+        }
+      } else {
+        Alert.alert('Error', 'Upload failed. Try again.');
       }
     } catch (e) {
       Alert.alert('Error', 'Failed to upload image');
     } finally {
       setUploadingImage(false);
     }
-  }, [user?.id, updateProfile, isEditing, editForm]);
+  }, [user?.id, updateProfile, refresh, isEditing, editForm]);
 
   const pickVideo = useCallback(async () => {
     if (!isPro) {
