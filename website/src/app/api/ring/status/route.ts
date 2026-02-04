@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         .select('chip_uid, ring_model, owner_user_id, status')
         .eq('chip_uid', uid.trim())
         .single();
-      ring = created ?? undefined;
+      ring = created ?? null;
     }
   }
 

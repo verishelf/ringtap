@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ringtap.me';
-
 const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api']);
 
 type ProfileData = {
@@ -49,7 +47,9 @@ export default function UsernameProfilePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/profile?username=${encodeURIComponent(slug)}`);
+      // Use same origin so ringtap.me/mrposada and www.ringtap.me/mrposada both work
+      const base = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await fetch(`${base}/api/profile?username=${encodeURIComponent(slug)}`);
       if (!res.ok) {
         if (res.status === 404) setError('Profile not found');
         else setError('Failed to load');
