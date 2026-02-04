@@ -23,8 +23,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing uid or username' }, { status: 400 });
     }
 
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-    const supabaseUrl = rawUrl.replace(/^["']|["']$/g, '').trim();
+    const rawUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '')
+      .replace(/^["'\s]+|["'\s]+$/g, '')
+      .replace(/\s+/g, '')
+      .trim();
+    let supabaseUrl = rawUrl;
+    if (supabaseUrl && !/^https?:\/\//i.test(supabaseUrl)) {
+      supabaseUrl = 'https://' + supabaseUrl;
+    }
     const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').replace(/^["']|["']$/g, '').trim();
     const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').replace(/^["']|["']$/g, '').trim();
     if (!supabaseUrl || !(anonKey || serviceKey)) {
@@ -33,11 +39,11 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-    if (!/^https:\/\/[^/]+/.test(supabaseUrl)) {
+    if (!/^https?:\/\/[^\s/]+/.test(supabaseUrl)) {
       return NextResponse.json(
         {
           error:
-            'Invalid NEXT_PUBLIC_SUPABASE_URL: must be a valid HTTPS URL (e.g. https://YOUR_PROJECT.supabase.co). Check no extra spaces or quotes in Vercel env.',
+            'Invalid NEXT_PUBLIC_SUPABASE_URL: use your Project URL from Supabase (e.g. https://xxxxx.supabase.co). In Vercel, set it for Production and redeploy.',
         },
         { status: 500 }
       );
