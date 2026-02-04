@@ -8,13 +8,23 @@ const RING_SIZES = [
   "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12", "13",
 ];
 
-const RINGS = [
+type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  type: "ring" | "card";
+};
+
+const PRODUCTS: Product[] = [
   {
     id: "classic",
     name: "Classic NFC Ring",
     description: "Sleek, minimal NFC ring. Tap to share your RingTap profile. Stainless steel, waterproof.",
     price: 49,
     image: "⌖",
+    type: "ring",
   },
   {
     id: "carbon",
@@ -22,6 +32,7 @@ const RINGS = [
     description: "Lightweight matte black. NFC chip built in—tap any phone to open your profile.",
     price: 59,
     image: "◆",
+    type: "ring",
   },
   {
     id: "silver",
@@ -29,6 +40,31 @@ const RINGS = [
     description: "Polished silver band. Works with RingTap—one tap shares your ringtap.me link.",
     price: 54,
     image: "○",
+    type: "ring",
+  },
+  {
+    id: "metal-card",
+    name: "Metal NFC Card",
+    description: "Premium metal card with NFC. Wallet-friendly—tap to share your RingTap profile. Brushed finish.",
+    price: 34,
+    image: "▢",
+    type: "card",
+  },
+  {
+    id: "metal-card-black",
+    name: "Black Metal NFC Card",
+    description: "Matte black metal NFC card. Same tap-to-share as the ring—fits in your wallet.",
+    price: 36,
+    image: "▪",
+    type: "card",
+  },
+  {
+    id: "classic-card",
+    name: "Classic NFC Card",
+    description: "White plastic NFC card. Program with your ringtap.me link. Slim and durable.",
+    price: 19,
+    image: "□",
+    type: "card",
   },
 ];
 
@@ -40,28 +76,34 @@ export default function StorePage() {
     setSelectedSizes((prev) => ({ ...prev, [ringId]: size }));
   };
 
-  const handleAddToCart = (ringId: string) => {
-    const size = selectedSizes[ringId];
-    if (!size) {
-      alert("Please select a ring size.");
-      return;
+  const handleAddToCart = (productId: string) => {
+    const product = PRODUCTS.find((p) => p.id === productId);
+    if (product?.type === "ring") {
+      const size = selectedSizes[productId];
+      if (!size) {
+        alert("Please select a ring size.");
+        return;
+      }
+      setAdded((prev) => ({ ...prev, [productId]: true }));
+      alert(`Added to cart: ${product.name}, size ${size}. Checkout coming soon—we'll notify you when ready.`);
+    } else {
+      setAdded((prev) => ({ ...prev, [productId]: true }));
+      alert(`Added to cart: ${product?.name ?? productId}. Checkout coming soon—we'll notify you when ready.`);
     }
-    setAdded((prev) => ({ ...prev, [ringId]: true }));
-    alert(`Added to cart: size ${size}. Checkout coming soon—we'll notify you when ready.`);
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header variant="store" />
 
-      {/* Store hero */}
-      <section className="border-b border-border-light/50 py-16 px-6">
-        <div className="mx-auto max-w-4xl text-center">
+      {/* Store hero — centered with balanced padding */}
+      <section className="border-b border-border-light/50 px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
+        <div className="mx-auto max-w-4xl flex flex-col items-center justify-center text-center min-h-[180px]">
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            NFC rings for RingTap
+            NFC rings & cards for RingTap
           </h1>
-          <p className="mt-4 text-muted-light max-w-2xl mx-auto">
-            Tap your ring to someone's phone—your profile opens instantly. Choose your size below; US ring sizes 5–13.
+          <p className="mt-4 text-muted-light max-w-2xl">
+            Tap your ring or card to someone's phone—your profile opens instantly. Rings: US sizes 5–13.
           </p>
         </div>
       </section>
@@ -92,46 +134,48 @@ export default function StorePage() {
       <section className="py-16 px-6">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-            {RINGS.map((ring) => (
+            {PRODUCTS.map((product) => (
               <article
-                key={ring.id}
+                key={product.id}
                 className="rounded-2xl border border-border-light bg-surface p-6 flex flex-col"
               >
                 <div className="flex h-24 w-full items-center justify-center rounded-xl bg-surface-elevated text-4xl text-accent mb-4">
-                  {ring.image}
+                  {product.image}
                 </div>
-                <h2 className="text-lg font-bold text-foreground">{ring.name}</h2>
+                <h2 className="text-lg font-bold text-foreground">{product.name}</h2>
                 <p className="mt-2 text-sm text-muted-light leading-relaxed flex-1">
-                  {ring.description}
+                  {product.description}
                 </p>
-                <p className="mt-4 text-xl font-bold text-accent">${ring.price}</p>
+                <p className="mt-4 text-xl font-bold text-accent">${product.price}</p>
 
-                <div className="mt-4">
-                  <label htmlFor={`size-${ring.id}`} className="block text-xs font-medium text-muted-light mb-2">
-                    Ring size (US)
-                  </label>
-                  <select
-                    id={`size-${ring.id}`}
-                    value={selectedSizes[ring.id] ?? ""}
-                    onChange={(e) => handleSizeChange(ring.id, e.target.value)}
-                    className="w-full rounded-xl border border-border-light bg-background px-4 py-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                  >
-                    <option value="">Select size</option>
-                    {RING_SIZES.map((size) => (
-                      <option key={size} value={size}>
-                        US {size}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {product.type === "ring" && (
+                  <div className="mt-4">
+                    <label htmlFor={`size-${product.id}`} className="block text-xs font-medium text-muted-light mb-2">
+                      Ring size (US)
+                    </label>
+                    <select
+                      id={`size-${product.id}`}
+                      value={selectedSizes[product.id] ?? ""}
+                      onChange={(e) => handleSizeChange(product.id, e.target.value)}
+                      className="w-full rounded-xl border border-border-light bg-background px-4 py-3 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    >
+                      <option value="">Select size</option>
+                      {RING_SIZES.map((size) => (
+                        <option key={size} value={size}>
+                          US {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <button
                   type="button"
-                  onClick={() => handleAddToCart(ring.id)}
-                  disabled={added[ring.id]}
+                  onClick={() => handleAddToCart(product.id)}
+                  disabled={added[product.id]}
                   className="mt-6 w-full rounded-xl bg-accent py-3 text-sm font-semibold text-background hover:bg-muted-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {added[ring.id] ? "Added — checkout coming soon" : "Add to cart"}
+                  {added[product.id] ? "Added — checkout coming soon" : "Add to cart"}
                 </button>
               </article>
             ))}

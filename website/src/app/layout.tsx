@@ -69,9 +69,7 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: SITE_URL },
   verification: {
-    // Optional: add when you have them
-    // google: "your-google-verification-code",
-    // yandex: "your-yandex-verification-code",
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
   },
   category: "technology",
 };
