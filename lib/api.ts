@@ -6,6 +6,15 @@ import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
 const PROFILE_URL_BASE = 'https://ringtap.me';
 const RING_API_BASE = 'https://www.ringtap.me';
 
+// --- In-app saved contacts (user_contacts) ---
+export type SavedContact = {
+  id: string;
+  contactUserId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  createdAt: string;
+};
+
 export function getProfileUrl(username: string): string {
   return `${PROFILE_URL_BASE}/${username}`;
 }
@@ -81,6 +90,79 @@ export async function getProfileByUsername(username: string): Promise<UserProfil
 
   if (error || !data) return null;
   return mapProfileFromDb(data);
+}
+
+export async function getSavedContacts(): Promise<SavedContact[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from('user_contacts')
+    .select('id, contact_user_id, display_name, avatar_url, created_at')
+    .eq('owner_id', user.id)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    contactUserId: row.contact_user_id as string,
+    displayName: (row.display_name as string) ?? '',
+    avatarUrl: (row.avatar_url as string) ?? null,
+    createdAt: row.created_at as string,
+  }));
+}
+
+export async function deleteSavedContact(contactId: string): Promise<boolean> {
+  const { error } = await supabase.from('user_contacts').delete().eq('id', contactId);
+  return !error;
+}
+
+/** Call Next.js save-contact API with the current session token. */
+export async function saveContactViaApi(
+  accessToken: string,
+  contactUserId: string,
+  displayName?: string,
+  avatarUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/save-contact`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        contact_user_id: contactUserId,
+        display_name: displayName ?? '',
+        avatar_url: avatarUrl ?? null,
+      }),
+    });
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok) return { success: false, error: data.error ?? 'Failed to save contact' };
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to save contact' };
+  }
+}
+
+/** Call Next.js ring setup API (QR flow): link ring to current user. */
+export async function setupRingViaApi(
+  accessToken: string,
+  setupId: string
+): Promise<{ success: boolean; already_linked?: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/ring/setup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ setup_id: setupId }),
+    });
+    const data = (await res.json()) as { success?: boolean; already_linked?: boolean; error?: string };
+    if (!res.ok) return { success: false, error: data.error ?? 'Failed to link ring' };
+    return { success: true, already_linked: data.already_linked };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to link ring' };
+  }
 }
 
 export async function upsertProfile(

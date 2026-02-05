@@ -111,6 +111,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       id: profile.id,
+      user_id: userId,
       username: profile.username,
       name: profile.name,
       title: profile.title,

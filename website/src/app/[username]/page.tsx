@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api']);
+const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup']);
 
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',
@@ -17,8 +17,11 @@ const SOCIAL_LABELS: Record<string, string> = {
   other: 'Link',
 };
 
+const DEEP_LINK_SCHEME = 'ringtap://';
+
 type ProfileData = {
   id: string;
+  user_id?: string;
   username: string;
   name: string;
   title: string;
@@ -116,6 +119,18 @@ export default function UsernameProfilePage() {
       setLoading(false);
     }
   }, [slug, router]);
+
+  // If opened inside RingTap app (WebView), redirect to app with user's UUID
+  const userId = profile?.user_id;
+  const isInApp = typeof window !== 'undefined' && (
+    /RingTap|Expo/i.test(navigator.userAgent) ||
+    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('inapp') === '1')
+  );
+  useEffect(() => {
+    if (!userId || !profile || !isInApp) return;
+    const deepLink = `${DEEP_LINK_SCHEME}profile/${userId}`;
+    window.location.replace(deepLink);
+  }, [userId, profile, isInApp]);
 
   useEffect(() => {
     fetchProfile();
@@ -269,8 +284,8 @@ export default function UsernameProfilePage() {
             </div>
           )}
 
-          {/* Save contact .vcf — always shown */}
-          <div className="border-t border-border-light px-6 py-4">
+          {/* Save contact .vcf + Save in App — always shown */}
+          <div className="border-t border-border-light px-6 py-4 space-y-3">
             <button
               type="button"
               onClick={() => downloadVCard(profile)}
@@ -279,8 +294,17 @@ export default function UsernameProfilePage() {
               <span aria-hidden>↓</span>
               Save contact
             </button>
+            {userId && (
+              <a
+                href={`${DEEP_LINK_SCHEME}profile/${userId}`}
+                className="block w-full rounded-xl border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors"
+              >
+                Save Contact in App
+              </a>
+            )}
             <p className="text-xs text-muted-light mt-1.5 text-center">
               Downloads a .vcf file to add to your phone contacts
+              {userId ? ' · Open in RingTap app to save there' : ''}
             </p>
           </div>
         </div>
