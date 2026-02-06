@@ -2,10 +2,9 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 
-
-export default function UpgradePage() {
+function UpgradeContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email') ?? '';
   const userId = searchParams.get('user_id') ?? '';
@@ -86,5 +85,17 @@ export default function UpgradePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+        <p className="text-muted-light">Loading…</p>
+      </div>
+    }>
+      <UpgradeContent />
+    </Suspense>
   );
 }
