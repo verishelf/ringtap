@@ -121,7 +121,8 @@
       [
         "react-native-nfc-manager",
         {
-          "nfcPermission": "RingTap writes your profile link to your NFC ring so others can tap to open your profile."
+          "nfcPermission": "RingTap writes your profile link to your NFC ring so others can tap to open your profile.",
+          "includeNdefEntitlement": false
         }
       ],
       [
