@@ -7,13 +7,20 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ringtap",
     "userInterfaceStyle": "automatic",
-    "deeplinks": ["ringtap://", "ringtap://activate", "ringtap://profile"],
+    "deeplinks": [
+      "ringtap://",
+      "ringtap://activate",
+      "ringtap://profile"
+    ],
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "me.ringtap.app",
       "buildNumber": "1",
-      "associatedDomains": ["applinks:ringtap.me", "applinks:www.ringtap.me"],
+      "associatedDomains": [
+        "applinks:ringtap.me",
+        "applinks:www.ringtap.me"
+      ],
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "RingTap uses your photo library to set your profile picture and add a video intro.",
         "NSMicrophoneUsageDescription": "RingTap may use the microphone when recording a video intro.",
@@ -43,12 +50,31 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "ringtap.me", "pathPrefix": "/activate" },
-            { "scheme": "https", "host": "www.ringtap.me", "pathPrefix": "/activate" },
-            { "scheme": "https", "host": "ringtap.me", "pathPrefix": "/profile" },
-            { "scheme": "https", "host": "www.ringtap.me", "pathPrefix": "/profile" }
+            {
+              "scheme": "https",
+              "host": "ringtap.me",
+              "pathPrefix": "/activate"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ringtap.me",
+              "pathPrefix": "/activate"
+            },
+            {
+              "scheme": "https",
+              "host": "ringtap.me",
+              "pathPrefix": "/profile"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ringtap.me",
+              "pathPrefix": "/profile"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "adaptiveIcon": {
@@ -96,6 +122,14 @@
         "react-native-nfc-manager",
         {
           "nfcPermission": "RingTap writes your profile link to your NFC ring so others can tap to open your profile."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
         }
       ]
     ],
