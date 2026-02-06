@@ -91,6 +91,12 @@
           "cameraPermission": "RingTap uses the camera to take a profile photo or record a video intro.",
           "microphonePermission": "RingTap uses the microphone when recording a video intro."
         }
+      ],
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "RingTap writes your profile link to your NFC ring so others can tap to open your profile."
+        }
       ]
     ],
     "experiments": {

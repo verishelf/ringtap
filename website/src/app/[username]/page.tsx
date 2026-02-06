@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup', 'upgrade']);
 
@@ -131,6 +131,18 @@ export default function UsernameProfilePage() {
     const deepLink = `${DEEP_LINK_SCHEME}profile/${userId}`;
     window.location.replace(deepLink);
   }, [userId, profile, isInApp]);
+
+  // Record profile view for analytics (once per load)
+  const recordedView = useRef(false);
+  useEffect(() => {
+    if (!profile?.id || recordedView.current) return;
+    recordedView.current = true;
+    fetch('/api/analytics/record', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile_id: profile.id, type: 'profile_view' }),
+    }).catch(() => {});
+  }, [profile?.id]);
 
   useEffect(() => {
     fetchProfile();
@@ -274,6 +286,19 @@ export default function UsernameProfilePage() {
                       href={ensureUrl(link.url)}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        if (profile?.id) {
+                          fetch('/api/analytics/record', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              profile_id: profile.id,
+                              type: 'link_click',
+                              link_id: link.id,
+                            }),
+                          }).catch(() => {});
+                        }
+                      }}
                       className="block rounded-xl bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity"
                     >
                       {link.title || link.url}

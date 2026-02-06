@@ -8,7 +8,9 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.ringtap.me';
 export async function POST(request: NextRequest) {
   if (!STRIPE_SECRET || !PRO_PRICE_ID) {
     return NextResponse.json(
-      { error: 'Stripe not configured (STRIPE_SECRET_KEY, STRIPE_PRO_PRICE_ID)' },
+      {
+        error: 'Stripe not configured. In Vercel (or your host): Project → Settings → Environment Variables → add STRIPE_SECRET_KEY and STRIPE_PRO_PRICE_ID. Create a Product "Pro" with a $9/month recurring price in Stripe Dashboard, then paste the Price ID (price_xxx).',
+      },
       { status: 500 }
     );
   }

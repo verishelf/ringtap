@@ -14,9 +14,11 @@ import {
 import { RingModelViewer } from '@/components/RingModelViewer';
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
+import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { claimRing, createAndClaimRing, getRingStatus, type RingStatus } from '@/lib/api';
+import { claimRing, createAndClaimRing, getProfileUrl, getRingStatus, type RingStatus } from '@/lib/api';
+import { writeProfileUrlToNfcTag } from '@/lib/nfcWriter';
 
 export default function ActivateScreen() {
   const params = useLocalSearchParams<{ uid?: string; r?: string }>();
@@ -24,10 +26,12 @@ export default function ActivateScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { user } = useSession();
+  const { profile } = useProfile();
   const [ring, setRing] = useState<RingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [writing, setWriting] = useState(false);
 
   const load = useCallback(async () => {
     if (!uid.trim()) {
@@ -93,8 +97,10 @@ export default function ActivateScreen() {
     );
   }
 
-  // No ring ID: first-tap flow — create a ring and assign to profile
+  // No ring ID: first-tap flow — write profile URL to ring and/or create & link
   if (!uid.trim()) {
+    const profileUrl = profile?.username ? getProfileUrl(profile.username) : null;
+
     const handleCreateAndLink = async () => {
       if (!user?.id) {
         Alert.alert('Sign in required', 'Sign in to link a ring to your profile.', [
@@ -122,16 +128,72 @@ export default function ActivateScreen() {
       }
     };
 
+    const handleWriteToRing = async () => {
+      if (!profileUrl) {
+        Alert.alert('Set username', 'Add a username in Profile first. Your link will be ringtap.me/username.');
+        return;
+      }
+      setWriting(true);
+      try {
+        const result = await writeProfileUrlToNfcTag(profileUrl);
+        if (result.success) {
+          Alert.alert('Done', 'Your profile link is now on the ring. When someone taps it, your RingTap profile will open.');
+        } else {
+          if (result.error !== 'Cancelled') {
+            Alert.alert('Write failed', result.error);
+          }
+        }
+      } catch (_) {
+        Alert.alert('Error', 'Could not write to ring');
+      } finally {
+        setWriting(false);
+      }
+    };
+
     return (
       <ThemedView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Text style={[styles.title, { color: colors.text }]}>Link your ring</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Tap to create a ring and assign it to your profile. No ring ID needed — use the same link on any NFC ring.
+            Write your profile link to the NFC ring so taps open your RingTap profile.
           </Text>
           <View style={styles.modelWrap}>
             <RingModelViewer modelUrl={null} />
           </View>
+
+          {profileUrl ? (
+            <>
+              <Text style={[styles.writeLabel, { color: colors.textSecondary }]}>
+                Your link: {profileUrl}
+              </Text>
+              <Pressable
+                style={[styles.writeButton, { borderColor: colors.accent }]}
+                onPress={handleWriteToRing}
+                disabled={writing}
+              >
+                {writing ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <>
+                    <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
+                    <Text style={[styles.writeButtonText, { color: colors.accent }]}>
+                      Hold ring to phone to write
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+              <Text style={[styles.hint, { color: colors.textSecondary }]}>
+                Hold your NFC ring flat against the back of your phone until it finishes.
+              </Text>
+            </>
+          ) : (
+            <Text style={[styles.hint, { color: colors.textSecondary }]}>
+              Set a username in Profile first so your link is ringtap.me/username.
+            </Text>
+          )}
+
+          <View style={styles.divider} />
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Register ring in app (optional)</Text>
           <Pressable
             style={[styles.claimButton, { backgroundColor: colors.accent }]}
             onPress={handleCreateAndLink}
@@ -241,6 +303,21 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   claimButtonText: { fontSize: Layout.body, fontWeight: '600' },
+  writeLabel: { fontSize: Layout.caption, marginBottom: 8, textAlign: 'center' },
+  writeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: Layout.radiusLg,
+    borderWidth: 2,
+    minWidth: 200,
+  },
+  writeButtonText: { fontSize: Layout.body, fontWeight: '600' },
+  sectionLabel: { fontSize: Layout.caption, marginBottom: 8 },
+  divider: { width: '100%', height: 1, backgroundColor: 'rgba(128,128,128,0.3)', marginVertical: Layout.sectionGap },
   button: {
     paddingVertical: 14,
     paddingHorizontal: 24,
