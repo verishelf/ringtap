@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import * as Linking from 'expo-linking';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -19,7 +19,8 @@ import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { getAnalytics, getScannedContacts } from '@/lib/api';
+import { getAnalytics, getSavedContacts, getScannedContacts } from '@/lib/api';
+import type { SavedContact } from '@/lib/api';
 import type { ScannedContact } from '@/lib/supabase/types';
 
 dayjs.extend(relativeTime);
@@ -29,11 +30,13 @@ const RING_STROKE = 3;
 const INNER_CIRCLE = 64;
 const STORE_URL = 'https://www.ringtap.me/store';
 
+type RecentContact = { type: 'scanned'; data: ScannedContact } | { type: 'saved'; data: SavedContact };
+
 export default function HomeScreen() {
   const { user } = useSession();
   const { profile } = useProfile();
   const colors = useThemeColors();
-  const [scannedCards, setScannedCards] = useState<ScannedContact[]>([]);
+  const [recentContacts, setRecentContacts] = useState<RecentContact[]>([]);
   const [tapsThisWeek, setTapsThisWeek] = useState(0);
   const [viewsThisWeek, setViewsThisWeek] = useState(0);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
@@ -65,17 +68,22 @@ export default function HomeScreen() {
     }
     setLoadingDashboard(true);
     try {
-      const [contacts, analytics] = await Promise.all([
-        getScannedContacts(user.id).then((list) => list.slice(0, 5)),
+      const [scanned, saved, analytics] = await Promise.all([
+        getScannedContacts(user.id),
+        getSavedContacts(),
         profile?.id ? getAnalytics(profile.id, 7) : Promise.resolve({ nfcTaps: 0, qrScans: 0, profileViews: 0 }),
       ]);
-      setScannedCards(contacts);
+      const merged: RecentContact[] = [
+        ...scanned.map((c) => ({ type: 'scanned' as const, data: c })),
+        ...saved.map((c) => ({ type: 'saved' as const, data: c })),
+      ].sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime());
+      setRecentContacts(merged.slice(0, 10));
       if (analytics && 'nfcTaps' in analytics) {
         setTapsThisWeek(analytics.nfcTaps + analytics.qrScans);
         setViewsThisWeek(analytics.profileViews);
       }
     } catch (_) {
-      setScannedCards([]);
+      setRecentContacts([]);
     } finally {
       setLoadingDashboard(false);
     }
@@ -84,6 +92,12 @@ export default function HomeScreen() {
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboard();
+    }, [loadDashboard])
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -103,7 +117,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Tap to share — glowing rings */}
-        <Link href="/share/nfc" asChild>
+        <Link href="/share/qr" asChild>
           <Pressable style={styles.scanRingWrap}>
             <View style={[styles.scanRingContainer, { width: RING_SIZE, height: RING_SIZE }]}>
               <Animated.View
@@ -166,7 +180,7 @@ export default function HomeScreen() {
           {/* Recently scanned cards */}
           <View style={[styles.recentCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
             <View style={styles.recentHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recently scanned cards</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent contacts</Text>
               <Link href="/(tabs)/profile" asChild>
                 <Pressable>
                   <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
@@ -175,28 +189,44 @@ export default function HomeScreen() {
             </View>
             {loadingDashboard ? (
               <ActivityIndicator size="small" color={colors.accent} style={styles.dashLoader} />
-            ) : scannedCards.length === 0 ? (
+            ) : recentContacts.length === 0 ? (
               <Text style={[styles.recentEmpty, { color: colors.textSecondary }]}>
-                No scanned cards yet. When someone saves your card, they’ll appear here.
+                No scanned or saved contacts yet. Save a profile in the app or scan a card to see them here.
               </Text>
             ) : (
-              scannedCards.map((contact) => (
-                <View key={contact.id} style={[styles.recentRow, { borderBottomColor: colors.borderLight }]}>
-                  <View style={[styles.recentAvatar, { backgroundColor: colors.surfaceElevated }]}>
-                    <Text style={[styles.recentAvatarText, { color: colors.accent }]} numberOfLines={1}>
-                      {(contact.name || contact.email || '?').charAt(0).toUpperCase()}
-                    </Text>
+              recentContacts.map((item) => {
+                const isSaved = item.type === 'saved';
+                const id = item.data.id;
+                const name = isSaved
+                  ? (item.data.displayName || 'Saved contact').trim()
+                  : (item.data.name?.trim() || item.data.email?.trim() || 'Unknown');
+                const createdAt = item.data.createdAt;
+                const row = (
+                  <View style={[styles.recentRow, { borderBottomColor: colors.borderLight }]}>
+                    <View style={[styles.recentAvatar, { backgroundColor: colors.surfaceElevated }]}>
+                      <Text style={[styles.recentAvatarText, { color: colors.accent }]} numberOfLines={1}>
+                        {name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={styles.recentInfo}>
+                      <Text style={[styles.recentName, { color: colors.text }]} numberOfLines={1}>
+                        {name}
+                      </Text>
+                      <Text style={[styles.recentTime, { color: colors.textSecondary }]}>
+                        {dayjs(createdAt).fromNow()}
+                        {isSaved ? ' · Saved' : ''}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.recentInfo}>
-                    <Text style={[styles.recentName, { color: colors.text }]} numberOfLines={1}>
-                      {contact.name?.trim() || contact.email?.trim() || 'Unknown'}
-                    </Text>
-                    <Text style={[styles.recentTime, { color: colors.textSecondary }]}>
-                      {dayjs(contact.createdAt).fromNow()}
-                    </Text>
-                  </View>
-                </View>
-              ))
+                );
+                return isSaved ? (
+                  <Link key={`saved-${id}`} href={`/profile/${(item.data as SavedContact).contactUserId}` as const} asChild>
+                    <Pressable>{row}</Pressable>
+                  </Link>
+                ) : (
+                  <View key={`scanned-${id}`}>{row}</View>
+                );
+              })
             )}
           </View>
 

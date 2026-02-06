@@ -73,12 +73,16 @@ export default function NFCShareScreen() {
           <Text style={[styles.hint, { color: colors.textSecondary }]}>Simulates opening your profile link as if an NFC tap triggered it.</Text>
         </View>
 
-        <Link href="/share/qr" asChild>
-          <Pressable style={[styles.secondaryButton, { borderColor: colors.accent }]}>
-            <Ionicons name="qr-code-outline" size={22} color={colors.accent} />
-            <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>Generate QR code instead</Text>
-          </Pressable>
-        </Link>
+        <View style={styles.secondaryButtonWrap}>
+          <Link href="/share/qr" asChild>
+            <Pressable style={[styles.secondaryButton, { borderColor: colors.accent }]}>
+              <View style={styles.buttonContent}>
+                <Ionicons name="qr-code-outline" size={22} color={colors.accent} />
+                <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>Share with QR instead</Text>
+              </View>
+            </Pressable>
+          </Link>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -119,14 +123,23 @@ const styles = StyleSheet.create({
     borderRadius: Layout.radiusMd,
   },
   buttonText: { fontSize: Layout.body, fontWeight: '600' },
+  secondaryButtonWrap: {
+    alignItems: 'center',
+    marginTop: Layout.rowGap,
+  },
   secondaryButton: {
+    height: Layout.buttonHeight,
+    paddingHorizontal: 24,
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Layout.inputGap,
-    height: Layout.buttonHeight,
-    borderWidth: 1,
-    borderRadius: Layout.radiusMd,
   },
   secondaryButtonText: { fontSize: 16, fontWeight: '600' },
 });

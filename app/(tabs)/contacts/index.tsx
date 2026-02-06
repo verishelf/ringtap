@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -35,6 +35,13 @@ export default function ContactsScreen() {
     if (user) loadContacts();
     else setLoading(false);
   }, [user, loadContacts]);
+
+  // Refetch when screen is focused so new saves (e.g. from web "Save to app") appear without restarting
+  useFocusEffect(
+    useCallback(() => {
+      if (user) loadContacts();
+    }, [user, loadContacts])
+  );
 
   const handleDelete = useCallback((contact: SavedContact) => {
     Alert.alert(

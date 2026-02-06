@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,6 +11,8 @@ import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
 import { getProfileUrl } from '@/lib/api';
+
+const QR_SIZE = 280;
 
 export default function QRShareScreen() {
   const colors = useThemeColors();
@@ -60,12 +63,17 @@ export default function QRShareScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.centered}>
           <View ref={qrRef} collapsable={false} style={[styles.qrWrap, { backgroundColor: colors.surface }]}>
-            <QRCode value={profileUrl} size={240} backgroundColor="#FFFFFF" color="#000000" />
+            <QRCode value={profileUrl} size={QR_SIZE} backgroundColor="#FFFFFF" color="#000000" />
           </View>
-          <Text style={[styles.url, { color: colors.textSecondary }]}>{profileUrl}</Text>
+          <Text style={[styles.url, { color: colors.textSecondary }]} numberOfLines={2}>
+            {profileUrl}
+          </Text>
         </View>
 
         <Pressable
@@ -78,6 +86,17 @@ export default function QRShareScreen() {
             {saving ? 'Preparing…' : 'Save & share QR image'}
           </Text>
         </Pressable>
+
+        <View style={styles.secondaryButtonWrap}>
+          <Link href="/share/nfc" asChild>
+            <Pressable style={[styles.secondaryButton, { borderColor: colors.accent }]}>
+              <View style={styles.buttonContent}>
+                <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
+                <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>Share with NFC</Text>
+              </View>
+            </Pressable>
+          </Link>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -93,22 +112,19 @@ const styles = StyleSheet.create({
     padding: Layout.screenPaddingBottom,
   },
   emptyText: { fontSize: Layout.body, textAlign: 'center' },
-  card: {
+  centered: {
     alignItems: 'center',
-    padding: Layout.cardPadding,
-    borderRadius: Layout.radiusLg,
+    justifyContent: 'center',
+    paddingVertical: Layout.sectionGap,
     marginBottom: Layout.sectionGap,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
   },
   qrWrap: {
-    padding: Layout.cardPadding,
+    padding: 20,
     borderRadius: Layout.radiusMd,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  url: { fontSize: Layout.caption, marginTop: 16, textAlign: 'center' },
+  url: { fontSize: Layout.caption, marginTop: 20, textAlign: 'center', paddingHorizontal: Layout.screenPadding },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -120,4 +136,23 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { fontSize: 16, fontWeight: '600' },
+  secondaryButtonWrap: {
+    alignItems: 'center',
+    marginTop: Layout.rowGap,
+  },
+  secondaryButton: {
+    height: Layout.buttonHeight,
+    paddingHorizontal: 24,
+    borderWidth: 1,
+    borderRadius: Layout.radiusMd,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Layout.inputGap,
+  },
+  secondaryButtonText: { fontSize: 16, fontWeight: '600' },
 });
