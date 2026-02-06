@@ -69,7 +69,13 @@ function NavLink({
   );
 }
 
-export function Header({ variant = "home" }: { variant?: HeaderVariant }) {
+export function Header({
+  variant = "home",
+  cartCount = 0,
+}: {
+  variant?: HeaderVariant;
+  cartCount?: number;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const links = variant === "store" ? storeLinks : homeLinks;
 
@@ -86,6 +92,15 @@ export function Header({ variant = "home" }: { variant?: HeaderVariant }) {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
+          {variant === "store" && (
+            <Link
+              href="/store/cart"
+              className="relative text-sm font-medium text-muted-light hover:text-foreground transition-colors"
+              onClick={() => setMenuOpen(false)}
+            >
+              Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+            </Link>
+          )}
           {links.map((link) => (
             <NavLink
               key={link.label}
@@ -124,6 +139,17 @@ export function Header({ variant = "home" }: { variant?: HeaderVariant }) {
         }`}
       >
         <nav className="flex flex-col px-4 py-4 gap-0">
+          {variant === "store" && (
+            <div className="border-b border-border-light/30">
+              <Link
+                href="/store/cart"
+                className="block py-3 text-sm font-medium text-muted-light hover:text-foreground"
+                onClick={() => setMenuOpen(false)}
+              >
+                Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+              </Link>
+            </div>
+          )}
           {links.map((link) => (
             <div key={link.label} className="border-b border-border-light/30 last:border-0">
               <span className="block py-3">

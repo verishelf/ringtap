@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { StoreCartProvider } from "@/contexts/StoreCartContext";
 
 const SITE_URL = "https://www.ringtap.me";
 
@@ -43,12 +44,12 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <StoreCartProvider>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }}
       />
       {children}
-    </>
+    </StoreCartProvider>
   );
 }

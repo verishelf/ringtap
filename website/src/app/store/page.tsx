@@ -1,12 +1,11 @@
 "use client";
 
 import { Header } from "@/components/Header";
+import { useStoreCart } from "@/contexts/StoreCartContext";
 import Link from "next/link";
 import { useState } from "react";
 
-const RING_SIZES = [
-  "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12", "13",
-];
+const RING_SIZES = ["5", "6", "7", "8", "9", "10", "11", "12", "13"];
 
 type Product = {
   id: string;
@@ -69,8 +68,8 @@ const PRODUCTS: Product[] = [
 ];
 
 export default function StorePage() {
+  const { addItem, count } = useStoreCart();
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
-  const [added, setAdded] = useState<Record<string, boolean>>({});
 
   const handleSizeChange = (ringId: string, size: string) => {
     setSelectedSizes((prev) => ({ ...prev, [ringId]: size }));
@@ -78,23 +77,22 @@ export default function StorePage() {
 
   const handleAddToCart = (productId: string) => {
     const product = PRODUCTS.find((p) => p.id === productId);
-    if (product?.type === "ring") {
+    if (!product) return;
+    if (product.type === "ring") {
       const size = selectedSizes[productId];
       if (!size) {
         alert("Please select a ring size.");
         return;
       }
-      setAdded((prev) => ({ ...prev, [productId]: true }));
-      alert(`Added to cart: ${product.name}, size ${size}. Checkout coming soon—we'll notify you when ready.`);
+      addItem({ productId: product.id, name: product.name, price: product.price, size });
     } else {
-      setAdded((prev) => ({ ...prev, [productId]: true }));
-      alert(`Added to cart: ${product?.name ?? productId}. Checkout coming soon—we'll notify you when ready.`);
+      addItem({ productId: product.id, name: product.name, price: product.price });
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <Header variant="store" />
+      <Header variant="store" cartCount={count} />
 
       {/* Store hero — centered with balanced padding */}
       <section className="border-b border-border-light/50 px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
@@ -172,17 +170,20 @@ export default function StorePage() {
                 <button
                   type="button"
                   onClick={() => handleAddToCart(product.id)}
-                  disabled={added[product.id]}
-                  className="mt-6 w-full rounded-xl bg-accent py-3 text-sm font-semibold text-background hover:bg-muted-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="mt-6 w-full rounded-xl bg-accent py-3 text-sm font-semibold text-background hover:opacity-90 transition-opacity"
                 >
-                  {added[product.id] ? "Added — checkout coming soon" : "Add to cart"}
+                  Add to cart
                 </button>
               </article>
             ))}
           </div>
 
           <p className="mt-10 text-center text-sm text-muted">
-            Checkout and shipping coming soon. Add to cart to get notified when we launch.
+            <Link href="/store/cart" className="text-accent font-medium hover:underline">
+              View cart ({count})
+            </Link>
+            {" · "}
+            Secure checkout with Stripe.
           </p>
         </div>
       </section>
