@@ -1,45 +1,45 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useSession } from '@/hooks/useSession';
 
-// Placeholder for Stripe checkout. In production you would:
-// 1. Create a Stripe Checkout Session via your backend (Supabase Edge Function or API)
-// 2. Redirect to Stripe Checkout URL or use Stripe React Native SDK
-// 3. Handle success/cancel and sync subscription via Supabase webhooks
+const UPGRADE_BASE_URL = 'https://www.ringtap.me/upgrade';
+
 export default function UpgradeScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const { user } = useSession();
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async () => {
+    const email = user?.email?.trim();
+    if (!email) {
+      Alert.alert('Sign in required', 'Use the email from your RingTap account so your Pro subscription is linked.');
+      return;
+    }
     setLoading(true);
     try {
-      // TODO: Call your backend to create Stripe Checkout Session
-      // const res = await fetch('YOUR_API/create-checkout-session', { method: 'POST', body: JSON.stringify({ userId, plan: 'pro' }) });
-      // const { url } = await res.json();
-      // await Linking.openURL(url);
-      // For demo: simulate success
-      await new Promise((r) => setTimeout(r, 1500));
-      Alert.alert(
-        'Pro upgrade',
-        'Stripe checkout would open here. After payment, your subscription is synced via Supabase webhooks.',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      const params = new URLSearchParams({ email });
+      if (user?.id) params.set('user_id', user.id);
+      const url = `${UPGRADE_BASE_URL}?${params.toString()}`;
+      const opened = await Linking.openURL(url);
+      if (!opened) Alert.alert('Error', 'Could not open browser. Try again.');
     } catch (e) {
-      Alert.alert('Error', 'Something went wrong. Try again.');
+      Alert.alert('Error', 'Could not open payment page. Try again.');
     } finally {
       setLoading(false);
     }
@@ -66,15 +66,14 @@ export default function UpgradeScreen() {
             <ActivityIndicator color={colors.text} size="small" />
           ) : (
             <>
-              <Ionicons name="card-outline" size={22} color={colors.text} />
-              <Text style={[styles.buttonText, { color: colors.text }]}>Continue to payment (Stripe)</Text>
+              <Ionicons name="open-outline" size={22} color={colors.text} />
+              <Text style={[styles.buttonText, { color: colors.text }]}>Open in browser to buy Pro</Text>
             </>
           )}
         </Pressable>
 
         <Text style={[styles.note, { color: colors.textSecondary }]}>
-          Stripe billing is integrated via Supabase webhooks. Set up your backend to create Checkout
-          sessions and sync subscription status to the subscriptions table.
+          Opens Safari (or your default browser) to complete payment. $9/month, cancel anytime. Secure checkout by Stripe.
         </Text>
       </ScrollView>
     </ThemedView>

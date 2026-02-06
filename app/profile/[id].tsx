@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileScanPreview } from '@/components/ProfileScanPreview';
 import { Layout } from '@/constants/theme';
@@ -18,7 +19,7 @@ import { useSession } from '@/hooks/useSession';
 import {
   getProfile,
   getLinks,
-  saveContactViaApi,
+  saveContact,
   type UserProfile,
   type UserLink,
 } from '@/lib/api';
@@ -27,7 +28,8 @@ export default function ProfileByIdScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useThemeColors();
-  const { user, session } = useSession();
+  const insets = useSafeAreaInsets();
+  const { user } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [links, setLinks] = useState<UserLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,15 +57,10 @@ export default function ProfileByIdScreen() {
   }, [fetchProfile]);
 
   const handleSaveContact = useCallback(async () => {
-    if (!user || !session?.access_token || !profile) return;
+    if (!user || !profile) return;
     setSaving(true);
     try {
-      const result = await saveContactViaApi(
-        session.access_token,
-        profile.userId,
-        profile.name,
-        profile.avatarUrl
-      );
+      const result = await saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined);
       if (result.success) {
         Alert.alert('Contact saved!', undefined, [{ text: 'OK' }]);
       } else {
@@ -74,11 +71,11 @@ export default function ProfileByIdScreen() {
     } finally {
       setSaving(false);
     }
-  }, [user, session?.access_token, profile]);
+  }, [user, profile]);
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[styles.centered, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
@@ -86,7 +83,7 @@ export default function ProfileByIdScreen() {
 
   if (error || !profile) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[styles.centered, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error ?? 'Profile not found'}</Text>
         <Pressable onPress={() => router.back()} style={[styles.backBtn, { borderColor: colors.borderLight }]}>
           <Text style={{ color: colors.text }}>Go back</Text>
@@ -97,7 +94,7 @@ export default function ProfileByIdScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.borderLight }]}>
+      <View style={[styles.header, { borderBottomColor: colors.borderLight, paddingTop: insets.top + 12, paddingBottom: 12 }]}>
         <Pressable onPress={() => router.back()} style={styles.headerBack} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>

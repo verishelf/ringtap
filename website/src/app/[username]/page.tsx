@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup']);
+const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup', 'upgrade']);
 
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',

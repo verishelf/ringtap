@@ -118,7 +118,7 @@ export default function ProfileEditorScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -126,7 +126,7 @@ export default function ProfileEditorScreen() {
     if (result.canceled || !user?.id) return;
     setUploadingImage(true);
     try {
-      const url = await uploadAvatar(user.id, result.assets[0].uri);
+      const { url, error } = await uploadAvatar(user.id, result.assets[0].uri);
       if (url) {
         if (isEditing && editForm) setEditForm((f) => ({ ...f, avatarUrl: url }));
         else {
@@ -134,7 +134,7 @@ export default function ProfileEditorScreen() {
           await refresh();
         }
       } else {
-        Alert.alert('Error', 'Upload failed. Try again.');
+        Alert.alert('Upload failed', error ?? 'Try again.');
       }
     } catch (e) {
       Alert.alert('Error', 'Failed to upload image');
@@ -154,7 +154,7 @@ export default function ProfileEditorScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: ['videos'],
       allowsEditing: true,
       videoMaxDuration: 20,
       quality: 0.8,
@@ -162,10 +162,12 @@ export default function ProfileEditorScreen() {
     if (result.canceled || !user?.id) return;
     setUploadingVideo(true);
     try {
-      const url = await uploadVideoIntro(user.id, result.assets[0].uri);
+      const { url, error } = await uploadVideoIntro(user.id, result.assets[0].uri);
       if (url) {
         if (isEditing && editForm) setEditForm((f) => ({ ...f, videoIntroUrl: url }));
         else await updateProfile({ videoIntroUrl: url });
+      } else if (error) {
+        Alert.alert('Upload failed', error);
       }
     } catch (e) {
       Alert.alert('Error', 'Failed to upload video (max ~20 seconds)');

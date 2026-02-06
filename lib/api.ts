@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase } from '@/lib/supabase/supabaseClient';
 import type { AnalyticsSummary, ProfileTheme, ScannedContact, ScannedContactSource, UserLink, UserProfile } from '@/lib/supabase/types';
 import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
@@ -115,7 +116,28 @@ export async function deleteSavedContact(contactId: string): Promise<boolean> {
   return !error;
 }
 
-/** Call Next.js save-contact API with the current session token. */
+/** Save a contact using the app's Supabase client (no website API needed). RLS allows insert when owner_id = auth.uid(). */
+export async function saveContact(
+  contactUserId: string,
+  displayName?: string,
+  avatarUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Sign in to save contacts' };
+  const { error } = await supabase.from('user_contacts').insert({
+    owner_id: user.id,
+    contact_user_id: contactUserId,
+    display_name: (displayName ?? '').trim(),
+    avatar_url: (avatarUrl ?? '').trim() || null,
+  });
+  if (error) {
+    if (error.code === '23505') return { success: true }; // already saved
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
+/** Call Next.js save-contact API (used when saving from web). App uses saveContact() instead. */
 export async function saveContactViaApi(
   accessToken: string,
   contactUserId: string,
@@ -439,10 +461,8 @@ async function readFileAsArrayBuffer(uri: string, defaultMime = 'image/jpeg'): P
 
   if (uri.startsWith('file://')) {
     const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-    const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-    return { data: bytes.buffer, mimeType };
+    const data = decodeBase64(base64);
+    return { data, mimeType };
   }
 
   const res = await fetch(uri);
@@ -451,7 +471,9 @@ async function readFileAsArrayBuffer(uri: string, defaultMime = 'image/jpeg'): P
   return { data, mimeType: blob.type || mimeType };
 }
 
-export async function uploadAvatar(userId: string, uri: string): Promise<string | null> {
+export type UploadResult = { url: string | null; error?: string };
+
+export async function uploadAvatar(userId: string, uri: string): Promise<UploadResult> {
   const ext = uri.split('.').pop()?.split('?')[0] ?? 'jpg';
   const path = `avatars/${userId}/${Date.now()}.${ext}`;
   try {
@@ -460,15 +482,18 @@ export async function uploadAvatar(userId: string, uri: string): Promise<string 
       contentType: mimeType,
       upsert: true,
     });
-    if (uploadError) return null;
+    if (uploadError) {
+      return { url: null, error: uploadError.message };
+    }
     const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
-    return urlData?.publicUrl ?? null;
-  } catch {
-    return null;
+    return { url: urlData?.publicUrl ?? null };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { url: null, error: message };
   }
 }
 
-export async function uploadVideoIntro(userId: string, uri: string): Promise<string | null> {
+export async function uploadVideoIntro(userId: string, uri: string): Promise<UploadResult> {
   const ext = uri.split('.').pop()?.split('?')[0] ?? 'mp4';
   const path = `intros/${userId}/${Date.now()}.${ext}`;
   try {
@@ -477,10 +502,13 @@ export async function uploadVideoIntro(userId: string, uri: string): Promise<str
       contentType: ext === 'mov' ? 'video/quicktime' : mimeType,
       upsert: true,
     });
-    if (uploadError) return null;
+    if (uploadError) {
+      return { url: null, error: uploadError.message };
+    }
     const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
-    return urlData?.publicUrl ?? null;
-  } catch {
-    return null;
+    return { url: urlData?.publicUrl ?? null };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { url: null, error: message };
   }
 }
