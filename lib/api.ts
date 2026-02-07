@@ -1,8 +1,8 @@
-import * as FileSystem from 'expo-file-system/legacy';
-import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase } from '@/lib/supabase/supabaseClient';
 import type { AnalyticsSummary, ProfileTheme, ScannedContact, ScannedContactSource, UserLink, UserProfile } from '@/lib/supabase/types';
 import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const PROFILE_URL_BASE = 'https://ringtap.me';
 const RING_API_BASE = 'https://www.ringtap.me';
@@ -128,7 +128,7 @@ export async function getSavedContacts(): Promise<SavedContact[]> {
     id: row.id as string,
     contactUserId: row.contact_user_id as string,
     displayName: (row.display_name as string) ?? '',
-    avatarUrl: (row.avatar_url as string) ?? null,
+    avatarUrl: resolveStorageUrlIfPath((row.avatar_url as string) ?? null),
     createdAt: row.created_at as string,
   }));
 }
@@ -249,6 +249,17 @@ function defaultTheme(): ProfileTheme {
   };
 }
 
+function resolveStorageUrlIfPath(url: string | null): string | null {
+  if (!url || !url.trim()) return null;
+  const u = url.trim();
+  if (/^https?:\/\//i.test(u)) return u;
+  if (u.startsWith('avatars/') || u.startsWith('intros/')) {
+    const { data } = supabase.storage.from('profiles').getPublicUrl(u);
+    return data?.publicUrl ?? u;
+  }
+  return u;
+}
+
 function mapProfileFromDb(row: Record<string, unknown>): UserProfile {
   return {
     id: row.id as string,
@@ -257,8 +268,8 @@ function mapProfileFromDb(row: Record<string, unknown>): UserProfile {
     name: row.name as string,
     title: row.title as string,
     bio: row.bio as string,
-    avatarUrl: (row.avatar_url as string) ?? null,
-    videoIntroUrl: (row.video_intro_url as string) ?? null,
+    avatarUrl: resolveStorageUrlIfPath((row.avatar_url as string) ?? null),
+    videoIntroUrl: resolveStorageUrlIfPath((row.video_intro_url as string) ?? null),
     email: row.email as string,
     phone: row.phone as string,
     website: row.website as string,
@@ -381,7 +392,7 @@ function mapScannedContactFromDb(row: Record<string, unknown>): ScannedContact {
     email: (row.email as string) ?? '',
     phone: (row.phone as string) ?? '',
     website: (row.website as string) ?? '',
-    avatarUrl: (row.avatar_url as string) ?? null,
+    avatarUrl: resolveStorageUrlIfPath((row.avatar_url as string) ?? null),
     profileUrl: (row.profile_url as string) ?? null,
     source: (row.source as ScannedContactSource) ?? 'manual',
     createdAt: row.created_at as string,

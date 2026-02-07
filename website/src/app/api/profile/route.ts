@@ -16,6 +16,18 @@ type ProfileRow = {
   social_links: Record<string, string>;
 };
 
+/** If url is a storage path (avatars/... or intros/...), return full public URL; else return as-is. */
+function resolveStorageUrl(supabaseUrl: string, url: string | null): string | null {
+  if (!url || !url.trim()) return null;
+  const u = url.trim();
+  if (/^https?:\/\//i.test(u)) return u;
+  const base = supabaseUrl.replace(/\/$/, '');
+  if (u.startsWith('avatars/') || u.startsWith('intros/')) {
+    return `${base}/storage/v1/object/public/profiles/${u}`;
+  }
+  return u;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const uid = request.nextUrl.searchParams.get('uid');
@@ -56,28 +68,21 @@ export async function GET(request: NextRequest) {
 
     if (username?.trim()) {
       const slug = username.trim().toLowerCase();
-      // Case-insensitive lookup: try exact match first, then ilike (handles any stored casing)
-      const { data: exact } = await supabase
+      const pattern = slug.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const { data: row, error: lookupErr } = await supabase
         .from('profiles')
         .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, email, phone, website, theme, custom_buttons, social_links')
-        .eq('username', slug)
+        .ilike('username', pattern)
         .maybeSingle();
-      if (exact) {
-        profile = exact as ProfileRow;
-      } else {
-        const pattern = slug.replace(/%/g, '\\%').replace(/_/g, '\\_');
-        const { data: fuzzy, error: fuzzyErr } = await supabase
-          .from('profiles')
-          .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, email, phone, website, theme, custom_buttons, social_links')
-          .ilike('username', pattern)
-          .maybeSingle();
-        profile = fuzzy as ProfileRow | null;
-        profileError = fuzzyErr;
-      }
+      profile = row as ProfileRow | null;
+      profileError = lookupErr;
       if (!profile) {
+        const errMsg = profileError && typeof (profileError as { message?: string }).message === 'string'
+          ? (profileError as { message: string }).message
+          : '';
         return NextResponse.json(
           {
-            error: `No profile with username "${slug}". In the RingTap app: Profile → Edit → set Username to "${slug}" → Save. Ensure the app and website use the same Supabase project.`,
+            error: `No profile with username "${slug}". ${errMsg ? `(Supabase: ${errMsg}. If this is an RLS error, add policy "Public can read profile by username" ON profiles FOR SELECT USING (true).) ` : ''}In the RingTap app: Profile → Edit → set Username → Save. App and website must use the same Supabase project.`,
           },
           { status: 404 }
         );
@@ -119,6 +124,9 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
     if (sub?.plan === 'pro') plan = 'pro';
 
+    const avatarUrl = resolveStorageUrl(supabaseUrl, profile.avatar_url);
+    const videoIntroUrl = resolveStorageUrl(supabaseUrl, profile.video_intro_url ?? null);
+
     return NextResponse.json({
       id: profile.id,
       user_id: userId,
@@ -126,8 +134,8 @@ export async function GET(request: NextRequest) {
       name: profile.name,
       title: profile.title,
       bio: profile.bio,
-      avatar_url: profile.avatar_url,
-      video_intro_url: profile.video_intro_url ?? null,
+      avatar_url: avatarUrl ?? profile.avatar_url,
+      video_intro_url: videoIntroUrl ?? profile.video_intro_url ?? null,
       email: profile.email,
       phone: profile.phone,
       website: profile.website,
