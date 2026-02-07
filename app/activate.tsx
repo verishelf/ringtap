@@ -10,6 +10,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RingModelViewer } from '@/components/RingModelViewer';
 import { ThemedView } from '@/components/themed-view';
@@ -17,7 +18,7 @@ import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { claimRing, createAndClaimRing, getProfileUrl, getRingStatus, type RingStatus } from '@/lib/api';
+import { claimRing, getProfileUrl, getRingStatus, type RingStatus } from '@/lib/api';
 import { writeProfileUrlToNfcTag } from '@/lib/nfcWriter';
 
 export default function ActivateScreen() {
@@ -25,12 +26,12 @@ export default function ActivateScreen() {
   const uid = (params.r ?? params.uid ?? '').trim();
   const router = useRouter();
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { profile } = useProfile();
   const [ring, setRing] = useState<RingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
-  const [linking, setLinking] = useState(false);
   const [writing, setWriting] = useState(false);
 
   const load = useCallback(async () => {
@@ -90,43 +91,16 @@ export default function ActivateScreen() {
 
   if (loading) {
     return (
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color={colors.accent} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading ring...</Text>
       </ThemedView>
     );
   }
 
-  // No ring ID: first-tap flow — write profile URL to ring and/or create & link
+  // No ring ID: first-tap flow — write profile URL to ring
   if (!uid.trim()) {
     const profileUrl = profile?.username ? getProfileUrl(profile.username) : null;
-
-    const handleCreateAndLink = async () => {
-      if (!user?.id) {
-        Alert.alert('Sign in required', 'Sign in to link a ring to your profile.', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign in', onPress: () => router.replace('/(auth)/login') },
-        ]);
-        return;
-      }
-      setLinking(true);
-      try {
-        const result = await createAndClaimRing(user.id);
-        if (result.success) {
-          Alert.alert(
-            result.already_linked ? 'Already linked' : 'Ring linked',
-            result.already_linked ? 'You already have a ring linked to your profile.' : 'Your ring is now linked to your profile.',
-            [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
-          );
-        } else {
-          Alert.alert('Error', result.error ?? 'Could not link ring');
-        }
-      } catch (_) {
-        Alert.alert('Error', 'Could not link ring');
-      } finally {
-        setLinking(false);
-      }
-    };
 
     const handleWriteToRing = async () => {
       if (!profileUrl) {
@@ -152,7 +126,13 @@ export default function ActivateScreen() {
 
     return (
       <ThemedView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scroll,
+            { paddingTop: insets.top + Layout.sectionGap, paddingBottom: Math.max(insets.bottom, Layout.screenPaddingBottom) },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={[styles.title, { color: colors.text }]}>Link your ring</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Write your profile link to the NFC ring so taps open your RingTap profile.
@@ -191,30 +171,6 @@ export default function ActivateScreen() {
               Set a username in Profile first so your link is ringtap.me/username.
             </Text>
           )}
-
-          <View style={styles.divider} />
-          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Register ring in app (optional)</Text>
-          <Pressable
-            style={[styles.claimButton, { backgroundColor: colors.accent }]}
-            onPress={handleCreateAndLink}
-            disabled={linking}
-          >
-            {linking ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <>
-                <Ionicons name="link" size={22} color={colors.primary} />
-                <Text style={[styles.claimButtonText, { color: colors.primary }]}>
-                  Create & link ring
-                </Text>
-              </>
-            )}
-          </Pressable>
-          {!user ? (
-            <Text style={[styles.hint, { color: colors.textSecondary }]}>
-              Sign in first to link a ring to your profile.
-            </Text>
-          ) : null}
         </ScrollView>
       </ThemedView>
     );
@@ -316,8 +272,6 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   writeButtonText: { fontSize: Layout.body, fontWeight: '600' },
-  sectionLabel: { fontSize: Layout.caption, marginBottom: 8 },
-  divider: { width: '100%', height: 1, backgroundColor: 'rgba(128,128,128,0.3)', marginVertical: Layout.sectionGap },
   button: {
     paddingVertical: 14,
     paddingHorizontal: 24,
