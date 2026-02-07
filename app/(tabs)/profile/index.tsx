@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -10,6 +9,7 @@ import {
     Modal,
     Pressable,
     ScrollView,
+    Share,
     StyleSheet,
     Text,
     TextInput,
@@ -24,8 +24,8 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { createScannedContact, deleteScannedContact, getLinks, getProfileUrl, getScannedContacts, uploadAvatar, uploadVideoIntro } from '@/lib/api';
-import type { ProfileTheme, ScannedContact, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
+import { getLinks, getProfileUrl, uploadAvatar, uploadVideoIntro } from '@/lib/api';
+import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 
@@ -90,17 +90,6 @@ export default function ProfileEditorScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewLinks, setPreviewLinks] = useState<UserLink[]>([]);
-  const [contacts, setContacts] = useState<ScannedContact[]>([]);
-  const [contactModalVisible, setContactModalVisible] = useState(false);
-  const [contactForm, setContactForm] = useState({
-    name: '',
-    title: '',
-    company: '',
-    email: '',
-    phone: '',
-    website: '',
-  });
-  const [savingContact, setSavingContact] = useState(false);
 
   // Sync editForm when entering edit mode
   useEffect(() => {
@@ -217,14 +206,17 @@ export default function ProfileEditorScreen() {
       return;
     }
     const url = getProfileUrl(profile.username);
-    const canShare = await Sharing.isAvailableAsync();
-    if (canShare) {
-      await Sharing.shareAsync(url);
-    } else {
+    try {
+      await Share.share({
+        message: url,
+        url,
+        title: profile.name?.trim() || 'My RingTap profile',
+      });
+    } catch (e) {
       await Clipboard.setStringAsync(url);
       Alert.alert('Link copied', 'Profile link copied to clipboard.');
     }
-  }, [profile?.username]);
+  }, [profile?.username, profile?.name]);
 
   const updateTheme = useCallback(
     (themeUpdates: Partial<ProfileTheme>) => {
@@ -252,66 +244,12 @@ export default function ProfileEditorScreen() {
     }
   }, [profileLoading, profile, user?.id, user?.email, updateProfile, refresh]);
 
-  // Load links and scanned contacts when tab is focused
+  // Load links when tab is focused
   useFocusEffect(
     useCallback(() => {
       if (!user?.id) return;
       getLinks(user.id).then(setPreviewLinks);
-      getScannedContacts(user.id).then(setContacts);
     }, [user?.id])
-  );
-
-  const openAddContact = useCallback(() => {
-    setContactForm({ name: '', title: '', company: '', email: '', phone: '', website: '' });
-    setContactModalVisible(true);
-  }, []);
-
-  const saveContact = useCallback(async () => {
-    if (!user?.id) return;
-    const { name, title, company, email, phone, website } = contactForm;
-    if (!name.trim()) {
-      Alert.alert('Name required', 'Enter at least a name for this contact.');
-      return;
-    }
-    setSavingContact(true);
-    try {
-      const created = await createScannedContact(user.id, {
-        name: name.trim(),
-        title: title.trim(),
-        company: company.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        website: website.trim(),
-        avatarUrl: null,
-        profileUrl: null,
-        source: 'manual',
-      });
-      if (created) {
-        setContacts((prev) => [created, ...prev]);
-        setContactModalVisible(false);
-      }
-    } catch (e) {
-      Alert.alert('Error', 'Could not save contact.');
-    } finally {
-      setSavingContact(false);
-    }
-  }, [user?.id, contactForm]);
-
-  const removeContact = useCallback(
-    (contact: ScannedContact) => {
-      Alert.alert('Remove contact', `Remove ${contact.name} from your contacts?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            const ok = await deleteScannedContact(contact.id);
-            if (ok) setContacts((prev) => prev.filter((c) => c.id !== contact.id));
-          },
-        },
-      ]);
-    },
-    []
   );
 
   if (profileLoading || !profile) {
@@ -619,73 +557,6 @@ export default function ProfileEditorScreen() {
               </View>
             </View>
 
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Scanned contacts</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>People you've scanned — business cards & contact info</Text>
-              <Pressable
-                style={[styles.addContactButton, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                onPress={openAddContact}
-              >
-                <Ionicons name="person-add-outline" size={22} color={colors.accent} />
-                <Text style={[styles.addContactButtonText, { color: colors.text }]}>Add contact</Text>
-              </Pressable>
-              {contacts.length === 0 ? (
-                <View style={[styles.contactsEmpty, { backgroundColor: colors.surface }]}>
-                  <Ionicons name="people-outline" size={40} color={colors.textSecondary} />
-                  <Text style={[styles.contactsEmptyText, { color: colors.textSecondary }]}>No contacts yet</Text>
-                  <Text style={[styles.contactsEmptyHint, { color: colors.textSecondary }]}>Add someone you met or scanned</Text>
-                </View>
-              ) : (
-                <View style={styles.contactsList}>
-                  {contacts.map((contact) => (
-                    <View key={contact.id} style={[styles.contactCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-                      <View style={styles.contactCardHeader}>
-                        {contact.avatarUrl ? (
-                          <Image source={{ uri: contact.avatarUrl }} style={styles.contactAvatar} />
-                        ) : (
-                          <View style={[styles.contactAvatarPlaceholder, { backgroundColor: colors.borderLight }]}>
-                            <Ionicons name="person" size={24} color={colors.textSecondary} />
-                          </View>
-                        )}
-                        <View style={styles.contactCardHeadline}>
-                          <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{contact.name}</Text>
-                          {(contact.title || contact.company) ? (
-                            <Text style={[styles.contactTitle, { color: colors.textSecondary }]} numberOfLines={1}>
-                              {[contact.title, contact.company].filter(Boolean).join(' · ')}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <Pressable onPress={() => removeContact(contact)} style={styles.contactDelete}>
-                          <Ionicons name="trash-outline" size={20} color={colors.destructive} />
-                        </Pressable>
-                      </View>
-                      {(contact.email || contact.phone || contact.website) ? (
-                        <View style={[styles.contactDetails, { borderTopColor: colors.borderLight }]}>
-                          {contact.email ? (
-                            <View style={styles.contactRow}>
-                              <Ionicons name="mail-outline" size={14} color={colors.textSecondary} />
-                              <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{contact.email}</Text>
-                            </View>
-                          ) : null}
-                          {contact.phone ? (
-                            <View style={styles.contactRow}>
-                              <Ionicons name="call-outline" size={14} color={colors.textSecondary} />
-                              <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{contact.phone}</Text>
-                            </View>
-                          ) : null}
-                          {contact.website ? (
-                            <View style={styles.contactRow}>
-                              <Ionicons name="globe-outline" size={14} color={colors.textSecondary} />
-                              <Text style={[styles.contactDetailText, { color: colors.textSecondary }]} numberOfLines={1}>{contact.website}</Text>
-                            </View>
-                          ) : null}
-                        </View>
-                      ) : null}
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
           </>
         )}
       </ScrollView>
@@ -710,77 +581,6 @@ export default function ProfileEditorScreen() {
         </View>
       </Modal>
 
-      {/* Add contact modal */}
-      <Modal visible={contactModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modal, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Add contact</Text>
-            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>Business card / contact info</Text>
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Name *"
-              placeholderTextColor={colors.textSecondary}
-              value={contactForm.name}
-              onChangeText={(v) => setContactForm((f) => ({ ...f, name: v }))}
-            />
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Title"
-              placeholderTextColor={colors.textSecondary}
-              value={contactForm.title}
-              onChangeText={(v) => setContactForm((f) => ({ ...f, title: v }))}
-            />
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Company"
-              placeholderTextColor={colors.textSecondary}
-              value={contactForm.company}
-              onChangeText={(v) => setContactForm((f) => ({ ...f, company: v }))}
-            />
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Email"
-              placeholderTextColor={colors.textSecondary}
-              value={contactForm.email}
-              onChangeText={(v) => setContactForm((f) => ({ ...f, email: v }))}
-              keyboardType="email-address"
-            />
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Phone"
-              placeholderTextColor={colors.textSecondary}
-              value={contactForm.phone}
-              onChangeText={(v) => setContactForm((f) => ({ ...f, phone: v }))}
-              keyboardType="phone-pad"
-            />
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Website"
-              placeholderTextColor={colors.textSecondary}
-              value={contactForm.website}
-              onChangeText={(v) => setContactForm((f) => ({ ...f, website: v }))}
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-            <View style={styles.modalActions}>
-              <Pressable style={[styles.modalCancel, { borderColor: colors.borderLight }]} onPress={() => setContactModalVisible(false)}>
-                <Text style={[styles.modalCancelText, { color: colors.text }]}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalSave, { backgroundColor: colors.accent }]}
-                onPress={saveContact}
-                disabled={savingContact}
-              >
-                {savingContact ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <Text style={[styles.modalSaveText, { color: colors.primary }]}>Save contact</Text>
-                )}
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ThemedView>
   );
 }
@@ -926,46 +726,6 @@ const styles = StyleSheet.create({
     borderRadius: Layout.radiusMd,
   },
   secondaryButtonText: { fontWeight: '600' },
-  addContactButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Layout.inputGap,
-    height: Layout.buttonHeight,
-    borderWidth: 1,
-    borderRadius: Layout.radiusMd,
-    marginBottom: Layout.rowGap,
-  },
-  addContactButtonText: { fontSize: Layout.body, fontWeight: '600' },
-  contactsEmpty: {
-    padding: Layout.cardPadding,
-    borderRadius: Layout.radiusLg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
-  contactsEmptyText: { fontSize: Layout.body, fontWeight: '600', marginTop: Layout.rowGap },
-  contactsEmptyHint: { fontSize: Layout.caption, marginTop: 4 },
-  contactsList: { gap: Layout.inputGap },
-  contactCard: {
-    padding: 16,
-    borderRadius: Layout.radiusLg,
-    borderWidth: 1,
-  },
-  contactCardHeader: { flexDirection: 'row', alignItems: 'center' },
-  contactAvatar: { width: 44, height: 44, borderRadius: 22 },
-  contactAvatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactCardHeadline: { flex: 1, marginLeft: Layout.rowGap, minWidth: 0 },
-  contactName: { fontSize: Layout.body, fontWeight: '600' },
-  contactTitle: { fontSize: Layout.caption, marginTop: 2 },
-  contactDelete: { padding: Layout.tightGap },
-  contactDetails: { marginTop: Layout.rowGap, paddingTop: Layout.rowGap, borderTopWidth: 1 },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: Layout.tightGap, marginBottom: 4 },
   contactDetailText: { fontSize: Layout.caption, flex: 1 },
   modalOverlay: {

@@ -18,7 +18,7 @@ import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { claimRing, getProfileUrl, getRingStatus, type RingStatus } from '@/lib/api';
+import { claimRing, getProfileUrlNfc, getRingStatus, type RingStatus } from '@/lib/api';
 import { writeProfileUrlToNfcTag } from '@/lib/nfcWriter';
 
 export default function ActivateScreen() {
@@ -100,7 +100,7 @@ export default function ActivateScreen() {
 
   // No ring ID: first-tap flow — write profile URL to ring
   if (!uid.trim()) {
-    const profileUrl = profile?.username ? getProfileUrl(profile.username) : null;
+    const profileUrl = profile?.username ? getProfileUrlNfc(profile.username) : null;
 
     const handleWriteToRing = async () => {
       if (!profileUrl) {

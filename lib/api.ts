@@ -20,6 +20,16 @@ export function getProfileUrl(username: string): string {
   return `${PROFILE_URL_BASE}/${username}`;
 }
 
+/** URL for NFC tap tracking — use when writing to NFC tag */
+export function getProfileUrlNfc(username: string): string {
+  return `${PROFILE_URL_BASE}/nfc/${username}`;
+}
+
+/** URL for QR scan tracking — use for QR code value */
+export function getProfileUrlQr(username: string): string {
+  return `${PROFILE_URL_BASE}/qr/${username}`;
+}
+
 // --- Ring (NFC activation) — calls Next.js API ---
 export type RingStatus = {
   status: 'unclaimed' | 'claimed';
@@ -410,10 +420,13 @@ export async function getAnalytics(
   }
 
   const events = (rawEvents ?? []) as Array<{ type: string; created_at: string }>;
-  const profileViews = events.filter((e) => e.type === 'profile_view').length;
+  const profileViewCount = events.filter((e) => e.type === 'profile_view').length;
+  const nfcTapCount = events.filter((e) => e.type === 'nfc_tap').length;
+  const qrScanCount = events.filter((e) => e.type === 'qr_scan').length;
+  const profileViews = profileViewCount + nfcTapCount + qrScanCount;
   const linkClicks = events.filter((e) => e.type === 'link_click').length;
-  const nfcTaps = events.filter((e) => e.type === 'nfc_tap').length;
-  const qrScans = events.filter((e) => e.type === 'qr_scan').length;
+  const nfcTaps = nfcTapCount;
+  const qrScans = qrScanCount;
 
   const byDay: AnalyticsSummary['byDay'] = [];
   const dayMap = new Map<string, { profile_view: number; link_click: number; nfc_tap: number; qr_scan: number }>();

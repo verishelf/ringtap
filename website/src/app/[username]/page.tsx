@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup', 'upgrade']);
+const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup', 'upgrade', 'nfc', 'qr']);
 
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',
@@ -73,11 +73,19 @@ function downloadVCard(profile: ProfileData): void {
   URL.revokeObjectURL(url);
 }
 
+type AnalyticsRecordType = 'profile_view' | 'nfc_tap' | 'qr_scan';
+
 export default function UsernameProfilePage() {
   const params = useParams();
+  const pathname = usePathname();
   const router = useRouter();
   const username = typeof params.username === 'string' ? params.username : '';
   const slug = username?.toLowerCase();
+  const recordType: AnalyticsRecordType = useMemo(() => {
+    if (pathname?.startsWith('/nfc/')) return 'nfc_tap';
+    if (pathname?.startsWith('/qr/')) return 'qr_scan';
+    return 'profile_view';
+  }, [pathname]);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +140,7 @@ export default function UsernameProfilePage() {
     window.location.replace(deepLink);
   }, [userId, profile, isInApp]);
 
-  // Record profile view for analytics (once per load)
+  // Record view for analytics by source (profile_view, nfc_tap, or qr_scan) — once per load
   const recordedView = useRef(false);
   useEffect(() => {
     if (!profile?.id || recordedView.current) return;
@@ -140,9 +148,9 @@ export default function UsernameProfilePage() {
     fetch('/api/analytics/record', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile_id: profile.id, type: 'profile_view' }),
+      body: JSON.stringify({ profile_id: profile.id, type: recordType }),
     }).catch(() => {});
-  }, [profile?.id]);
+  }, [profile?.id, recordType]);
 
   useEffect(() => {
     fetchProfile();

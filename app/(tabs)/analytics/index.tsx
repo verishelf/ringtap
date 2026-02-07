@@ -1,41 +1,77 @@
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
+import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { getAnalytics } from '@/lib/api';
 import type { AnalyticsSummary } from '@/lib/supabase/types';
 
+const EMPTY_ANALYTICS: AnalyticsSummary = {
+  profileViews: 0,
+  linkClicks: 0,
+  nfcTaps: 0,
+  qrScans: 0,
+  byDay: [],
+};
+
 type Period = 7 | 30 | 90;
 
 export default function AnalyticsScreen() {
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const { isPro } = useSubscription();
+  const { signOut } = useSession();
   const colors = useThemeColors();
   const [period, setPeriod] = useState<Period>(30);
   const [data, setData] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    setError(null);
     if (!profile?.id) {
       setData(null);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const result = await getAnalytics(profile.id, period);
-    setData(result);
-    setLoading(false);
+    try {
+      const result = await getAnalytics(profile.id, period);
+      setData(result);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const isAuthError = /refresh token|session|unauthorized|invalid.*token/i.test(msg);
+      setError(isAuthError ? 'Session expired. Sign in again to see analytics.' : 'Couldn’t load analytics.');
+      setData(EMPTY_ANALYTICS);
+    } finally {
+      setLoading(false);
+    }
   }, [profile?.id, period]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    refresh();
+  }, [refresh]);
+
+  const handleSignOutAndRetry = useCallback(() => {
+    Alert.alert(
+      'Sign in again',
+      'Sign out and sign back in to restore your session, then open Analytics.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+      ]
+    );
+  }, [signOut]);
 
   if (!isPro) {
     return (
@@ -51,7 +87,57 @@ export default function AnalyticsScreen() {
     );
   }
 
-  if (loading || !data) {
+  if (!profile?.id && !profileLoading && !loading) {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={[styles.centered, styles.errorBlock]}>
+          <Ionicons name="person-outline" size={48} color={colors.textSecondary} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Sign in to see analytics</Text>
+          <Text style={[styles.errorSubtitle, { color: colors.textSecondary }]}>
+            Add a username in Profile so we can track views and link clicks.
+          </Text>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  if (loading && !data) {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </ThemedView>
+    );
+  }
+
+  if (error && data) {
+    return (
+      <ThemedView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <View style={[styles.errorCard, { backgroundColor: colors.surface }]}>
+            <Ionicons name="warning-outline" size={40} color={colors.accent} />
+            <Text style={[styles.errorTitle, { color: colors.text }]}>{error}</Text>
+            <View style={styles.errorActions}>
+              <Pressable style={[styles.retryButton, { borderColor: colors.accent }]} onPress={handleRetry}>
+                <Text style={[styles.retryButtonText, { color: colors.accent }]}>Retry</Text>
+              </Pressable>
+              <Pressable style={[styles.retryButton, { borderColor: colors.accent }]} onPress={handleSignOutAndRetry}>
+                <Text style={[styles.retryButtonText, { color: colors.accent }]}>Sign out</Text>
+              </Pressable>
+            </View>
+          </View>
+          <Text style={[styles.chartTitle, { color: colors.text }]}>Last period (cached)</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>{data.profileViews}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Profile views</Text>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    );
+  }
+
+  if (!data) {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.centered}>
@@ -239,4 +325,16 @@ const styles = StyleSheet.create({
   },
   lockedTitle: { fontSize: 20, fontWeight: '600', marginTop: 16 },
   lockedSubtitle: { fontSize: Layout.bodySmall, marginTop: Layout.tightGap, textAlign: 'center' },
+  errorBlock: { padding: Layout.screenPadding },
+  errorTitle: { fontSize: 18, fontWeight: '600', marginTop: 16, textAlign: 'center' },
+  errorSubtitle: { fontSize: Layout.bodySmall, marginTop: Layout.tightGap, textAlign: 'center' },
+  errorCard: {
+    padding: Layout.cardPadding,
+    borderRadius: Layout.radiusMd,
+    alignItems: 'center',
+    marginBottom: Layout.sectionGap,
+  },
+  errorActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  retryButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: Layout.radiusMd, borderWidth: 1 },
+  retryButtonText: { fontSize: Layout.body, fontWeight: '600' },
 });

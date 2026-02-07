@@ -10,7 +10,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
-import { getProfileUrl } from '@/lib/api';
+import { getProfileUrlQr } from '@/lib/api';
 
 const QR_SIZE = 280;
 
@@ -19,7 +19,7 @@ export default function QRShareScreen() {
   const { profile } = useProfile();
   const [saving, setSaving] = useState(false);
   const qrRef = useRef<View>(null);
-  const profileUrl = profile?.username ? getProfileUrl(profile.username) : null;
+  const profileUrl = profile?.username ? getProfileUrlQr(profile.username) : null;
 
   const saveQR = useCallback(async () => {
     if (!profileUrl) {
