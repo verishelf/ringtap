@@ -464,13 +464,15 @@ export default function ProfileEditorScreen() {
             <View style={[styles.viewCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               {/* Centered header: avatar, name, title, tagline */}
               <View style={styles.viewCardHeaderCentered}>
-                {profile.avatarUrl ? (
-                  <Image source={{ uri: profile.avatarUrl }} style={styles.viewCardAvatarLarge} />
-                ) : (
-                  <View style={[styles.viewCardAvatarPlaceholder, { backgroundColor: colors.borderLight }]}>
-                    <Ionicons name="person" size={48} color={colors.textSecondary} />
-                  </View>
-                )}
+                <View style={[styles.viewCardAvatarWrap, isPro && styles.viewCardAvatarProRing]}>
+                  {profile.avatarUrl ? (
+                    <Image source={{ uri: profile.avatarUrl }} style={styles.viewCardAvatarLarge} />
+                  ) : (
+                    <View style={[styles.viewCardAvatarPlaceholder, { backgroundColor: colors.borderLight }]}>
+                      <Ionicons name="person" size={48} color={colors.textSecondary} />
+                    </View>
+                  )}
+                </View>
                 <View style={styles.viewCardNameRow}>
                   <Text style={[styles.viewCardName, { color: colors.text }]} numberOfLines={1}>
                     {profile.name?.trim() || 'Your name'}
@@ -595,6 +597,7 @@ export default function ProfileEditorScreen() {
               onSaveContact={copyProfileLink}
               footerText={profile.username ? 'Tap or scan the QR to connect instantly via RingTap.' : undefined}
               showVerified={isPro}
+              showProRing={isPro}
             />
           </ScrollView>
         </View>
@@ -628,7 +631,9 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   viewCardHeaderCentered: { alignItems: 'center', marginBottom: Layout.rowGap },
-  viewCardAvatarLarge: { width: 88, height: 88, borderRadius: 44, marginBottom: Layout.rowGap },
+  viewCardAvatarWrap: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: Layout.rowGap },
+  viewCardAvatarProRing: { width: 94, height: 94, borderRadius: 47, borderWidth: 3, borderColor: '#D4AF37', marginBottom: Layout.rowGap },
+  viewCardAvatarLarge: { width: 88, height: 88, borderRadius: 44 },
   viewCardAvatarPlaceholder: {
     width: 88,
     height: 88,

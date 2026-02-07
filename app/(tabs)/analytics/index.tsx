@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
@@ -56,6 +57,12 @@ export default function AnalyticsScreen() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (profile?.id && isPro) refresh();
+    }, [profile?.id, isPro, refresh])
+  );
 
   const handleRetry = useCallback(() => {
     setError(null);

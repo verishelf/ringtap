@@ -58,9 +58,13 @@ interface ProfileScanPreviewProps {
   footerText?: string;
   /** When true, show a verified checkmark next to the name (e.g. for Pro). */
   showVerified?: boolean;
+  /** When true, show a gold ring around the profile avatar (e.g. for Pro). */
+  showProRing?: boolean;
 }
 
-export function ProfileScanPreview({ profile, links, onSaveContact, footerText, showVerified }: ProfileScanPreviewProps) {
+const PRO_RING_COLOR = '#D4AF37';
+
+export function ProfileScanPreview({ profile, links, onSaveContact, footerText, showVerified, showProRing }: ProfileScanPreviewProps) {
   const colors = useThemeColors();
   const accent = profile.theme?.accentColor ?? colors.accent;
   const shape = profile.theme?.buttonShape ?? 'rounded';
@@ -90,13 +94,15 @@ export function ProfileScanPreview({ profile, links, onSaveContact, footerText, 
       <View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
         {/* Centered header: avatar, name, title, tagline */}
         <View style={styles.headerCentered}>
-          {profile.avatarUrl ? (
-            <Image source={{ uri: profile.avatarUrl }} style={styles.avatarLarge} />
-          ) : (
-            <View style={[styles.avatarLargePlaceholder, { backgroundColor: colors.borderLight }]}>
-              <Ionicons name="person" size={48} color={colors.textSecondary} />
-            </View>
-          )}
+          <View style={[styles.avatarWrap, showProRing && styles.avatarProRing]}>
+            {profile.avatarUrl ? (
+              <Image source={{ uri: profile.avatarUrl }} style={styles.avatarLarge} />
+            ) : (
+              <View style={[styles.avatarLargePlaceholder, { backgroundColor: colors.borderLight }]}>
+                <Ionicons name="person" size={48} color={colors.textSecondary} />
+              </View>
+            )}
+          </View>
           <View style={styles.nameRow}>
             <Text style={[styles.nameCentered, { color: colors.text }]} numberOfLines={1}>
               {profile.name?.trim() || 'Your name'}
@@ -258,14 +264,15 @@ const styles = StyleSheet.create({
     padding: Layout.cardPadding,
   },
   headerCentered: { alignItems: 'center', marginBottom: Layout.rowGap },
-  avatarLarge: { width: 88, height: 88, borderRadius: 44, marginBottom: Layout.rowGap },
+  avatarWrap: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: Layout.rowGap },
+  avatarProRing: { width: 94, height: 94, borderRadius: 47, borderWidth: 3, borderColor: PRO_RING_COLOR, marginBottom: Layout.rowGap },
+  avatarLarge: { width: 88, height: 88, borderRadius: 44 },
   avatarLargePlaceholder: {
     width: 88,
     height: 88,
     borderRadius: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Layout.rowGap,
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   nameCentered: { fontSize: 22, fontWeight: '700', textAlign: 'center' },

@@ -80,6 +80,18 @@ export async function createAndClaimRing(userId: string): Promise<{ success: boo
   }
 }
 
+/** Unlink all rings owned by the current user (RLS: user can update own rings). */
+export async function unlinkMyRings(): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Sign in to manage your ring' };
+  const { error } = await supabase
+    .from('rings')
+    .update({ owner_user_id: null, status: 'unclaimed', updated_at: new Date().toISOString() })
+    .eq('owner_user_id', user.id);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
 // --- Profile ---
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   const { data, error } = await supabase
@@ -413,10 +425,11 @@ export async function getAnalytics(
     .from('analytics_events')
     .select('type, created_at')
     .eq('profile_id', profileId)
-    .gte('created_at', fromDate.toISOString());
+    .gte('created_at', fromDate.toISOString())
+    .order('created_at', { ascending: true });
 
   if (error) {
-    return { profileViews: 0, linkClicks: 0, nfcTaps: 0, qrScans: 0, byDay: [] };
+    throw new Error(error.message || 'Failed to load analytics');
   }
 
   const events = (rawEvents ?? []) as Array<{ type: string; created_at: string }>;

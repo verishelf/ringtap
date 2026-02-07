@@ -26,14 +26,23 @@ export default function ContactsScreen() {
   const [loading, setLoading] = useState(true);
 
   const loadContacts = useCallback(async () => {
-    const list = await getSavedContacts();
-    setContacts(list);
-    setLoading(false);
+    setLoading(true);
+    try {
+      const list = await getSavedContacts();
+      setContacts(list ?? []);
+    } catch {
+      setContacts([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     if (user) loadContacts();
-    else setLoading(false);
+    else {
+      setContacts([]);
+      setLoading(false);
+    }
   }, [user, loadContacts]);
 
   // Refetch when screen is focused so new saves (e.g. from web "Save to app") appear without restarting

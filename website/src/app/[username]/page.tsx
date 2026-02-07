@@ -199,14 +199,18 @@ export default function UsernameProfilePage() {
       return;
     }
     if (RESERVED.has(slug)) {
+      setLoading(false);
       router.replace('/');
       return;
     }
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
-      const res = await fetch(`/api/profile?username=${encodeURIComponent(slug)}`);
+      const res = await fetch(`/api/profile?username=${encodeURIComponent(slug)}`, { signal: controller.signal });
       const text = await res.text();
+      clearTimeout(timeoutId);
       if (!res.ok) {
         let msg = 'Failed to load';
         if (res.status === 404) msg = 'Profile not found';
@@ -224,8 +228,13 @@ export default function UsernameProfilePage() {
       }
       const json = JSON.parse(text);
       setProfile(json);
-    } catch {
-      setError('Failed to load. Check your connection or try www.ringtap.me/' + slug);
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if ((e as Error)?.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError('Failed to load. Check your connection or try www.ringtap.me/' + slug);
+      }
     } finally {
       setLoading(false);
     }
@@ -303,17 +312,21 @@ export default function UsernameProfilePage() {
         <div className="rounded-2xl border border-border-light bg-surface overflow-hidden">
           {/* Centered header: avatar, name, title, tagline */}
           <div className="pt-8 pb-4 px-6 text-center">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt=""
-                className="mx-auto rounded-full object-cover bg-surface-elevated border border-border-light mb-4 w-[88px] h-[88px]"
-              />
-            ) : (
-              <div className="w-[88px] h-[88px] mx-auto rounded-full bg-surface-elevated border border-border-light flex items-center justify-center text-3xl text-muted-light mb-4">
-                {profile.name?.charAt(0) ?? '?'}
-              </div>
-            )}
+            <div
+              className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-surface-elevated ${profile.plan === 'pro' ? 'w-[94px] h-[94px] border-[3px] border-[#D4AF37]' : 'w-[88px] h-[88px] border border-border-light'}`}
+            >
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  className="h-[88px] w-[88px] rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-surface-elevated text-3xl text-muted-light">
+                  {profile.name?.charAt(0) ?? '?'}
+                </div>
+              )}
+            </div>
             <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
               {profile.name?.trim() || 'No name'}
               {profile.plan === 'pro' ? (

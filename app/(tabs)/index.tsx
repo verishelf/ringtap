@@ -19,6 +19,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { getAnalytics, getSavedContacts, getScannedContacts } from '@/lib/api';
 import type { SavedContact } from '@/lib/api';
@@ -30,12 +31,14 @@ const RING_SIZE = 140;
 const RING_STROKE = 3;
 const INNER_CIRCLE = 64;
 const STORE_URL = 'https://www.ringtap.me/store';
+const PRO_RING_COLOR = '#D4AF37';
 
 type RecentContact = { type: 'scanned'; data: ScannedContact } | { type: 'saved'; data: SavedContact };
 
 export default function HomeScreen() {
   const { user } = useSession();
   const { profile } = useProfile();
+  const { isPro } = useSubscription();
   const colors = useThemeColors();
   const [recentContacts, setRecentContacts] = useState<RecentContact[]>([]);
   const [tapsThisWeek, setTapsThisWeek] = useState(0);
@@ -110,15 +113,20 @@ export default function HomeScreen() {
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Manage your RingTap card</Text>
           </View>
-          <Link href="/(tabs)/profile" asChild>
-            <Pressable style={[styles.profileIconWrap, { backgroundColor: colors.surface }]}>
-              {profile?.avatarUrl ? (
-                <Image source={{ uri: profile.avatarUrl }} style={styles.profileAvatar} />
-              ) : (
-                <Ionicons name="person-circle-outline" size={36} color={colors.accent} />
-              )}
-            </Pressable>
-          </Link>
+          <View style={[styles.profileCircleWrap, isPro && styles.profileCircleWrapPro]}>
+            {isPro ? (
+              <View style={styles.profileGoldRing} pointerEvents="none" />
+            ) : null}
+            <Link href="/(tabs)/profile" asChild>
+              <Pressable style={[styles.profileIconWrap, { backgroundColor: colors.surface }]}>
+                {profile?.avatarUrl ? (
+                  <Image source={{ uri: profile.avatarUrl }} style={styles.profileAvatar} />
+                ) : (
+                  <Ionicons name="person-circle-outline" size={36} color={colors.accent} />
+                )}
+              </Pressable>
+            </Link>
+          </View>
         </View>
 
         {/* Tap to share — glowing rings */}
@@ -269,13 +277,29 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1, minWidth: 0 },
   greeting: { fontSize: 28, fontWeight: '700' },
   subtitle: { fontSize: Layout.body, marginTop: 4 },
+  profileCircleWrap: {
+    marginLeft: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileCircleWrapPro: {
+    width: 50,
+    height: 50,
+  },
+  profileGoldRing: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: PRO_RING_COLOR,
+  },
   profileIconWrap: {
     width: 44,
     height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
     overflow: 'hidden',
   },
   profileAvatar: { width: 44, height: 44, borderRadius: 22 },
