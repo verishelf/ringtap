@@ -4,7 +4,25 @@ import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+declare global {
+  interface Window {
+    gtag?: (command: string, ...args: unknown[]) => void;
+    dataLayer?: unknown[];
+  }
+}
+
 const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup', 'upgrade', 'nfc', 'qr']);
+
+/** Send event to GA4 (matches app analytics: taps, scans, link clicks) */
+function sendGA4Event(eventName: string, params?: Record<string, string | number | undefined>) {
+  if (typeof window === 'undefined') return;
+  const p = { ...params };
+  if (window.gtag) {
+    window.gtag('event', eventName, p);
+  } else if (Array.isArray(window.dataLayer)) {
+    window.dataLayer.push(['event', eventName, p]);
+  }
+}
 
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',
@@ -225,7 +243,7 @@ export default function UsernameProfilePage() {
     window.location.replace(deepLink);
   }, [userId, profile, isInApp]);
 
-  // Record view for analytics by source (profile_view, nfc_tap, or qr_scan) — once per load
+  // Record view for analytics by source (profile_view, nfc_tap, or qr_scan) — once per load; also send to GA4
   const recordedView = useRef(false);
   useEffect(() => {
     if (!profile?.id || recordedView.current) return;
@@ -235,7 +253,12 @@ export default function UsernameProfilePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ profile_id: profile.id, type: recordType }),
     }).catch(() => {});
-  }, [profile?.id, recordType]);
+    sendGA4Event(recordType, {
+      profile_username: profile.username,
+      profile_id: profile.id,
+      source: recordType,
+    });
+  }, [profile?.id, profile?.username, recordType]);
 
   useEffect(() => {
     fetchProfile();
@@ -345,6 +368,7 @@ export default function UsernameProfilePage() {
                     {profile.email?.trim() ? (
                       <a
                         href={`mailto:${profile.email}`}
+                        onClick={() => sendGA4Event('link_click', { profile_username: profile.username, link_type: 'email', link_url: `mailto:${profile.email}` })}
                         className="flex items-center gap-2 text-muted-light hover:text-accent transition-colors"
                       >
                         <ContactIcon type="mail" />
@@ -356,6 +380,7 @@ export default function UsernameProfilePage() {
                         href={ensureUrl(profile.website)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => sendGA4Event('link_click', { profile_username: profile.username, link_type: 'website', link_url: ensureUrl(profile.website!) })}
                         className="flex items-center gap-2 text-muted-light hover:text-accent transition-colors"
                       >
                         <ContactIcon type="globe" />
@@ -365,6 +390,7 @@ export default function UsernameProfilePage() {
                     {profile.phone?.trim() ? (
                       <a
                         href={`tel:${profile.phone}`}
+                        onClick={() => sendGA4Event('link_click', { profile_username: profile.username, link_type: 'phone', link_url: `tel:${profile.phone}` })}
                         className="flex items-center gap-2 text-muted-light hover:text-accent transition-colors"
                       >
                         <ContactIcon type="call" />
@@ -387,6 +413,7 @@ export default function UsernameProfilePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       title={SOCIAL_LABELS[key] ?? key}
+                      onClick={() => sendGA4Event('link_click', { profile_username: profile.username, link_type: 'social', link_platform: key, link_url: ensureUrl(url) })}
                       className="inline-flex items-center justify-center rounded-xl border border-border-light bg-surface-elevated p-3 text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors"
                       aria-label={`${SOCIAL_LABELS[key] ?? key}`}
                     >
@@ -416,6 +443,13 @@ export default function UsernameProfilePage() {
                             }),
                           }).catch(() => {});
                         }
+                        sendGA4Event('link_click', {
+                          profile_username: profile.username,
+                          link_type: 'custom',
+                          link_id: link.id,
+                          link_title: link.title || link.url,
+                          link_url: ensureUrl(link.url),
+                        });
                       }}
                       className="block rounded-xl bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity"
                     >
