@@ -88,6 +88,7 @@ type ProfileData = {
   website?: string;
   social_links?: Record<string, string>;
   links?: { id: string; title: string; url: string; type: string }[];
+  plan?: string;
 };
 
 function ensureUrl(url: string): string {
@@ -262,8 +263,15 @@ export default function UsernameProfilePage() {
                 {profile.name?.charAt(0) ?? '?'}
               </div>
             )}
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
               {profile.name?.trim() || 'No name'}
+              {profile.plan === 'pro' ? (
+                <span className="text-accent inline-flex shrink-0" title="Verified Pro">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                  </svg>
+                </span>
+              ) : null}
             </h1>
             {profile.title?.trim() ? (
               <p className="text-muted-light mt-1">{profile.title}</p>

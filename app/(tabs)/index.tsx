@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -111,7 +112,11 @@ export default function HomeScreen() {
           </View>
           <Link href="/(tabs)/profile" asChild>
             <Pressable style={[styles.profileIconWrap, { backgroundColor: colors.surface }]}>
-              <Ionicons name="person-circle-outline" size={36} color={colors.accent} />
+              {profile?.avatarUrl ? (
+                <Image source={{ uri: profile.avatarUrl }} style={styles.profileAvatar} />
+              ) : (
+                <Ionicons name="person-circle-outline" size={36} color={colors.accent} />
+              )}
             </Pressable>
           </Link>
         </View>
@@ -271,7 +276,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
+    overflow: 'hidden',
   },
+  profileAvatar: { width: 44, height: 44, borderRadius: 22 },
   scanRingWrap: {
     alignItems: 'center',
     marginBottom: Layout.sectionGap,

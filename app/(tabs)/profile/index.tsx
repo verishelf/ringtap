@@ -471,9 +471,14 @@ export default function ProfileEditorScreen() {
                     <Ionicons name="person" size={48} color={colors.textSecondary} />
                   </View>
                 )}
-                <Text style={[styles.viewCardName, { color: colors.text }]} numberOfLines={1}>
-                  {profile.name?.trim() || 'Your name'}
-                </Text>
+                <View style={styles.viewCardNameRow}>
+                  <Text style={[styles.viewCardName, { color: colors.text }]} numberOfLines={1}>
+                    {profile.name?.trim() || 'Your name'}
+                  </Text>
+                  {isPro ? (
+                    <Ionicons name="checkmark-circle" size={22} color={colors.accent} style={styles.verifiedBadge} />
+                  ) : null}
+                </View>
                 {profile.title?.trim() ? (
                   <Text style={[styles.viewCardTitle, { color: colors.textSecondary }]} numberOfLines={1}>{profile.title}</Text>
                 ) : null}
@@ -589,6 +594,7 @@ export default function ProfileEditorScreen() {
               links={previewLinks}
               onSaveContact={copyProfileLink}
               footerText={profile.username ? 'Tap or scan the QR to connect instantly via RingTap.' : undefined}
+              showVerified={isPro}
             />
           </ScrollView>
         </View>
@@ -631,7 +637,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Layout.rowGap,
   },
+  viewCardNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   viewCardName: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
+  verifiedBadge: { marginLeft: 2 },
   viewCardTitle: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
   viewCardTagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center' },
   viewCardVideoWrap: { width: '100%', aspectRatio: 16 / 9, marginBottom: Layout.rowGap, borderRadius: Layout.radiusMd, overflow: 'hidden' },

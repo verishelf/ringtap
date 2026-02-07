@@ -109,6 +109,15 @@ export async function GET(request: NextRequest) {
       .order('sort_order', { ascending: true });
     if (!linksError && Array.isArray(linksData)) links = linksData;
 
+    // Plan for verified badge (Pro)
+    let plan: string = 'free';
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('plan')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (sub?.plan === 'pro') plan = 'pro';
+
     return NextResponse.json({
       id: profile.id,
       user_id: userId,
@@ -122,6 +131,7 @@ export async function GET(request: NextRequest) {
       website: profile.website,
       social_links: profile.social_links ?? {},
       links,
+      plan,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

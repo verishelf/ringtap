@@ -56,9 +56,11 @@ interface ProfileScanPreviewProps {
   onSaveContact?: () => void;
   /** Optional footer line(s) shown below the main CTA. */
   footerText?: string;
+  /** When true, show a verified checkmark next to the name (e.g. for Pro). */
+  showVerified?: boolean;
 }
 
-export function ProfileScanPreview({ profile, links, onSaveContact, footerText }: ProfileScanPreviewProps) {
+export function ProfileScanPreview({ profile, links, onSaveContact, footerText, showVerified }: ProfileScanPreviewProps) {
   const colors = useThemeColors();
   const accent = profile.theme?.accentColor ?? colors.accent;
   const shape = profile.theme?.buttonShape ?? 'rounded';
@@ -95,9 +97,14 @@ export function ProfileScanPreview({ profile, links, onSaveContact, footerText }
               <Ionicons name="person" size={48} color={colors.textSecondary} />
             </View>
           )}
-          <Text style={[styles.nameCentered, { color: colors.text }]} numberOfLines={1}>
-            {profile.name?.trim() || 'Your name'}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={[styles.nameCentered, { color: colors.text }]} numberOfLines={1}>
+              {profile.name?.trim() || 'Your name'}
+            </Text>
+            {showVerified ? (
+              <Ionicons name="checkmark-circle" size={22} color={accent} style={styles.verifiedBadge} />
+            ) : null}
+          </View>
           {profile.title?.trim() ? (
             <Text style={[styles.titleCentered, { color: colors.textSecondary }]} numberOfLines={1}>
               {profile.title}
@@ -260,7 +267,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Layout.rowGap,
   },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   nameCentered: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
+  verifiedBadge: { marginLeft: 2 },
   titleCentered: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
   tagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center', paddingHorizontal: 8 },
   videoWrap: { width: '100%', aspectRatio: 16 / 9, marginBottom: Layout.rowGap, borderRadius: Layout.radiusMd, overflow: 'hidden' },
