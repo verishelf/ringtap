@@ -9,6 +9,7 @@ type ProfileRow = {
   title: string;
   bio: string;
   avatar_url: string | null;
+  video_intro_url: string | null;
   email: string;
   phone: string;
   website: string;
@@ -126,6 +127,7 @@ export async function GET(request: NextRequest) {
       title: profile.title,
       bio: profile.bio,
       avatar_url: profile.avatar_url,
+      video_intro_url: profile.video_intro_url ?? null,
       email: profile.email,
       phone: profile.phone,
       website: profile.website,

@@ -83,6 +83,7 @@ type ProfileData = {
   title: string;
   bio: string;
   avatar_url: string | null;
+  video_intro_url?: string | null;
   email?: string;
   phone?: string;
   website?: string;
@@ -283,6 +284,22 @@ export default function UsernameProfilePage() {
             ) : null}
             <p className="text-muted text-xs mt-2">ringtap.me/{profile.username}</p>
           </div>
+
+          {profile.video_intro_url?.trim() ? (
+            <div className="px-6 pb-4">
+              <div className="rounded-xl overflow-hidden bg-black/5 aspect-video max-w-md mx-auto">
+                <video
+                  src={profile.video_intro_url}
+                  controls
+                  playsInline
+                  className="w-full h-full object-contain"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+          ) : null}
 
           {(profile.bio?.trim() || hasContact || socialLinks.length > 0 || links.length > 0) && (
             <div className="border-t border-border-light px-6 py-4 space-y-4">
