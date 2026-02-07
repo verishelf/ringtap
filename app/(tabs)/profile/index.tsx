@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { ResizeMode, Video } from 'expo-av';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -117,11 +118,9 @@ export default function ProfileEditorScreen() {
     try {
       const { url, error } = await uploadAvatar(user.id, result.assets[0].uri);
       if (url) {
+        await updateProfile({ avatarUrl: url });
+        await refresh();
         if (isEditing && editForm) setEditForm((f) => ({ ...f, avatarUrl: url }));
-        else {
-          await updateProfile({ avatarUrl: url });
-          await refresh();
-        }
       } else {
         Alert.alert('Upload failed', error ?? 'Try again.');
       }
@@ -153,8 +152,9 @@ export default function ProfileEditorScreen() {
     try {
       const { url, error } = await uploadVideoIntro(user.id, result.assets[0].uri);
       if (url) {
+        await updateProfile({ videoIntroUrl: url });
+        await refresh();
         if (isEditing && editForm) setEditForm((f) => ({ ...f, videoIntroUrl: url }));
-        else await updateProfile({ videoIntroUrl: url });
       } else if (error) {
         Alert.alert('Upload failed', error);
       }
@@ -163,7 +163,7 @@ export default function ProfileEditorScreen() {
     } finally {
       setUploadingVideo(false);
     }
-  }, [user?.id, updateProfile, isPro, isEditing, editForm]);
+  }, [user?.id, updateProfile, refresh, isPro, isEditing, editForm]);
 
   const startEditing = useCallback(() => {
     if (profile) setEditForm(initEditForm(profile));
@@ -482,6 +482,19 @@ export default function ProfileEditorScreen() {
                 ) : null}
               </View>
 
+              {profile.videoIntroUrl ? (
+                <View style={styles.viewCardVideoWrap}>
+                  <Video
+                    source={{ uri: profile.videoIntroUrl }}
+                    style={styles.viewCardVideo}
+                    resizeMode={ResizeMode.CONTAIN}
+                    useNativeControls
+                    isLooping={false}
+                    shouldPlay={false}
+                  />
+                </View>
+              ) : null}
+
               {(profile.bio?.trim() || profile.email?.trim() || profile.phone?.trim() || profile.website?.trim() || Object.entries(profile.socialLinks || {}).some(([, v]) => v?.trim())) ? (
                 <>
                   <View style={[styles.viewCardSeparator, { backgroundColor: colors.borderLight }]} />
@@ -621,6 +634,8 @@ const styles = StyleSheet.create({
   viewCardName: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
   viewCardTitle: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
   viewCardTagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center' },
+  viewCardVideoWrap: { width: '100%', aspectRatio: 16 / 9, marginBottom: Layout.rowGap, borderRadius: Layout.radiusMd, overflow: 'hidden' },
+  viewCardVideo: { width: '100%', height: '100%' },
   viewCardSeparator: { height: StyleSheet.hairlineWidth, marginVertical: Layout.rowGap },
   viewCardSectionTitle: { fontSize: Layout.body, fontWeight: '700', marginBottom: Layout.tightGap },
   viewCardBio: { fontSize: Layout.bodySmall, lineHeight: 22, marginBottom: Layout.rowGap },

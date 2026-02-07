@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { ResizeMode, Video } from 'expo-av';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useMemo } from 'react';
@@ -108,6 +109,19 @@ export function ProfileScanPreview({ profile, links, onSaveContact, footerText }
             </Text>
           ) : null}
         </View>
+
+        {profile.videoIntroUrl ? (
+          <View style={styles.videoWrap}>
+            <Video
+              source={{ uri: profile.videoIntroUrl }}
+              style={styles.videoIntro}
+              resizeMode={ResizeMode.CONTAIN}
+              useNativeControls
+              isLooping={false}
+              shouldPlay={false}
+            />
+          </View>
+        ) : null}
 
         {hasContent ? (
           <>
@@ -249,6 +263,8 @@ const styles = StyleSheet.create({
   nameCentered: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
   titleCentered: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
   tagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center', paddingHorizontal: 8 },
+  videoWrap: { width: '100%', aspectRatio: 16 / 9, marginBottom: Layout.rowGap, borderRadius: Layout.radiusMd, overflow: 'hidden' },
+  videoIntro: { width: '100%', height: '100%' },
   separator: { height: StyleSheet.hairlineWidth, marginVertical: Layout.rowGap },
   sectionHeading: { fontSize: Layout.body, fontWeight: '700', marginBottom: Layout.tightGap },
   bio: { fontSize: Layout.bodySmall, lineHeight: 22, marginBottom: Layout.rowGap },

@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase } from '@/lib/supabase/supabaseClient';
 import type { AnalyticsSummary, ProfileTheme, ScannedContact, ScannedContactSource, UserLink, UserProfile } from '@/lib/supabase/types';
@@ -467,21 +467,29 @@ export async function getSubscription(userId: string): Promise<{ plan: string; s
 }
 
 // --- Storage (avatars, video) ---
-/** Read local file as ArrayBuffer. Uses FileSystem for file:// (reliable on RN); fetch fallback for other URIs. */
+/** Read file as ArrayBuffer. Uses FileSystem + base64 for file:// (RN/Expo Go); fetch only for remote URIs. */
 async function readFileAsArrayBuffer(uri: string, defaultMime = 'image/jpeg'): Promise<{ data: ArrayBuffer; mimeType: string }> {
   const ext = uri.split('.').pop()?.split('?')[0]?.toLowerCase() ?? 'jpg';
   const mimeType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'mp4' || ext === 'mov' ? 'video/mp4' : defaultMime;
 
   if (uri.startsWith('file://')) {
-    const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+    const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
     const data = decodeBase64(base64);
     return { data, mimeType };
   }
 
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  const data = await blob.arrayBuffer();
-  return { data, mimeType: blob.type || mimeType };
+  const data = await new Promise<ArrayBuffer>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', uri, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
+      else reject(new Error(`HTTP ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.send();
+  });
+  return { data, mimeType };
 }
 
 export type UploadResult = { url: string | null; error?: string };
