@@ -188,9 +188,9 @@ export default function AnalyticsScreen() {
     { value: 90, label: '90 days' },
   ];
 
-  // Build chart data by day
+  // Build chart data by day (include today; last bar = today)
   const dayMap = new Map<string, { profile_view: number; link_click: number; nfc_tap: number; qr_scan: number }>();
-  const start = dayjs().subtract(period, 'day');
+  const start = dayjs().subtract(period - 1, 'day');
   for (let i = 0; i < period; i++) {
     const d = start.add(i, 'day').format('YYYY-MM-DD');
     dayMap.set(d, { profile_view: 0, link_click: 0, nfc_tap: 0, qr_scan: 0 });
@@ -287,28 +287,34 @@ export default function AnalyticsScreen() {
                       }
                     }}
                   >
-                    {trackWidth > 0 &&
-                      (() => {
-                        let leftPx = 0;
-                        return activityOrder.map((key) => {
+                    {trackWidth > 0 && d.total > 0 && (
+                      <View style={[styles.barSegmentRow, { width: trackWidth }]}>
+                        {activityOrder.map((key) => {
                           const count = d[key];
                           if (count <= 0) return null;
-                          const widthPx = Math.max(1, (count / d.total) * trackWidth);
-                          const segmentStyle = {
-                            position: 'absolute' as const,
-                            left: leftPx,
-                            width: widthPx,
-                            height: 20,
-                            backgroundColor: ACTIVITY_COLORS[key],
-                            borderTopLeftRadius: leftPx === 0 ? Layout.radiusSm : 0,
-                            borderBottomLeftRadius: leftPx === 0 ? Layout.radiusSm : 0,
-                            borderTopRightRadius: leftPx + widthPx >= trackWidth - 1 ? Layout.radiusSm : 0,
-                            borderBottomRightRadius: leftPx + widthPx >= trackWidth - 1 ? Layout.radiusSm : 0,
-                          };
-                          leftPx += widthPx;
-                          return <View key={key} style={[styles.barSegmentAbs, segmentStyle]} />;
-                        });
-                      })()}
+                          const widthPx = Math.max(1, Math.floor((count / d.total) * trackWidth));
+                          const segments = activityOrder.filter((k) => d[k] > 0);
+                          const isFirst = segments[0] === key;
+                          const isLast = segments[segments.length - 1] === key;
+                          return (
+                            <View
+                              key={key}
+                              style={[
+                                styles.barSegmentBlock,
+                                {
+                                  width: widthPx,
+                                  backgroundColor: ACTIVITY_COLORS[key],
+                                  borderTopLeftRadius: isFirst ? Layout.radiusSm : 0,
+                                  borderBottomLeftRadius: isFirst ? Layout.radiusSm : 0,
+                                  borderTopRightRadius: isLast ? Layout.radiusSm : 0,
+                                  borderBottomRightRadius: isLast ? Layout.radiusSm : 0,
+                                },
+                              ]}
+                            />
+                          );
+                        })}
+                      </View>
+                    )}
                   </View>
                   <Text style={[styles.barValue, { color: colors.text }]}>{d.total}</Text>
                 </View>
@@ -377,9 +383,10 @@ const styles = StyleSheet.create({
   chartWrap: { borderRadius: Layout.radiusMd, padding: 16 },
   barRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Layout.inputGap, gap: Layout.inputGap },
   barLabel: { width: 36, fontSize: Layout.caption },
-  barTrack: { flex: 1, height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden' },
+  barTrack: { flex: 1, height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden', justifyContent: 'center' },
+  barSegmentRow: { flexDirection: 'row', height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden' },
+  barSegmentBlock: { height: '100%', minWidth: 1 },
   barFill: { height: '100%', borderRadius: Layout.radiusSm },
-  barSegmentAbs: { borderRadius: 0 },
   barValue: { width: 28, fontSize: Layout.caption, fontWeight: '600', textAlign: 'right' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
