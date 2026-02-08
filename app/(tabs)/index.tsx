@@ -77,11 +77,15 @@ export default function HomeScreen() {
     }
     setLoadingDashboard(true);
     try {
+      // Resolve profile id so we load analytics even when useProfile hasn't populated yet
+      const profileId = profile?.id ?? (await getProfile(user.id))?.id ?? null;
       const [scanned, saved, conversations, analytics] = await Promise.all([
         getScannedContacts(user.id),
         getSavedContacts(),
         getConversations(user.id),
-        profile?.id ? getAnalytics(profile.id, 7) : Promise.resolve({ nfcTaps: 0, qrScans: 0, profileViews: 0 }),
+        profileId
+          ? getAnalytics(profileId, 7)
+          : Promise.resolve({ profileViews: 0, linkClicks: 0, nfcTaps: 0, qrScans: 0 }),
       ]);
       setRecentMessages((conversations ?? []).slice(0, 5));
       const merged: RecentContact[] = [
@@ -116,6 +120,8 @@ export default function HomeScreen() {
       setRecentMessages([]);
       setRecentAvatarByUserId({});
       setRecentIsProByUserId({});
+      setTapsThisWeek(0);
+      setViewsThisWeek(0);
     } finally {
       setLoadingDashboard(false);
     }
@@ -253,18 +259,20 @@ export default function HomeScreen() {
                       style={styles.recentAvatarWrap}
                     />
                     <View style={styles.recentInfo}>
-                      <NameWithVerified
-                        name={`${conv.peerName || 'Unknown'}${conv.hasUnread ? ' · New' : ''}`}
-                        isPro={conv.peerIsPro}
-                      />
+                      <View style={styles.recentNameRow}>
+                        {conv.hasUnread ? (
+                          <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
+                        ) : null}
+                        <NameWithVerified
+                          name={`${conv.peerName || 'Unknown'}${conv.hasUnread ? ' · New' : ''}`}
+                          isPro={conv.peerIsPro}
+                        />
+                      </View>
                       <Text style={[styles.recentTime, { color: colors.textSecondary }]} numberOfLines={1}>
                         {conv.lastMessageBody || 'No messages yet'}
                         {conv.lastMessageAt ? ` · ${dayjs(conv.lastMessageAt).fromNow()}` : ''}
                       </Text>
                     </View>
-                    {conv.hasUnread ? (
-                      <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
-                    ) : null}
                   </Pressable>
                 </Link>
               ))
@@ -433,7 +441,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   unreadBadgeText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  unreadDot: { width: 10, height: 10, borderRadius: 5, marginLeft: 8 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  recentNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'nowrap' },
   seeAll: { fontSize: Layout.caption, fontWeight: '600' },
   recentEmpty: { fontSize: Layout.bodySmall, fontStyle: 'italic', paddingVertical: 8 },
   recentRow: {

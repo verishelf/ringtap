@@ -343,6 +343,8 @@ export async function getSubscription(userId: string) {
 }
 
 // --- Analytics ---
+const ANALYTICS_TYPES = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan'] as const;
+
 export async function getAnalytics(
   profileId: string,
   periodDays: number
@@ -356,19 +358,25 @@ export async function getAnalytics(
     .eq('profile_id', profileId)
     .gte('created_at', sinceStr);
   if (error) throw new Error(error.message);
-  const events = data ?? [];
+  const events = (data ?? []) as Array<{ type: string; created_at: string }>;
   const profileViews = events.filter((e) => e.type === 'profile_view').length;
   const linkClicks = events.filter((e) => e.type === 'link_click').length;
   const nfcTaps = events.filter((e) => e.type === 'nfc_tap').length;
   const qrScans = events.filter((e) => e.type === 'qr_scan').length;
   const byDay: Array<{ date: string; count: number; type: string }> = [];
-  const dayMap = new Map<string, number>();
-  events.forEach((e) => {
-    const date = (e.created_at as string).slice(0, 10);
-    dayMap.set(date, (dayMap.get(date) ?? 0) + 1);
+  const dayTypeMap = new Map<string, number>();
+  for (const e of events) {
+    const date = e.created_at.slice(0, 10);
+    const key = `${date}:${e.type}`;
+    dayTypeMap.set(key, (dayTypeMap.get(key) ?? 0) + 1);
+  }
+  dayTypeMap.forEach((count, key) => {
+    const [date, type] = key.split(':');
+    if (date && ANALYTICS_TYPES.includes(type as (typeof ANALYTICS_TYPES)[number])) {
+      byDay.push({ date, type, count });
+    }
   });
-  dayMap.forEach((count, date) => byDay.push({ date, count, type: 'all' }));
-  byDay.sort((a, b) => a.date.localeCompare(b.date));
+  byDay.sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
   return {
     profileViews,
     linkClicks,
