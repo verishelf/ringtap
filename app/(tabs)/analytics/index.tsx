@@ -209,6 +209,14 @@ export default function AnalyticsScreen() {
     });
   const maxTotal = Math.max(1, ...chartData.map((d) => d.total));
 
+  const ACTIVITY_COLORS = {
+    profile_view: colors.accent,
+    link_click: '#e91e63',
+    nfc_tap: '#4caf50',
+    qr_scan: '#ff9800',
+  } as const;
+  const activityOrder: (keyof typeof ACTIVITY_COLORS)[] = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan'];
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -260,13 +268,26 @@ export default function AnalyticsScreen() {
               {chartData.map((d) => (
                 <View key={d.date} style={styles.barRow}>
                   <Text style={[styles.barLabel, { color: colors.textSecondary }]}>{d.label}</Text>
-                  <View style={[styles.barTrack, { backgroundColor: colors.borderLight }]}>
-                    <View
-                      style={[
-                        styles.barFill,
-                        { width: `${(d.total / maxTotal) * 100}%`, backgroundColor: colors.accent },
-                      ]}
-                    />
+                  <View style={[styles.barTrack, { backgroundColor: colors.borderLight, flexDirection: 'row' }]}>
+                    {activityOrder.map((key) => {
+                      const count = d[key];
+                      if (count <= 0) return null;
+                      const pct = (count / maxTotal) * 100;
+                      const segments = activityOrder.filter((k) => d[k] > 0);
+                      const isFirst = segments[0] === key;
+                      const isLast = segments[segments.length - 1] === key;
+                      return (
+                        <View
+                          key={key}
+                          style={[
+                            styles.barSegment,
+                            { width: `${pct}%`, backgroundColor: ACTIVITY_COLORS[key] },
+                            isFirst && styles.barSegmentFirst,
+                            isLast && styles.barSegmentLast,
+                          ]}
+                        />
+                      );
+                    })}
                   </View>
                   <Text style={[styles.barValue, { color: colors.text }]}>{d.total}</Text>
                 </View>
@@ -274,19 +295,19 @@ export default function AnalyticsScreen() {
             </View>
             <View style={styles.legend}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
+                <View style={[styles.legendDot, { backgroundColor: ACTIVITY_COLORS.profile_view }]} />
                 <Text style={[styles.legendText, { color: colors.textSecondary }]}>Views</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#e91e63' }]} />
+                <View style={[styles.legendDot, { backgroundColor: ACTIVITY_COLORS.link_click }]} />
                 <Text style={[styles.legendText, { color: colors.textSecondary }]}>Clicks</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#4caf50' }]} />
+                <View style={[styles.legendDot, { backgroundColor: ACTIVITY_COLORS.nfc_tap }]} />
                 <Text style={[styles.legendText, { color: colors.textSecondary }]}>NFC</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#ff9800' }]} />
+                <View style={[styles.legendDot, { backgroundColor: ACTIVITY_COLORS.qr_scan }]} />
                 <Text style={[styles.legendText, { color: colors.textSecondary }]}>QR</Text>
               </View>
             </View>
@@ -337,6 +358,9 @@ const styles = StyleSheet.create({
   barLabel: { width: 36, fontSize: Layout.caption },
   barTrack: { flex: 1, height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: Layout.radiusSm },
+  barSegment: { height: '100%', minWidth: 0 },
+  barSegmentFirst: { borderTopLeftRadius: Layout.radiusSm, borderBottomLeftRadius: Layout.radiusSm },
+  barSegmentLast: { borderTopRightRadius: Layout.radiusSm, borderBottomRightRadius: Layout.radiusSm },
   barValue: { width: 28, fontSize: Layout.caption, fontWeight: '600', textAlign: 'right' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
