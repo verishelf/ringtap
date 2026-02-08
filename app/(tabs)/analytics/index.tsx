@@ -268,26 +268,35 @@ export default function AnalyticsScreen() {
               {chartData.map((d) => (
                 <View key={d.date} style={styles.barRow}>
                   <Text style={[styles.barLabel, { color: colors.textSecondary }]}>{d.label}</Text>
-                  <View style={[styles.barTrack, { backgroundColor: colors.borderLight, flexDirection: 'row' }]}>
-                    {activityOrder.map((key) => {
-                      const count = d[key];
-                      if (count <= 0) return null;
-                      const pct = (count / maxTotal) * 100;
-                      const segments = activityOrder.filter((k) => d[k] > 0);
-                      const isFirst = segments[0] === key;
-                      const isLast = segments[segments.length - 1] === key;
-                      return (
-                        <View
-                          key={key}
-                          style={[
-                            styles.barSegment,
-                            { width: `${pct}%`, backgroundColor: ACTIVITY_COLORS[key] },
-                            isFirst && styles.barSegmentFirst,
-                            isLast && styles.barSegmentLast,
-                          ]}
-                        />
-                      );
-                    })}
+                  <View style={[styles.barTrack, { backgroundColor: colors.borderLight }]}>
+                    <View
+                      style={[
+                        styles.barStack,
+                        {
+                          width: `${(d.total / maxTotal) * 100}%`,
+                          flexDirection: 'row',
+                        },
+                      ]}
+                    >
+                      {activityOrder.map((key) => {
+                        const count = d[key];
+                        if (count <= 0) return null;
+                        const segments = activityOrder.filter((k) => d[k] > 0);
+                        const isFirst = segments[0] === key;
+                        const isLast = segments[segments.length - 1] === key;
+                        return (
+                          <View
+                            key={key}
+                            style={[
+                              styles.barSegment,
+                              { flex: count, backgroundColor: ACTIVITY_COLORS[key] },
+                              isFirst && styles.barSegmentFirst,
+                              isLast && styles.barSegmentLast,
+                            ]}
+                          />
+                        );
+                      })}
+                    </View>
                   </View>
                   <Text style={[styles.barValue, { color: colors.text }]}>{d.total}</Text>
                 </View>
@@ -356,9 +365,10 @@ const styles = StyleSheet.create({
   chartWrap: { borderRadius: Layout.radiusMd, padding: 16 },
   barRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Layout.inputGap, gap: Layout.inputGap },
   barLabel: { width: 36, fontSize: Layout.caption },
-  barTrack: { flex: 1, height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden' },
+  barTrack: { flex: 1, height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden', justifyContent: 'center' },
+  barStack: { height: '100%', borderRadius: Layout.radiusSm, overflow: 'hidden', flexDirection: 'row' },
   barFill: { height: '100%', borderRadius: Layout.radiusSm },
-  barSegment: { height: '100%', minWidth: 0 },
+  barSegment: { height: '100%', minWidth: 2 },
   barSegmentFirst: { borderTopLeftRadius: Layout.radiusSm, borderBottomLeftRadius: Layout.radiusSm },
   barSegmentLast: { borderTopRightRadius: Layout.radiusSm, borderBottomRightRadius: Layout.radiusSm },
   barValue: { width: 28, fontSize: Layout.caption, fontWeight: '600', textAlign: 'right' },
