@@ -7,7 +7,7 @@ const SITE_URL = "https://www.ringtap.me";
 export const metadata: Metadata = {
   title: "RingTap — Your Digital Business Card | NFC & QR Sharing",
   description:
-    "RingTap is your digital business card. Share your profile instantly with NFC rings, QR codes, or your personal link—ringtap.me/you. Free to start, works on iPhone and Android.",
+    "RingTap is your digital business card. Share your profile instantly with NFC rings, QR codes, or your link—ringtap.me/you. Custom themes, analytics, and your style on the web. Free to start, works on iPhone and Android.",
   keywords: [
     "digital business card",
     "NFC business card",
@@ -15,10 +15,11 @@ export const metadata: Metadata = {
     "QR code business card",
     "ringtap",
     "contact sharing",
+    "profile analytics",
   ],
   openGraph: {
     title: "RingTap — Your Digital Business Card. One Tap.",
-    description: "Share your profile instantly with NFC and QR. Your link: ringtap.me/you. Free to start.",
+    description: "Share your profile with NFC and QR. Your link, your theme: ringtap.me/you. Analytics, custom colors, free to start.",
     url: SITE_URL,
     type: "website",
   },
@@ -49,11 +50,15 @@ export default function Home() {
             </li>
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
-              Works with NFC rings & cards
+              NFC rings & QR — one tap to share
             </li>
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
               Your link: ringtap.me/you
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
+              Pro: your theme & analytics on the web
             </li>
           </ul>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -115,7 +120,7 @@ export default function Home() {
                 step: "4",
                 title: "Save contacts & insights",
                 description:
-                  "Keep a list of people you've met. On Pro, see how many profile views, link clicks, and NFC/QR scans you get.",
+                  "Keep a list of people you've met and see recent messages in the app. On Pro, your dashboard shows taps and views this week, and the Analytics tab breaks down profile views, link clicks, NFC taps, and QR scans.",
               },
             ].map((item) => (
               <div key={item.step} className="relative">
@@ -158,7 +163,7 @@ export default function Home() {
               {
                 title: "Free & Pro",
                 description:
-                  "Free: profile, 2 links, QR, NFC sharing. Pro: unlimited links, themes, video intro, and analytics. Billing via Stripe; cancel anytime.",
+                  "Free: profile, 2 links, QR, NFC sharing. Pro: unlimited links, custom theme (accent color, button shape, Pro border on card and avatar), video intro, and analytics. Your ringtap.me page uses your theme so you look the same everywhere. Billing via Stripe; cancel anytime.",
               },
             ].map((f) => (
               <div key={f.title} className="rounded-2xl border border-border-light bg-surface p-6">
@@ -177,7 +182,7 @@ export default function Home() {
             Simple pricing
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
-            Free forever for your profile and 2 links. Upgrade to Pro for unlimited links, themes, and analytics.
+            Free forever for your profile and 2 links. Pro adds unlimited links, your theme on the web, and analytics (taps, views, clicks).
           </p>
           <div className="mt-16 grid gap-8 sm:grid-cols-2">
             <div className="rounded-2xl border border-border-light bg-surface p-8">
@@ -223,7 +228,11 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
-                  Profile themes (accent, shape)
+                  Profile theme (accent, shape, Pro border)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-accent mt-0.5">✓</span>
+                  Your theme on ringtap.me (web matches app)
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
@@ -231,7 +240,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
-                  Analytics (views, clicks, NFC, QR)
+                  Analytics (views, taps, clicks, NFC, QR)
                 </li>
               </ul>
               <a
@@ -274,7 +283,7 @@ export default function Home() {
               },
               {
                 q: "What's included in Pro?",
-                a: "Pro ($9/month) includes unlimited links, profile themes (accent color and button shape), a short video intro on your profile, and analytics (profile views, link clicks, NFC taps, QR scans). Billing is handled securely by Stripe; you can cancel anytime.",
+                a: "Pro ($9/month) includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Billing is handled securely by Stripe; you can cancel anytime.",
               },
             ].map((faq) => (
               <div key={faq.q}>
@@ -325,7 +334,7 @@ export default function Home() {
             </a>
           </div>
           <p className="mt-6 text-xs text-muted">
-            Free to start. Pro unlocks unlimited links, analytics, and themes. Billing via Stripe.
+            Free to start. Pro unlocks unlimited links, your theme on ringtap.me, and analytics. Billing via Stripe.
           </p>
         </div>
       </section>

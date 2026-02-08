@@ -135,13 +135,26 @@ type ProfileData = {
   social_links?: Record<string, string>;
   links?: { id: string; title: string; url: string; type: string }[];
   plan?: string;
-  theme?: { profileBorderColor?: string };
+  theme?: {
+    profileBorderColor?: string;
+    accentColor?: string;
+    buttonShape?: 'rounded' | 'pill' | 'square';
+  };
 };
 
 function ensureUrl(url: string): string {
   const u = url.trim();
   if (!u) return '#';
   return /^https?:\/\//i.test(u) ? u : `https://${u}`;
+}
+
+/** Button radius class from theme (matches app ProfileTheme.buttonShape) */
+function buttonRadiusClass(shape?: 'rounded' | 'pill' | 'square'): string {
+  switch (shape) {
+    case 'pill': return 'rounded-full';
+    case 'square': return 'rounded';
+    default: return 'rounded-xl';
+  }
 }
 
 /** Build a vCard 3.0 string for Save contact (.vcf) */
@@ -305,6 +318,7 @@ export default function UsernameProfilePage() {
     : [];
   const links = Array.isArray(profile.links) ? profile.links : [];
   const hasContact = !!(profile.email?.trim() || profile.phone?.trim() || profile.website?.trim());
+  const accentColor = profile.theme?.accentColor;
 
   return (
     <div className="min-h-screen bg-background py-10 px-4 sm:px-6">
@@ -313,6 +327,7 @@ export default function UsernameProfilePage() {
         {(() => {
           const proBorderColor = profile.theme?.profileBorderColor ?? '#D4AF37';
           const cardBorderColor = profile.plan === 'pro' ? proBorderColor : undefined;
+          const btnClass = buttonRadiusClass(profile.theme?.buttonShape);
           return (
         <div
           className="rounded-2xl border bg-surface overflow-hidden"
@@ -473,7 +488,8 @@ export default function UsernameProfilePage() {
                           link_url: ensureUrl(link.url),
                         });
                       }}
-                      className="block rounded-xl bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity"
+                      className={`${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity block`}
+                      style={accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : undefined}
                     >
                       {link.title || link.url}
                     </a>
@@ -488,7 +504,8 @@ export default function UsernameProfilePage() {
             <button
               type="button"
               onClick={() => downloadVCard(profile)}
-              className="w-full rounded-xl bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              className={`w-full ${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2`}
+              style={accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : undefined}
             >
               <span aria-hidden>↓</span>
               Save contact
@@ -496,7 +513,7 @@ export default function UsernameProfilePage() {
             {userId && (
               <a
                 href={`${DEEP_LINK_SCHEME}profile/${userId}`}
-                className="block w-full rounded-xl border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors"
+                className={`block w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors`}
               >
                 Save Contact in App
               </a>
@@ -511,7 +528,7 @@ export default function UsernameProfilePage() {
         })()}
 
         <p className="mt-8 text-center text-sm text-muted">
-          <Link href="/" className="text-accent hover:underline">RingTap</Link>
+          <Link href="/" className="text-accent hover:underline" style={accentColor ? { color: accentColor } : undefined}>RingTap</Link>
         </p>
       </div>
     </div>

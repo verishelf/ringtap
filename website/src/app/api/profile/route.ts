@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     const avatarUrl = resolveStorageUrl(supabaseUrl, profile.avatar_url);
     const videoIntroUrl = resolveStorageUrl(supabaseUrl, profile.video_intro_url ?? null);
 
-    const theme = (profile as { theme?: { profileBorderColor?: string } }).theme ?? {};
+    const theme = (profile as { theme?: { profileBorderColor?: string; accentColor?: string; buttonShape?: string } }).theme ?? {};
     return NextResponse.json({
       id: profile.id,
       user_id: userId,
