@@ -23,11 +23,12 @@ export async function POST(request: NextRequest) {
     let supabaseUrl = rawUrl;
     if (supabaseUrl && !/^https?:\/\//i.test(supabaseUrl)) supabaseUrl = 'https://' + supabaseUrl;
     const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').replace(/^["']|["']$/g, '').trim();
-    if (!supabaseUrl || !anonKey) {
-      return NextResponse.json({ error: 'Server missing Supabase config' }, { status: 500 });
+    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').replace(/^["']|["']$/g, '').trim();
+    if (!supabaseUrl || !(anonKey || serviceKey)) {
+      return NextResponse.json({ error: 'Server missing Supabase config (NEXT_PUBLIC_SUPABASE_URL and anon or service key)' }, { status: 500 });
     }
 
-    const supabase = createClient(supabaseUrl, anonKey);
+    const supabase = createClient(supabaseUrl, serviceKey || anonKey);
 
     let profileId: string | null = body.profile_id?.trim() || null;
     if (!profileId && body.username?.trim()) {

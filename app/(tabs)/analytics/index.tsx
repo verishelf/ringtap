@@ -10,7 +10,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { getAnalytics } from '@/lib/api';
+import { getAnalytics, getProfile } from '@/lib/api';
 import type { AnalyticsSummary } from '@/lib/supabase/types';
 
 const EMPTY_ANALYTICS: AnalyticsSummary = {
@@ -26,7 +26,7 @@ type Period = 7 | 30 | 90;
 export default function AnalyticsScreen() {
   const { profile, loading: profileLoading } = useProfile();
   const { isPro } = useSubscription();
-  const { signOut } = useSession();
+  const { user, signOut } = useSession();
   const colors = useThemeColors();
   const [period, setPeriod] = useState<Period>(30);
   const [data, setData] = useState<AnalyticsSummary | null>(null);
@@ -35,14 +35,20 @@ export default function AnalyticsScreen() {
 
   const refresh = useCallback(async () => {
     setError(null);
-    if (!profile?.id) {
+    if (!user?.id) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+    const profileId = profile?.id ?? (await getProfile(user.id))?.id ?? null;
+    if (!profileId) {
       setData(null);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const result = await getAnalytics(profile.id, period);
+      const result = await getAnalytics(profileId, period);
       setData(result);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -52,7 +58,7 @@ export default function AnalyticsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [profile?.id, period]);
+  }, [user?.id, profile?.id, period]);
 
   useEffect(() => {
     refresh();
@@ -60,8 +66,8 @@ export default function AnalyticsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (profile?.id && isPro) refresh();
-    }, [profile?.id, isPro, refresh])
+      if (user?.id && isPro) refresh();
+    }, [user?.id, isPro, refresh])
   );
 
   const handleRetry = useCallback(() => {
@@ -94,12 +100,26 @@ export default function AnalyticsScreen() {
     );
   }
 
-  if (!profile?.id && !profileLoading && !loading) {
+  if (!user?.id && !profileLoading && !loading) {
     return (
       <ThemedView style={styles.container}>
         <View style={[styles.centered, styles.errorBlock]}>
           <Ionicons name="person-outline" size={48} color={colors.textSecondary} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>Sign in to see analytics</Text>
+          <Text style={[styles.errorSubtitle, { color: colors.textSecondary }]}>
+            Sign in and add a username in Profile so we can track views and link clicks.
+          </Text>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  if (user?.id && !data && !loading) {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={[styles.centered, styles.errorBlock]}>
+          <Ionicons name="person-outline" size={48} color={colors.textSecondary} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Create your profile</Text>
           <Text style={[styles.errorSubtitle, { color: colors.textSecondary }]}>
             Add a username in Profile so we can track views and link clicks.
           </Text>

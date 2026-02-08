@@ -98,18 +98,21 @@ export default function ChatScreen() {
       const isMe = item.senderId === user?.id;
       const avatarUrl = isMe ? myAvatarUrl : peerAvatarUrl;
       const showPro = isMe ? myIsPro : peerIsPro;
-      const renderProBadge = () =>
-        showPro ? (
-          <View style={styles.verifiedWrap}>
-            <Ionicons name="checkmark-circle" size={18} color={PRO_RING_COLOR} />
-          </View>
-        ) : null;
+      const avatarWithBadge = (
+        <View style={styles.chatAvatarWithBadge}>
+          <ProAvatar avatarUrl={avatarUrl} isPro={showPro} size="small" />
+          {showPro ? (
+            <View style={styles.verifiedBadgeOnAvatar}>
+              <Ionicons name="checkmark-circle" size={18} color={PRO_RING_COLOR} />
+            </View>
+          ) : null}
+        </View>
+      );
       return (
         <View style={[styles.bubbleRow, isMe ? styles.bubbleRowMe : styles.bubbleRowThem]}>
           {!isMe && (
             <>
-              <ProAvatar avatarUrl={avatarUrl} isPro={showPro} size="small" style={styles.chatAvatarWrap} />
-              {renderProBadge()}
+              <View style={styles.chatAvatarWrap}>{avatarWithBadge}</View>
             </>
           )}
           <View style={[styles.bubbleWithTime, isMe ? styles.bubbleWithTimeMe : styles.bubbleWithTimeThem]}>
@@ -126,10 +129,7 @@ export default function ChatScreen() {
             </Text>
           </View>
           {isMe && (
-            <>
-              {renderProBadge()}
-              <ProAvatar avatarUrl={avatarUrl} isPro={showPro} size="small" style={styles.chatAvatarWrap} />
-            </>
+            <View style={styles.chatAvatarWrap}>{avatarWithBadge}</View>
           )}
         </View>
       );
@@ -214,7 +214,17 @@ const styles = StyleSheet.create({
   bubbleRowMe: { justifyContent: 'flex-end' },
   bubbleRowThem: { justifyContent: 'flex-start' },
   chatAvatarWrap: { marginHorizontal: 6 },
-  verifiedWrap: { justifyContent: 'center', marginHorizontal: 2 },
+  chatAvatarWithBadge: { position: 'relative' },
+  verifiedBadgeOnAvatar: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
   bubbleWithTime: { maxWidth: '75%' },
   bubbleWithTimeMe: { alignItems: 'flex-end' },
   bubbleWithTimeThem: { alignItems: 'flex-start' },

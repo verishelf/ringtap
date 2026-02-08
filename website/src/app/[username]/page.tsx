@@ -266,15 +266,16 @@ export default function UsernameProfilePage() {
     window.location.replace(deepLink);
   }, [userId, profile, isInApp]);
 
-  // Record view for analytics by source (profile_view, nfc_tap, or qr_scan) — once per load; also send to GA4
+  // Record view for analytics (shows in app Analytics tab) — once per load. Link, NFC, and QR all record here.
   const recordedView = useRef(false);
   useEffect(() => {
     if (!profile?.id || recordedView.current) return;
     recordedView.current = true;
+    const payload = { profile_id: profile.id, username: profile.username, type: recordType };
     fetch('/api/analytics/record', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile_id: profile.id, type: recordType }),
+      body: JSON.stringify(payload),
     }).catch(() => {});
     sendGA4Event(recordType, {
       profile_username: profile.username,
