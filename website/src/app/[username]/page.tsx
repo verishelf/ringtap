@@ -135,6 +135,7 @@ type ProfileData = {
   social_links?: Record<string, string>;
   links?: { id: string; title: string; url: string; type: string }[];
   plan?: string;
+  theme?: { profileBorderColor?: string };
 };
 
 function ensureUrl(url: string): string {
