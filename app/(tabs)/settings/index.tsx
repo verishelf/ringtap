@@ -12,6 +12,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { unlinkMyRings } from '@/lib/api';
 
+const MENU_ICON_SIZE = 22;
+const CHEVRON_SIZE = 20;
+const ICON_BOX_SIZE = 28;
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { user, signOut } = useSession();
@@ -87,36 +91,41 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginTop: Layout.sectionGap }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Ring</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Link href="/activate" asChild>
-              <Pressable style={[styles.menuItem, styles.rowBorder, styles.menuItemWithChevron, { borderBottomColor: colors.borderLight }]}>
-                <View style={styles.menuItemLeft}>
-                  <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
-                  <Text style={[styles.menuText, { color: colors.text }]}>Manage ring</Text>
-                </View>
-                <View style={[styles.menuItemRight, styles.chevronRight]} pointerEvents="none">
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                </View>
-              </Pressable>
-            </Link>
             <Pressable
-              style={[styles.menuItem, styles.menuItemWithChevron]}
+              style={[styles.menuItem, styles.rowBorder, { borderBottomColor: colors.borderLight }]}
+              onPress={() => router.push('/activate')}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="ellipse-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Manage ring</Text>
+              </View>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
               onPress={handleUnlinkRing}
               disabled={unlinking}
             >
               <View style={styles.menuItemLeft}>
-                <Ionicons name="link-outline" size={22} color={colors.accent} />
-                <Text style={[styles.menuText, { color: colors.text }]}>Unlink ring</Text>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="link-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Unlink ring</Text>
               </View>
               {unlinking ? (
-                <View style={[styles.menuItemRight, styles.chevronRight]}>
+                <View style={styles.menuItemRight}>
                   <ActivityIndicator size="small" color={colors.accent} />
                 </View>
               ) : (
-                <View style={[styles.menuItemRight, styles.chevronRight]} pointerEvents="none">
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                <View style={styles.menuItemRight} pointerEvents="none">
+                  <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
                 </View>
               )}
             </Pressable>
@@ -130,11 +139,13 @@ export default function SettingsScreen() {
               <Link href="/(tabs)/settings/manage" asChild>
                 <Pressable style={styles.menuItem}>
                   <View style={styles.menuItemLeft}>
-                    <Ionicons name="card-outline" size={22} color={colors.accent} />
+                    <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                      <Ionicons name="card-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                    </View>
                     <Text style={[styles.menuText, { color: colors.text }]}>Manage subscription</Text>
                   </View>
                   <View style={styles.menuItemRight}>
-                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                    <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
                   </View>
                 </Pressable>
               </Link>
@@ -142,11 +153,13 @@ export default function SettingsScreen() {
               <Link href="/(tabs)/settings/upgrade" asChild>
                 <Pressable style={styles.menuItem}>
                   <View style={styles.menuItemLeft}>
-                    <Ionicons name="rocket-outline" size={22} color={colors.accent} />
+                    <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                      <Ionicons name="rocket-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                    </View>
                     <Text style={[styles.menuText, { color: colors.text }]}>Upgrade to Pro</Text>
                   </View>
                   <View style={styles.menuItemRight}>
-                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                    <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
                   </View>
                 </Pressable>
               </Link>
@@ -157,7 +170,9 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Pressable style={[styles.card, styles.menuItem, { backgroundColor: colors.surface }]} onPress={handleSignOut}>
             <View style={styles.menuItemLeft}>
-              <Ionicons name="log-out-outline" size={22} color={colors.destructive} />
+              <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                <Ionicons name="log-out-outline" size={MENU_ICON_SIZE} color={colors.destructive} />
+              </View>
               <Text style={[styles.menuText, styles.signOutText, { color: colors.destructive }]}>Sign out</Text>
             </View>
           </Pressable>
@@ -201,25 +216,20 @@ const styles = StyleSheet.create({
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     flex: 1,
     minWidth: 0,
+    marginRight: 8,
+  },
+  iconBox: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 0,
-    marginLeft: 8,
-  },
-  menuItemWithChevron: {
-    position: 'relative',
-  },
-  chevronRight: {
-    position: 'absolute',
-    right: Layout.cardPadding,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
+    minWidth: 24,
   },
   menuText: { fontSize: Layout.body, flexShrink: 1 },
   signOutText: {},

@@ -19,7 +19,10 @@ import { useSession } from '@/hooks/useSession';
 import {
   getProfile,
   getLinks,
+  getSavedContacts,
+  getOrCreateConversation,
   saveContact,
+  getSubscription,
   type UserProfile,
   type UserLink,
 } from '@/lib/api';
@@ -35,15 +38,18 @@ export default function ProfileByIdScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAlreadySaved, setIsAlreadySaved] = useState(false);
+  const [profileIsPro, setProfileIsPro] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
-      const [p, l] = await Promise.all([getProfile(id), getLinks(id)]);
+      const [p, l, sub] = await Promise.all([getProfile(id), getLinks(id), getSubscription(id)]);
       setProfile(p ?? null);
       setLinks(l ?? []);
+      setProfileIsPro((sub?.plan as string) === 'pro');
       if (!p) setError('Profile not found');
     } catch {
       setError('Failed to load profile');
@@ -51,6 +57,19 @@ export default function ProfileByIdScreen() {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (!user?.id || !profile || profile.userId === user.id) return;
+    let cancelled = false;
+    getSavedContacts().then((contacts) => {
+      if (!cancelled) {
+        setIsAlreadySaved(contacts.some((c) => c.contactUserId === profile.userId));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, profile?.userId]);
 
   useEffect(() => {
     fetchProfile();
@@ -62,6 +81,7 @@ export default function ProfileByIdScreen() {
     try {
       const result = await saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined);
       if (result.success) {
+        setIsAlreadySaved(true);
         Alert.alert('Contact saved!', undefined, [{ text: 'OK' }]);
       } else {
         Alert.alert('Could not save', result.error ?? 'Try again.');
@@ -72,6 +92,20 @@ export default function ProfileByIdScreen() {
       setSaving(false);
     }
   }, [user, profile]);
+
+  const handleMessage = useCallback(async () => {
+    if (!user || !profile || profile.userId === user.id) return;
+    setSaving(true);
+    try {
+      const conv = await getOrCreateConversation(user.id, profile.userId);
+      if (conv) router.push(`/messages/${conv.id}` as const);
+      else Alert.alert('Error', 'Could not start conversation.');
+    } catch {
+      Alert.alert('Error', 'Could not start conversation.');
+    } finally {
+      setSaving(false);
+    }
+  }, [user, profile, router]);
 
   if (loading) {
     return (
@@ -111,7 +145,10 @@ export default function ProfileByIdScreen() {
         <ProfileScanPreview
           profile={profile}
           links={links}
-          onSaveContact={user?.id !== profile.userId ? handleSaveContact : undefined}
+          onSaveContact={user?.id !== profile.userId && !isAlreadySaved ? handleSaveContact : undefined}
+          onMessage={user?.id !== profile.userId ? handleMessage : undefined}
+          showProRing={profileIsPro}
+          showVerified={profileIsPro}
         />
       </ScrollView>
     </View>

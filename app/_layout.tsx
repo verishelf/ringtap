@@ -8,6 +8,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 
@@ -83,6 +84,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="activate" />
         <Stack.Screen name="profile" />
+        <Stack.Screen name="messages" />
         <Stack.Screen name="setup" />
         <Stack.Screen name="share" options={{ presentation: 'modal' }} />
       </Stack>
@@ -92,10 +94,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <AppearanceProvider>
-        <RootLayoutNav />
-      </AppearanceProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <AppearanceProvider>
+          <RootLayoutNav />
+        </AppearanceProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

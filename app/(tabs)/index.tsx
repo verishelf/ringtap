@@ -15,14 +15,16 @@ import {
     View,
 } from 'react-native';
 
+import { ProAvatar, NameWithVerified } from '@/components/ProBadge';
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { getAnalytics, getSavedContacts, getScannedContacts } from '@/lib/api';
+import { getAnalytics, getConversations, getProfile, getSavedContacts, getScannedContacts, getSubscription } from '@/lib/api';
 import type { SavedContact } from '@/lib/api';
+import type { ConversationWithPeer } from '@/lib/api';
 import type { ScannedContact } from '@/lib/supabase/types';
 
 dayjs.extend(relativeTime);
@@ -41,6 +43,9 @@ export default function HomeScreen() {
   const { isPro } = useSubscription();
   const colors = useThemeColors();
   const [recentContacts, setRecentContacts] = useState<RecentContact[]>([]);
+  const [recentMessages, setRecentMessages] = useState<ConversationWithPeer[]>([]);
+  const [recentAvatarByUserId, setRecentAvatarByUserId] = useState<Record<string, string | null>>({});
+  const [recentIsProByUserId, setRecentIsProByUserId] = useState<Record<string, boolean>>({});
   const [tapsThisWeek, setTapsThisWeek] = useState(0);
   const [viewsThisWeek, setViewsThisWeek] = useState(0);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
@@ -72,22 +77,45 @@ export default function HomeScreen() {
     }
     setLoadingDashboard(true);
     try {
-      const [scanned, saved, analytics] = await Promise.all([
+      const [scanned, saved, conversations, analytics] = await Promise.all([
         getScannedContacts(user.id),
         getSavedContacts(),
+        getConversations(user.id),
         profile?.id ? getAnalytics(profile.id, 7) : Promise.resolve({ nfcTaps: 0, qrScans: 0, profileViews: 0 }),
       ]);
+      setRecentMessages((conversations ?? []).slice(0, 5));
       const merged: RecentContact[] = [
         ...scanned.map((c) => ({ type: 'scanned' as const, data: c })),
         ...saved.map((c) => ({ type: 'saved' as const, data: c })),
       ].sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime());
-      setRecentContacts(merged.slice(0, 10));
+      const list = merged.slice(0, 10);
+      setRecentContacts(list);
+      const userIds = [...new Set(list.map((item) => (item.type === 'saved' ? (item.data as SavedContact).contactUserId : (item.data as ScannedContact).userId)))];
+      const avatarMap: Record<string, string | null> = {};
+      const proMap: Record<string, boolean> = {};
+      await Promise.all(
+        userIds.map(async (uid) => {
+          try {
+            const [p, sub] = await Promise.all([getProfile(uid), getSubscription(uid)]);
+            avatarMap[uid] = p?.avatarUrl?.trim() ?? null;
+            proMap[uid] = (sub?.plan as string) === 'pro';
+          } catch {
+            avatarMap[uid] = null;
+            proMap[uid] = false;
+          }
+        })
+      );
+      setRecentAvatarByUserId(avatarMap);
+      setRecentIsProByUserId(proMap);
       if (analytics && 'nfcTaps' in analytics) {
         setTapsThisWeek(analytics.nfcTaps + analytics.qrScans);
         setViewsThisWeek(analytics.profileViews);
       }
     } catch (_) {
       setRecentContacts([]);
+      setRecentMessages([]);
+      setRecentAvatarByUserId({});
+      setRecentIsProByUserId({});
     } finally {
       setLoadingDashboard(false);
     }
@@ -190,11 +218,64 @@ export default function HomeScreen() {
             )}
           </View>
 
+          {/* Recent messages */}
+          <View style={[styles.recentCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
+            <View style={styles.recentHeader}>
+              <View style={styles.recentHeaderTitleRow}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent messages</Text>
+                {recentMessages.some((c) => c.hasUnread) ? (
+                  <View style={[styles.unreadBadge, { backgroundColor: colors.accent }]}>
+                    <Text style={[styles.unreadBadgeText, { color: colors.primary }]}>New</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Link href="/messages" asChild>
+                <Pressable>
+                  <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
+                </Pressable>
+              </Link>
+            </View>
+            {loadingDashboard ? (
+              <ActivityIndicator size="small" color={colors.accent} style={styles.dashLoader} />
+            ) : recentMessages.length === 0 ? (
+              <Text style={[styles.recentEmpty, { color: colors.textSecondary }]}>
+                No messages yet. Message a saved contact to start.
+              </Text>
+            ) : (
+              recentMessages.map((conv) => (
+                <Link key={conv.id} href={`/messages/${conv.id}` as const} asChild>
+                  <Pressable style={[styles.recentRow, { borderBottomColor: colors.borderLight }]}>
+                    <ProAvatar
+                      avatarUrl={conv.peerAvatarUrl}
+                      isPro={conv.peerIsPro}
+                      size="small"
+                      placeholderLetter={conv.peerName || '?'}
+                      style={styles.recentAvatarWrap}
+                    />
+                    <View style={styles.recentInfo}>
+                      <NameWithVerified
+                        name={`${conv.peerName || 'Unknown'}${conv.hasUnread ? ' · New' : ''}`}
+                        isPro={conv.peerIsPro}
+                      />
+                      <Text style={[styles.recentTime, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {conv.lastMessageBody || 'No messages yet'}
+                        {conv.lastMessageAt ? ` · ${dayjs(conv.lastMessageAt).fromNow()}` : ''}
+                      </Text>
+                    </View>
+                    {conv.hasUnread ? (
+                      <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
+                    ) : null}
+                  </Pressable>
+                </Link>
+              ))
+            )}
+          </View>
+
           {/* Recently scanned cards */}
           <View style={[styles.recentCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
             <View style={styles.recentHeader}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent contacts</Text>
-              <Link href="/(tabs)/profile" asChild>
+              <Link href="/(tabs)/contacts" asChild>
                 <Pressable>
                   <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
                 </Pressable>
@@ -210,21 +291,25 @@ export default function HomeScreen() {
               recentContacts.map((item) => {
                 const isSaved = item.type === 'saved';
                 const id = item.data.id;
+                const contactUserId = isSaved ? (item.data as SavedContact).contactUserId : (item.data as ScannedContact).userId;
                 const name = isSaved
                   ? (item.data.displayName || 'Saved contact').trim()
                   : (item.data.name?.trim() || item.data.email?.trim() || 'Unknown');
                 const createdAt = item.data.createdAt;
+                const storedAvatar = (isSaved ? (item.data as SavedContact).avatarUrl : (item.data as ScannedContact).avatarUrl)?.trim() || null;
+                const avatarUrl = recentAvatarByUserId[contactUserId] ?? storedAvatar ?? null;
+                const isPro = recentIsProByUserId[contactUserId] ?? false;
                 const row = (
                   <View style={[styles.recentRow, { borderBottomColor: colors.borderLight }]}>
-                    <View style={[styles.recentAvatar, { backgroundColor: colors.surfaceElevated }]}>
-                      <Text style={[styles.recentAvatarText, { color: colors.accent }]} numberOfLines={1}>
-                        {name.charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
+                    <ProAvatar
+                      avatarUrl={avatarUrl}
+                      isPro={isPro}
+                      size="small"
+                      placeholderLetter={name}
+                      style={styles.recentAvatarWrap}
+                    />
                     <View style={styles.recentInfo}>
-                      <Text style={[styles.recentName, { color: colors.text }]} numberOfLines={1}>
-                        {name}
-                      </Text>
+                      <NameWithVerified name={name} isPro={isPro} />
                       <Text style={[styles.recentTime, { color: colors.textSecondary }]}>
                         {dayjs(createdAt).fromNow()}
                         {isSaved ? ' · Saved' : ''}
@@ -233,7 +318,7 @@ export default function HomeScreen() {
                   </View>
                 );
                 return isSaved ? (
-                  <Link key={`saved-${id}`} href={`/profile/${(item.data as SavedContact).contactUserId}` as const} asChild>
+                  <Link key={`saved-${id}`} href={`/profile/${contactUserId}` as const} asChild>
                     <Pressable>{row}</Pressable>
                   </Link>
                 ) : (
@@ -341,6 +426,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: Layout.tightGap,
   },
+  recentHeaderTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  unreadBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  unreadBadgeText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  unreadDot: { width: 10, height: 10, borderRadius: 5, marginLeft: 8 },
   seeAll: { fontSize: Layout.caption, fontWeight: '600' },
   recentEmpty: { fontSize: Layout.bodySmall, fontStyle: 'italic', paddingVertical: 8 },
   recentRow: {
@@ -355,8 +448,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  recentAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     marginRight: 12,
   },
+  recentAvatarWrap: { marginRight: 12 },
   recentAvatarText: { fontSize: 15, fontWeight: '700' },
   recentInfo: { flex: 1, minWidth: 0 },
   recentName: { fontSize: Layout.bodySmall, fontWeight: '600' },

@@ -54,6 +54,8 @@ interface ProfileScanPreviewProps {
   links: UserLink[];
   /** Called when "Save Contact" is pressed (e.g. copy profile link). If provided, the Save Contact button is shown. */
   onSaveContact?: () => void;
+  /** Called when "Message" is pressed. If provided, the Message button is shown. */
+  onMessage?: () => void;
   /** Optional footer line(s) shown below the main CTA. */
   footerText?: string;
   /** When true, show a verified checkmark next to the name (e.g. for Pro). */
@@ -64,7 +66,7 @@ interface ProfileScanPreviewProps {
 
 const PRO_RING_COLOR = '#D4AF37';
 
-export function ProfileScanPreview({ profile, links, onSaveContact, footerText, showVerified, showProRing }: ProfileScanPreviewProps) {
+export function ProfileScanPreview({ profile, links, onSaveContact, onMessage, footerText, showVerified, showProRing }: ProfileScanPreviewProps) {
   const colors = useThemeColors();
   const accent = profile.theme?.accentColor ?? colors.accent;
   const shape = profile.theme?.buttonShape ?? 'rounded';
@@ -89,12 +91,15 @@ export function ProfileScanPreview({ profile, links, onSaveContact, footerText, 
     socialWithUrls.length > 0 ||
     links.length > 0;
 
+  const borderColor = (showProRing && (profile.theme?.profileBorderColor ?? PRO_RING_COLOR)) || colors.borderLight;
+  const cardBorderColor = showProRing ? (profile.theme?.profileBorderColor ?? PRO_RING_COLOR) : colors.borderLight;
+
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+      <View style={[styles.card, { borderColor: cardBorderColor, backgroundColor: colors.surface }]}>
         {/* Centered header: avatar, name, title, tagline */}
         <View style={styles.headerCentered}>
-          <View style={[styles.avatarWrap, showProRing && styles.avatarProRing]}>
+          <View style={[styles.avatarWrap, showProRing && [styles.avatarProRing, { borderColor }]]}>
             {profile.avatarUrl ? (
               <Image source={{ uri: profile.avatarUrl }} style={styles.avatarLarge} />
             ) : (
@@ -244,6 +249,16 @@ export function ProfileScanPreview({ profile, links, onSaveContact, footerText, 
               </Pressable>
             )}
 
+            {onMessage && (
+              <Pressable
+                style={[styles.saveContactButton, styles.messageButton, { borderColor: accent, borderRadius: radius }]}
+                onPress={onMessage}
+              >
+                <Ionicons name="chatbubble-outline" size={22} color={accent} />
+                <Text style={[styles.saveContactText, { color: accent }]}>Message</Text>
+              </Pressable>
+            )}
+
             {footerText ? (
               <Text style={[styles.footer, { color: colors.textSecondary }]}>{footerText}</Text>
             ) : null}
@@ -315,6 +330,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: Layout.rowGap,
   },
+  messageButton: { backgroundColor: 'transparent', borderWidth: 2 },
   saveContactText: { fontSize: Layout.body, fontWeight: '700' },
   footer: { fontSize: Layout.caption, textAlign: 'center', lineHeight: 18 },
   placeholder: { fontSize: Layout.caption, fontStyle: 'italic' },

@@ -309,11 +309,19 @@ export default function UsernameProfilePage() {
     <div className="min-h-screen bg-background py-10 px-4 sm:px-6">
       <div className="max-w-lg mx-auto">
         {/* Card — same structure as app ProfileScanPreview */}
-        <div className="rounded-2xl border border-border-light bg-surface overflow-hidden">
+        {(() => {
+          const proBorderColor = profile.theme?.profileBorderColor ?? '#D4AF37';
+          const cardBorderColor = profile.plan === 'pro' ? proBorderColor : undefined;
+          return (
+        <div
+          className="rounded-2xl border bg-surface overflow-hidden"
+          style={cardBorderColor ? { borderColor: cardBorderColor, borderWidth: 2 } : { borderColor: 'var(--border-light)', borderWidth: 1 }}
+        >
           {/* Centered header: avatar, name, title, tagline */}
           <div className="pt-8 pb-4 px-6 text-center">
             <div
-              className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-surface-elevated ${profile.plan === 'pro' ? 'w-[94px] h-[94px] border-[3px] border-[#D4AF37]' : 'w-[88px] h-[88px] border border-border-light'}`}
+              className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-surface-elevated ${profile.plan === 'pro' ? 'w-[94px] h-[94px] border-[3px]' : 'w-[88px] h-[88px] border border-border-light'}`}
+              style={profile.plan === 'pro' ? { borderColor: proBorderColor } : undefined}
             >
               {profile.avatar_url ? (
                 <img
@@ -498,6 +506,8 @@ export default function UsernameProfilePage() {
             </p>
           </div>
         </div>
+          );
+        })()}
 
         <p className="mt-8 text-center text-sm text-muted">
           <Link href="/" className="text-accent hover:underline">RingTap</Link>

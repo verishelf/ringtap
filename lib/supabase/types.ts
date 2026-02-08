@@ -24,6 +24,8 @@ export interface ProfileTheme {
   backgroundGradient: [string, string];
   buttonShape: ButtonShape;
   typography: TypographyStyle;
+  /** Pro: border color for profile card and avatar ring (app preview + web) */
+  profileBorderColor?: string;
 }
 
 export interface UserLink {

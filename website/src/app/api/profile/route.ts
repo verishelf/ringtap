@@ -127,6 +127,7 @@ export async function GET(request: NextRequest) {
     const avatarUrl = resolveStorageUrl(supabaseUrl, profile.avatar_url);
     const videoIntroUrl = resolveStorageUrl(supabaseUrl, profile.video_intro_url ?? null);
 
+    const theme = (profile as { theme?: { profileBorderColor?: string } }).theme ?? {};
     return NextResponse.json({
       id: profile.id,
       user_id: userId,
@@ -142,6 +143,7 @@ export async function GET(request: NextRequest) {
       social_links: profile.social_links ?? {},
       links,
       plan,
+      theme,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

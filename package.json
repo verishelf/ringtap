@@ -14,6 +14,7 @@
     "build:all": "eas build --platform all --profile production"
   },
   "dependencies": {
+    "base64-arraybuffer": "^1.0.2",
     "@expo-google-fonts/space-grotesk": "^0.2.3",
     "@expo/vector-icons": "^15.0.3",
     "@react-navigation/bottom-tabs": "^7.4.0",

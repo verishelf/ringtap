@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -13,10 +12,12 @@ import {
   View,
 } from 'react-native';
 
+import { ProAvatar, NameWithVerified } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
-import { getSavedContacts, deleteSavedContact, type SavedContact } from '@/lib/api';
+import { getSavedContacts, getProfile, getSubscription, deleteSavedContact } from '@/lib/api';
+import type { SavedContact } from '@/lib/api';
 
 export default function ContactsScreen() {
   const router = useRouter();
@@ -24,28 +25,58 @@ export default function ContactsScreen() {
   const { user } = useSession();
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [avatarByUserId, setAvatarByUserId] = useState<Record<string, string | null>>({});
+  const [isProByUserId, setIsProByUserId] = useState<Record<string, boolean>>({});
 
   const loadContacts = useCallback(async () => {
+    if (!user) {
+      setContacts([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const list = await getSavedContacts();
       setContacts(list ?? []);
+      setAvatarByUserId({});
+      setIsProByUserId({});
+      if (list?.length) {
+        const avatarMap: Record<string, string | null> = {};
+        const proMap: Record<string, boolean> = {};
+        await Promise.all(
+          list.map(async (c) => {
+            const url = c.avatarUrl?.trim();
+            if (url) avatarMap[c.contactUserId] = url;
+            else {
+              try {
+                const profile = await getProfile(c.contactUserId);
+                avatarMap[c.contactUserId] = profile?.avatarUrl?.trim() ?? null;
+              } catch {
+                avatarMap[c.contactUserId] = null;
+              }
+            }
+            try {
+              const sub = await getSubscription(c.contactUserId);
+              proMap[c.contactUserId] = (sub?.plan as string) === 'pro';
+            } catch {
+              proMap[c.contactUserId] = false;
+            }
+          })
+        );
+        setAvatarByUserId((prev) => ({ ...prev, ...avatarMap }));
+        setIsProByUserId((prev) => ({ ...prev, ...proMap }));
+      }
     } catch {
       setContacts([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
-    if (user) loadContacts();
-    else {
-      setContacts([]);
-      setLoading(false);
-    }
-  }, [user, loadContacts]);
+    loadContacts();
+  }, [loadContacts]);
 
-  // Refetch when screen is focused so new saves (e.g. from web "Save to app") appear without restarting
   useFocusEffect(
     useCallback(() => {
       if (user) loadContacts();
@@ -71,31 +102,34 @@ export default function ContactsScreen() {
   }, []);
 
   const renderItem: ListRenderItem<SavedContact> = useCallback(
-    ({ item }) => (
-      <Pressable
-        style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-        onPress={() => router.push(`/profile/${item.contactUserId}` as const)}
-      >
-        {item.avatarUrl ? (
-          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatarPlaceholder, { backgroundColor: colors.borderLight }]}>
-            <Ionicons name="person" size={24} color={colors.textSecondary} />
-          </View>
-        )}
-        <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-          {item.displayName || 'Saved contact'}
-        </Text>
+    ({ item }) => {
+      const avatarUrl = item.avatarUrl?.trim() || avatarByUserId[item.contactUserId] || null;
+      const isPro = isProByUserId[item.contactUserId] ?? false;
+      const name = item.displayName || 'Saved contact';
+      return (
         <Pressable
-          onPress={() => handleDelete(item)}
-          hitSlop={12}
-          style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.7 }]}
+          style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+          onPress={() => router.push(`/profile/${item.contactUserId}` as const)}
         >
-          <Ionicons name="trash-outline" size={22} color={colors.textSecondary} />
+          <ProAvatar
+            avatarUrl={avatarUrl}
+            isPro={isPro}
+            size="medium"
+            placeholderLetter={name}
+            style={styles.avatarWrap}
+          />
+          <NameWithVerified name={name} isPro={isPro} containerStyle={styles.nameWrap} />
+          <Pressable
+            onPress={() => handleDelete(item)}
+            hitSlop={12}
+            style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="trash-outline" size={ROW_ICON_SIZE} color={colors.textSecondary} />
+          </Pressable>
         </Pressable>
-      </Pressable>
-    ),
-    [colors, handleDelete, router]
+      );
+    },
+    [colors, avatarByUserId, isProByUserId, handleDelete, router]
   );
 
   if (!user) {
@@ -118,6 +152,16 @@ export default function ContactsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Pressable
+        style={[styles.messagesRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+        onPress={() => router.push('/messages')}
+      >
+        <View style={[styles.messagesIconWrap, { backgroundColor: colors.accent + '33' }]}>
+          <Ionicons name="chatbubbles-outline" size={ROW_ICON_SIZE + 4} color={colors.accent} />
+        </View>
+        <Text style={[styles.messagesLabel, { color: colors.text }]}>Messages</Text>
+        <Ionicons name="chevron-forward" size={ROW_CHEVRON_SIZE} color={colors.textSecondary} />
+      </Pressable>
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
@@ -125,7 +169,7 @@ export default function ContactsScreen() {
         contentContainerStyle={[styles.listContent, contacts.length === 0 && styles.listEmpty]}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No saved contacts yet. Open a profile and tap “Save Contact” to add one.
+            No saved contacts yet. Open a profile and tap "Save Contact" to add one.
           </Text>
         }
       />
@@ -133,11 +177,27 @@ export default function ContactsScreen() {
   );
 }
 
+const ROW_ICON_SIZE = 22;
+const ROW_CHEVRON_SIZE = 20;
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Layout.cardPadding },
-  listContent: { padding: Layout.screenPadding, paddingBottom: 40 },
+  listContent: { paddingHorizontal: Layout.screenPadding, paddingBottom: 40 },
   listEmpty: { flex: 1, justifyContent: 'center', paddingVertical: 40 },
+  messagesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: Layout.screenPadding,
+    marginHorizontal: Layout.screenPadding,
+    marginTop: Layout.screenPadding,
+    marginBottom: 8,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+  },
+  messagesIconWrap: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  messagesLabel: { flex: 1, fontSize: 17, fontWeight: '600' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -147,9 +207,8 @@ const styles = StyleSheet.create({
     borderRadius: Layout.radiusMd,
     borderWidth: 1,
   },
-  avatar: { width: 48, height: 48, borderRadius: 24, marginRight: 12 },
-  avatarPlaceholder: { width: 48, height: 48, borderRadius: 24, marginRight: 12, justifyContent: 'center', alignItems: 'center' },
-  name: { flex: 1, fontSize: 16, fontWeight: '500' },
+  avatarWrap: { marginRight: 12 },
+  nameWrap: { flex: 1 },
   deleteBtn: { padding: 8 },
   emptyText: { textAlign: 'center', fontSize: 15 },
 });

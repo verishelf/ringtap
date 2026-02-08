@@ -60,6 +60,14 @@ function openSocialUrl(url: string) {
 
 const ACCENT_COLORS = [Tokens.accent, '#71717A', '#A1A1AA', '#D4D4D8', '#E4E4E7', '#52525B', '#3F3F46', '#27272A', '#1A1A1D', Tokens.text];
 
+const PROFILE_BORDER_COLORS = [
+  '#D4AF37', '#F59E0B', '#EAB308', '#84CC16', '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9', '#3B82F6',
+  '#6366F1', '#8B5CF6', '#A855F7', '#D946EF', '#EC4899', '#F43F5E', '#EF4444', '#F97316', '#FB923C', '#FBBF24',
+  '#FACC15', '#A3E635', '#4ADE80', '#2DD4BF', '#38BDF8', '#60A5FA', '#818CF8', '#A78BFA', '#C084FC', '#E879F9',
+  '#F472B6', '#FB7185', '#F87171', '#94A3B8', '#64748B', '#475569', '#334155', '#1E293B', '#0F172A', '#FFFFFF',
+  '#E4E4E7', '#D4D4D8', '#A1A1AA', '#71717A', '#52525B', '#3F3F46', '#27272A',
+];
+
 type EditForm = Pick<UserProfile, 'username' | 'name' | 'title' | 'bio' | 'avatarUrl' | 'videoIntroUrl' | 'email' | 'phone' | 'website' | 'socialLinks' | 'theme'>;
 
 function initEditForm(profile: UserProfile): EditForm {
@@ -74,7 +82,7 @@ function initEditForm(profile: UserProfile): EditForm {
     phone: profile.phone,
     website: profile.website,
     socialLinks: { ...profile.socialLinks },
-    theme: { ...profile.theme },
+    theme: { profileBorderColor: '#D4AF37', ...profile.theme },
   };
 }
 
@@ -439,6 +447,21 @@ export default function ProfileEditorScreen() {
                     />
                   ))}
                 </View>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Profile border color</Text>
+                <Text style={[styles.hint, { color: colors.textSecondary }]}>Border around your profile card and avatar (app preview & web)</Text>
+                <View style={styles.colorRowWrap}>
+                  {PROFILE_BORDER_COLORS.map((color, index) => (
+                    <Pressable
+                      key={`border-${index}`}
+                      style={[
+                        styles.colorDot,
+                        { backgroundColor: color },
+                        (editForm.theme.profileBorderColor ?? '#D4AF37') === color && styles.colorDotSelected,
+                      ]}
+                      onPress={() => updateTheme({ profileBorderColor: color })}
+                    />
+                  ))}
+                </View>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>Button shape</Text>
                 <View style={styles.row}>
                   {(['rounded', 'pill', 'square'] as const).map((shape) => (
@@ -461,10 +484,10 @@ export default function ProfileEditorScreen() {
         ) : (
           /* ---------- View mode: read-only profile (layout like scan preview) ---------- */
           <>
-            <View style={[styles.viewCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <View style={[styles.viewCard, { backgroundColor: colors.surface, borderColor: isPro ? (profile.theme?.profileBorderColor ?? '#D4AF37') : colors.borderLight }]}>
               {/* Centered header: avatar, name, title, tagline */}
               <View style={styles.viewCardHeaderCentered}>
-                <View style={[styles.viewCardAvatarWrap, isPro && styles.viewCardAvatarProRing]}>
+                <View style={[styles.viewCardAvatarWrap, isPro && [styles.viewCardAvatarProRing, { borderColor: profile.theme?.profileBorderColor ?? '#D4AF37' }]]}>
                   {profile.avatarUrl ? (
                     <Image source={{ uri: profile.avatarUrl }} style={styles.viewCardAvatarLarge} />
                   ) : (
@@ -721,6 +744,7 @@ const styles = StyleSheet.create({
   },
   videoButtonText: { fontWeight: '600' },
   colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.inputGap, marginBottom: Layout.rowGap },
+  colorRowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: Layout.rowGap },
   colorDot: { width: 36, height: 36, borderRadius: 18 },
   colorDotSelected: { borderWidth: 3, borderColor: '#000' },
   row: { flexDirection: 'row', gap: Layout.rowGap, marginBottom: Layout.rowGap },
