@@ -268,25 +268,29 @@ export default function AnalyticsScreen() {
               {chartData.map((d) => (
                 <View key={d.date} style={styles.barRow}>
                   <Text style={[styles.barLabel, { color: colors.textSecondary }]}>{d.label}</Text>
-                  <View style={[styles.barTrack, { backgroundColor: colors.borderLight, flexDirection: 'row' }]}>
-                    {activityOrder.map((key) => {
-                      const count = d[key];
-                      if (count <= 0) return null;
-                      const segments = activityOrder.filter((k) => d[k] > 0);
-                      const isFirst = segments[0] === key;
-                      const isLast = segments[segments.length - 1] === key;
-                      return (
-                        <View
-                          key={key}
-                          style={[
-                            styles.barSegment,
-                            { flex: count, backgroundColor: ACTIVITY_COLORS[key] },
-                            isFirst && styles.barSegmentFirst,
-                            isLast && styles.barSegmentLast,
-                          ]}
-                        />
-                      );
-                    })}
+                  <View style={[styles.barTrack, { backgroundColor: colors.borderLight }]}>
+                    {(() => {
+                      let leftPct = 0;
+                      return activityOrder.map((key) => {
+                        const count = d[key];
+                        if (count <= 0) return null;
+                        const widthPct = (count / d.total) * 100;
+                        const segmentStyle = {
+                          position: 'absolute' as const,
+                          left: `${leftPct}%`,
+                          width: `${widthPct}%`,
+                          top: 0,
+                          bottom: 0,
+                          backgroundColor: ACTIVITY_COLORS[key],
+                          borderTopLeftRadius: leftPct === 0 ? Layout.radiusSm : 0,
+                          borderBottomLeftRadius: leftPct === 0 ? Layout.radiusSm : 0,
+                          borderTopRightRadius: leftPct + widthPct >= 99.9 ? Layout.radiusSm : 0,
+                          borderBottomRightRadius: leftPct + widthPct >= 99.9 ? Layout.radiusSm : 0,
+                        };
+                        leftPct += widthPct;
+                        return <View key={key} style={[styles.barSegmentAbs, segmentStyle]} />;
+                      });
+                    })()}
                   </View>
                   <Text style={[styles.barValue, { color: colors.text }]}>{d.total}</Text>
                 </View>
@@ -355,11 +359,9 @@ const styles = StyleSheet.create({
   chartWrap: { borderRadius: Layout.radiusMd, padding: 16 },
   barRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Layout.inputGap, gap: Layout.inputGap },
   barLabel: { width: 36, fontSize: Layout.caption },
-  barTrack: { flex: 1, height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden', flexDirection: 'row' },
+  barTrack: { flex: 1, height: 20, borderRadius: Layout.radiusSm, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: Layout.radiusSm },
-  barSegment: { height: '100%', minWidth: 1 },
-  barSegmentFirst: { borderTopLeftRadius: Layout.radiusSm, borderBottomLeftRadius: Layout.radiusSm },
-  barSegmentLast: { borderTopRightRadius: Layout.radiusSm, borderBottomRightRadius: Layout.radiusSm },
+  barSegmentAbs: { borderRadius: 0 },
   barValue: { width: 28, fontSize: Layout.caption, fontWeight: '600', textAlign: 'right' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
