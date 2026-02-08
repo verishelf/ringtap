@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -32,6 +32,8 @@ export default function AnalyticsScreen() {
   const [data, setData] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trackWidth, setTrackWidth] = useState(0);
+  const trackMeasured = useRef(false);
 
   const refresh = useCallback(async () => {
     setError(null);
@@ -85,6 +87,12 @@ export default function AnalyticsScreen() {
       ]
     );
   }, [signOut]);
+
+  // Reset track measurement when period or data changes (must be before any early return)
+  useEffect(() => {
+    trackMeasured.current = false;
+    setTrackWidth(0);
+  }, [period, data]);
 
   if (!isPro) {
     return (
@@ -268,29 +276,39 @@ export default function AnalyticsScreen() {
               {chartData.map((d) => (
                 <View key={d.date} style={styles.barRow}>
                   <Text style={[styles.barLabel, { color: colors.textSecondary }]}>{d.label}</Text>
-                  <View style={[styles.barTrack, { backgroundColor: colors.borderLight }]}>
-                    {(() => {
-                      let leftPct = 0;
-                      return activityOrder.map((key) => {
-                        const count = d[key];
-                        if (count <= 0) return null;
-                        const widthPct = (count / d.total) * 100;
-                        const segmentStyle = {
-                          position: 'absolute' as const,
-                          left: `${leftPct}%`,
-                          width: `${widthPct}%`,
-                          top: 0,
-                          bottom: 0,
-                          backgroundColor: ACTIVITY_COLORS[key],
-                          borderTopLeftRadius: leftPct === 0 ? Layout.radiusSm : 0,
-                          borderBottomLeftRadius: leftPct === 0 ? Layout.radiusSm : 0,
-                          borderTopRightRadius: leftPct + widthPct >= 99.9 ? Layout.radiusSm : 0,
-                          borderBottomRightRadius: leftPct + widthPct >= 99.9 ? Layout.radiusSm : 0,
-                        };
-                        leftPct += widthPct;
-                        return <View key={key} style={[styles.barSegmentAbs, segmentStyle]} />;
-                      });
-                    })()}
+                  <View
+                    style={[styles.barTrack, { backgroundColor: colors.borderLight }]}
+                    onLayout={(e) => {
+                      if (trackMeasured.current) return;
+                      const w = e.nativeEvent.layout.width;
+                      if (w > 0) {
+                        trackMeasured.current = true;
+                        setTrackWidth(w);
+                      }
+                    }}
+                  >
+                    {trackWidth > 0 &&
+                      (() => {
+                        let leftPx = 0;
+                        return activityOrder.map((key) => {
+                          const count = d[key];
+                          if (count <= 0) return null;
+                          const widthPx = Math.max(1, (count / d.total) * trackWidth);
+                          const segmentStyle = {
+                            position: 'absolute' as const,
+                            left: leftPx,
+                            width: widthPx,
+                            height: 20,
+                            backgroundColor: ACTIVITY_COLORS[key],
+                            borderTopLeftRadius: leftPx === 0 ? Layout.radiusSm : 0,
+                            borderBottomLeftRadius: leftPx === 0 ? Layout.radiusSm : 0,
+                            borderTopRightRadius: leftPx + widthPx >= trackWidth - 1 ? Layout.radiusSm : 0,
+                            borderBottomRightRadius: leftPx + widthPx >= trackWidth - 1 ? Layout.radiusSm : 0,
+                          };
+                          leftPx += widthPx;
+                          return <View key={key} style={[styles.barSegmentAbs, segmentStyle]} />;
+                        });
+                      })()}
                   </View>
                   <Text style={[styles.barValue, { color: colors.text }]}>{d.total}</Text>
                 </View>
