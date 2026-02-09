@@ -107,6 +107,14 @@ export default function ProfileByIdScreen() {
     }
   }, [user, profile, router]);
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  }, [router]);
+
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -119,7 +127,7 @@ export default function ProfileByIdScreen() {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error ?? 'Profile not found'}</Text>
-        <Pressable onPress={() => router.back()} style={[styles.backBtn, { borderColor: colors.borderLight }]}>
+        <Pressable onPress={handleBack} style={[styles.backBtn, { borderColor: colors.borderLight }]}>
           <Text style={{ color: colors.text }}>Go back</Text>
         </Pressable>
       </View>
@@ -129,7 +137,7 @@ export default function ProfileByIdScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.borderLight, paddingTop: insets.top + 12, paddingBottom: 12 }]}>
-        <Pressable onPress={() => router.back()} style={styles.headerBack} hitSlop={12}>
+        <Pressable onPress={handleBack} style={styles.headerBack} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
