@@ -23,6 +23,7 @@
       ],
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "RingTap uses your photo library to set your profile picture and add a video intro.",
+        "NSPhotoLibraryAddUsageDescription": "RingTap saves your QR code to Photos so you can add it to your Lock Screen.",
         "NSMicrophoneUsageDescription": "RingTap may use the microphone when recording a video intro.",
         "NSCameraUsageDescription": "RingTap may use the camera to take a profile photo or record a video intro.",
         "UIBackgroundModes": [],

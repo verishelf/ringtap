@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode as decodeBase64 } from 'base64-arraybuffer';
-import { supabase } from '@/lib/supabase/supabaseClient';
+import { supabase, supabaseUrl } from '@/lib/supabase/supabaseClient';
 import type {
   AnalyticsSummary,
   ProfileTheme,
@@ -542,6 +542,69 @@ export async function sendMessage(conversationId: string, senderId: string, body
     createdAt: data.created_at,
     readAt: data.read_at,
   };
+}
+
+/** Upsert push token for the current user (e.g. Expo push token). Reassigns token to this user if it was previously used by another. */
+export async function savePushToken(
+  userId: string,
+  token: string,
+  platform?: string
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.from('push_tokens').upsert(
+    { user_id: userId, token, platform },
+    { onConflict: 'token' }
+  );
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/** Ask the Edge Function to send a push notification to the recipient for a new message. Fire-and-forget; call after sendMessage. */
+export async function triggerPushForMessage(
+  recipientUserId: string,
+  body: string,
+  conversationId: string
+): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) return;
+  const url = `${supabaseUrl}/functions/v1/send-message-push`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      recipient_user_id: recipientUserId,
+      body,
+      conversation_id: conversationId,
+    }),
+  });
+  if (!res.ok) {
+    // Fire-and-forget: log but don't throw
+    console.warn('[push] send-message-push failed', res.status, await res.text());
+  }
+}
+
+/** Delete the current user's account via Edge Function. Caller should sign out and redirect after. */
+export async function deleteAccount(): Promise<{ ok: boolean; error?: string }> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) return { ok: false, error: 'Not signed in' };
+  const res = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    return { ok: false, error: (body as { error?: string }).error ?? `Request failed (${res.status})` };
+  }
+  return { ok: true };
 }
 
 /** Delete a conversation (participant only; RLS enforces). Messages are deleted by cascade. */

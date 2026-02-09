@@ -5,6 +5,7 @@ export default function ShareLayout() {
     <Stack>
       <Stack.Screen name="nfc" options={{ title: 'NFC Share' }} />
       <Stack.Screen name="qr" options={{ title: 'QR Code' }} />
+      <Stack.Screen name="lock-screen" options={{ title: 'QR on Lock Screen' }} />
     </Stack>
   );
 }

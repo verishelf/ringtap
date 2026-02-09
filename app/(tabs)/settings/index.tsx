@@ -7,10 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useNotifications } from '@/contexts/NotificationsContext';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { unlinkMyRings } from '@/lib/api';
+import { deleteAccount, unlinkMyRings } from '@/lib/api';
 
 const MENU_ICON_SIZE = 22;
 const CHEVRON_SIZE = 20;
@@ -21,9 +22,16 @@ export default function SettingsScreen() {
   const { user, signOut } = useSession();
   const { plan, isPro } = useSubscription();
   const { isLight, setTheme } = useAppearance();
+  const { prefs: notifPrefs, setPrefs: setNotifPrefs, permissionStatus, requestPermission } = useNotifications();
   const colors = useThemeColors();
   const router = useRouter();
   const [unlinking, setUnlinking] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleNewMessagesToggle = async (on: boolean) => {
+    setNotifPrefs({ newMessages: on });
+    if (on) await requestPermission();
+  };
 
   const handleUnlinkRing = () => {
     Alert.alert(
@@ -59,6 +67,31 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account',
+      'This will permanently delete your account and all your data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            const { ok, error } = await deleteAccount();
+            setDeleting(false);
+            if (ok) {
+              await signOut();
+              router.replace('/(auth)/login');
+            } else {
+              Alert.alert('Could not delete account', error ?? 'Something went wrong.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.sectionGap }]}>
@@ -74,6 +107,48 @@ export default function SettingsScreen() {
                 thumbColor={colors.text}
               />
             </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <View style={[styles.row, styles.rowBorder, { borderBottomColor: colors.borderLight }]}>
+              <Text style={[styles.label, { color: colors.text }]}>New messages</Text>
+              <Switch
+                value={notifPrefs.newMessages}
+                onValueChange={handleNewMessagesToggle}
+                trackColor={{ false: colors.borderLight, true: colors.accent }}
+                thumbColor={colors.text}
+              />
+            </View>
+            {permissionStatus === 'denied' && notifPrefs.newMessages && (
+              <View style={styles.row}>
+                <Text style={[styles.hint, { color: colors.textSecondary, flex: 1 }]}>
+                  Notifications are off in system settings. Turn them on in Settings → RingTap to get alerts for new messages.
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Widget</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => router.push('/share/lock-screen')}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="phone-portrait-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>QR on Lock Screen</Text>
+              </View>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </Pressable>
           </View>
         </View>
 
@@ -168,6 +243,26 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
+          <Pressable
+            style={[styles.card, styles.menuItem, { backgroundColor: colors.surface }]}
+            onPress={handleDeleteAccount}
+            disabled={deleting}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                <Ionicons name="trash-outline" size={MENU_ICON_SIZE} color={colors.destructive} />
+              </View>
+              <Text style={[styles.menuText, styles.signOutText, { color: colors.destructive }]}>Delete account</Text>
+            </View>
+            {deleting ? (
+              <View style={styles.menuItemRight}>
+                <ActivityIndicator size="small" color={colors.destructive} />
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
           <Pressable style={[styles.card, styles.menuItem, { backgroundColor: colors.surface }]} onPress={handleSignOut}>
             <View style={styles.menuItemLeft}>
               <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
@@ -203,6 +298,7 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: Layout.body },
   value: { fontSize: Layout.body, maxWidth: '60%' },
+  hint: { fontSize: Layout.caption },
   proBadge: { fontWeight: '600' },
   menuItem: {
     flexDirection: 'row',

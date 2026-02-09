@@ -68,6 +68,8 @@ export default function AnalyticsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      trackMeasured.current = false;
+      setTrackWidth(0);
       if (user?.id && isPro) refresh();
     }, [user?.id, isPro, refresh])
   );
@@ -202,7 +204,7 @@ export default function AnalyticsScreen() {
     }
   }
   const chartData = Array.from(dayMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => b.localeCompare(a))
     .map(([date, counts]) => {
       const total = counts.profile_view + counts.link_click + counts.nfc_tap + counts.qr_scan;
       return {

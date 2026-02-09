@@ -88,8 +88,16 @@ export default function QRShareScreen() {
         </Pressable>
 
         <View style={styles.secondaryButtonWrap}>
-          <Link href="/share/nfc" asChild>
+          <Link href="/share/lock-screen" asChild>
             <Pressable style={[styles.secondaryButton, { borderColor: colors.accent }]}>
+              <View style={styles.buttonContent}>
+                <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
+                <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>QR on Lock Screen</Text>
+              </View>
+            </Pressable>
+          </Link>
+          <Link href="/share/nfc" asChild>
+            <Pressable style={[styles.secondaryButton, { borderColor: colors.accent, marginTop: 8 }]}>
               <View style={styles.buttonContent}>
                 <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
                 <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>Share with NFC</Text>

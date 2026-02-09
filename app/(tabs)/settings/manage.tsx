@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { supabase } from '@/lib/supabase/supabaseClient';
 
-// Placeholder. In production you would:
-// 1. Open Stripe Customer Portal (create portal session via backend, redirect to URL)
-// 2. Or use Stripe React Native SDK to manage subscription
+const PORTAL_API_BASE = 'https://www.ringtap.me';
+
 export default function ManageSubscriptionScreen() {
   const router = useRouter();
   const colors = useThemeColors();
@@ -18,21 +19,36 @@ export default function ManageSubscriptionScreen() {
   const [loading, setLoading] = useState(false);
 
   const openPortal = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      Alert.alert('Error', 'Please sign in again.');
+      return;
+    }
     setLoading(true);
     try {
-      // TODO: Call backend to create Stripe Billing Portal session
-      // const res = await fetch('YOUR_API/create-portal-session', { method: 'POST', body: JSON.stringify({ userId }) });
-      // const { url } = await res.json();
-      // await Linking.openURL(url);
-      await new Promise((r) => setTimeout(r, 800));
-      Alert.alert(
-        'Manage subscription',
-        'Stripe Customer Portal would open here. You can update payment method, cancel, or change plan. Subscription status is synced via Supabase webhooks.',
-        [{ text: 'OK' }]
-      );
-      refresh();
+      const res = await fetch(`${PORTAL_API_BASE}/api/stripe/create-portal-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) {
+        Alert.alert('Could not open portal', data.error ?? 'Something went wrong.');
+        return;
+      }
+      if (data.url) {
+        const opened = await Linking.openURL(data.url);
+        if (!opened) Alert.alert('Error', 'Could not open browser.');
+        refresh();
+      } else {
+        Alert.alert('Error', 'No portal URL returned.');
+      }
     } catch (e) {
-      Alert.alert('Error', 'Could not open billing portal.');
+      Alert.alert('Error', 'Could not open billing portal. Try again.');
     } finally {
       setLoading(false);
     }
@@ -44,7 +60,7 @@ export default function ManageSubscriptionScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[styles.planName, { color: colors.text }]}>Pro</Text>
           <Text style={[styles.status, { color: colors.textSecondary }]}>{status ?? 'active'}</Text>
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>Billing is managed by Stripe. Use the portal to update payment or cancel.</Text>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>Update payment method or cancel your subscription. You keep Pro until the end of the current billing period.</Text>
         </View>
 
         <Pressable
@@ -52,8 +68,14 @@ export default function ManageSubscriptionScreen() {
           onPress={openPortal}
           disabled={loading}
         >
-          <Ionicons name="open-outline" size={22} color={colors.text} />
-          <Text style={[styles.buttonText, { color: colors.text }]}>Open Stripe billing portal</Text>
+          {loading ? (
+            <ActivityIndicator color={colors.text} size="small" />
+          ) : (
+            <>
+              <Ionicons name="open-outline" size={22} color={colors.text} />
+              <Text style={[styles.buttonText, { color: colors.text }]}>Manage or cancel subscription</Text>
+            </>
+          )}
         </Pressable>
       </ScrollView>
     </ThemedView>

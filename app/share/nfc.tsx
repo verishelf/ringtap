@@ -61,7 +61,12 @@ export default function NFCShareScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Your profile link</Text>
             <Text style={[styles.url, { color: colors.accent }]}>{profileUrl}</Text>
-            <Text style={[styles.hint, { color: colors.textSecondary }]}>Write this URL to your NFC tag using your phone's NFC tools or a compatible app.</Text>
+            <Link href="/activate" asChild>
+              <Pressable style={[styles.linkRingButton, { backgroundColor: colors.accent }]}>
+                <Ionicons name="ellipse-outline" size={22} color={colors.text} />
+                <Text style={[styles.linkRingButtonText, { color: colors.text }]}>Link ring</Text>
+              </Pressable>
+            </Link>
           </View>
         )}
 
@@ -74,8 +79,16 @@ export default function NFCShareScreen() {
         </View>
 
         <View style={styles.secondaryButtonWrap}>
-          <Link href="/share/qr" asChild>
+          <Link href="/share/lock-screen" asChild>
             <Pressable style={[styles.secondaryButton, { borderColor: colors.accent }]}>
+              <View style={styles.buttonContent}>
+                <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
+                <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>QR on Lock Screen</Text>
+              </View>
+            </Pressable>
+          </Link>
+          <Link href="/share/qr" asChild>
+            <Pressable style={[styles.secondaryButton, { borderColor: colors.accent, marginTop: 8 }]}>
               <View style={styles.buttonContent}>
                 <Ionicons name="qr-code-outline" size={22} color={colors.accent} />
                 <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>Share with QR instead</Text>
@@ -114,6 +127,16 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, fontSize: Layout.bodySmall + 1, lineHeight: 22 },
   url: { fontSize: Layout.bodySmall, marginBottom: Layout.tightGap },
   hint: { fontSize: Layout.caption, marginTop: Layout.tightGap },
+  linkRingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Layout.inputGap,
+    marginTop: Layout.tightGap,
+    height: Layout.buttonHeight,
+    borderRadius: Layout.radiusMd,
+  },
+  linkRingButtonText: { fontSize: Layout.body, fontWeight: '600' },
   button: {
     flexDirection: 'row',
     alignItems: 'center',

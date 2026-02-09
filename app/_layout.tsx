@@ -15,6 +15,7 @@ import 'react-native-url-polyfill/auto';
 import { Colors } from '@/constants/theme';
 import { AppearanceProvider } from '@/contexts/AppearanceContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useActivation } from '@/hooks/useActivation';
 
@@ -97,7 +98,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <AppearanceProvider>
-          <RootLayoutNav />
+          <NotificationsProvider>
+            <RootLayoutNav />
+          </NotificationsProvider>
         </AppearanceProvider>
       </AuthProvider>
     </GestureHandlerRootView>

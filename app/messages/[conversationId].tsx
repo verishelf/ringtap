@@ -21,7 +21,15 @@ import { useProfile } from '@/hooks/useProfile';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
-import { getConversation, getMessages, getProfile, getSubscription, sendMessage, type Message } from '@/lib/api';
+import {
+  getConversation,
+  getMessages,
+  getProfile,
+  getSubscription,
+  sendMessage,
+  triggerPushForMessage,
+  type Message,
+} from '@/lib/api';
 
 export default function ChatScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
@@ -32,6 +40,7 @@ export default function ChatScreen() {
   const { profile: myProfile } = useProfile();
   const { isPro: myIsPro } = useSubscription();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [peerId, setPeerId] = useState<string | null>(null);
   const [peerAvatarUrl, setPeerAvatarUrl] = useState<string | null>(null);
   const [peerIsPro, setPeerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,10 +60,11 @@ export default function ChatScreen() {
       ]);
       setMessages(list ?? []);
       if (conv) {
-        const peerId = conv.user1Id === user.id ? conv.user2Id : conv.user1Id;
+        const pid = conv.user1Id === user.id ? conv.user2Id : conv.user1Id;
+        setPeerId(pid);
         const [peerProfile, peerSub] = await Promise.all([
-          getProfile(peerId),
-          getSubscription(peerId),
+          getProfile(pid),
+          getSubscription(pid),
         ]);
         setPeerAvatarUrl(peerProfile?.avatarUrl?.trim() || null);
         setPeerIsPro((peerSub?.plan as string) === 'pro');
@@ -77,11 +87,16 @@ export default function ChatScreen() {
     setInput('');
     try {
       const msg = await sendMessage(conversationId, user.id, trimmed);
-      if (msg) setMessages((prev) => [...prev, msg]);
+      if (msg) {
+        setMessages((prev) => [...prev, msg]);
+        if (peerId && peerId !== user.id) {
+          triggerPushForMessage(peerId, trimmed, conversationId).catch(() => {});
+        }
+      }
     } finally {
       setSending(false);
     }
-  }, [user?.id, conversationId, input, sending]);
+  }, [user?.id, conversationId, input, sending, peerId]);
 
   const formatMessageTime = (iso: string) => {
     const d = new Date(iso);

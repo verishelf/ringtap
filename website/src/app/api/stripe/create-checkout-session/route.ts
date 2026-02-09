@@ -2,20 +2,21 @@ import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 
 const STRIPE_SECRET = (process.env.STRIPE_SECRET_KEY ?? '').replace(/^["'\s]+|["'\s]+$/g, '').trim();
-const PRO_PRICE_ID = (process.env.STRIPE_PRO_PRICE_ID ?? '').replace(/^["'\s]+|["'\s]+$/g, '').trim();
+const PRO_PRICE_ID_MONTHLY = (process.env.STRIPE_PRO_PRICE_ID ?? '').replace(/^["'\s]+|["'\s]+$/g, '').trim();
+const PRO_PRICE_ID_YEARLY = (process.env.STRIPE_PRO_PRICE_ID_YEARLY ?? '').replace(/^["'\s]+|["'\s]+$/g, '').trim();
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.ringtap.me';
 
 export async function POST(request: NextRequest) {
-  if (!STRIPE_SECRET || !PRO_PRICE_ID) {
+  if (!STRIPE_SECRET || !PRO_PRICE_ID_MONTHLY) {
     return NextResponse.json(
       {
-        error: 'Stripe not configured. In Vercel (or your host): Project → Settings → Environment Variables → add STRIPE_SECRET_KEY and STRIPE_PRO_PRICE_ID. Create a Product "Pro" with a $9/month recurring price in Stripe Dashboard, then paste the Price ID (price_xxx).',
+        error: 'Stripe not configured. Add STRIPE_SECRET_KEY and STRIPE_PRO_PRICE_ID (monthly). Optionally STRIPE_PRO_PRICE_ID_YEARLY for yearly.',
       },
       { status: 500 }
     );
   }
 
-  let body: { email?: string; user_id?: string };
+  let body: { email?: string; user_id?: string; interval?: 'month' | 'year' };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -27,6 +28,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 });
   }
 
+  const interval = body.interval === 'year' ? 'year' : 'month';
+  const priceId = interval === 'year' && PRO_PRICE_ID_YEARLY ? PRO_PRICE_ID_YEARLY : PRO_PRICE_ID_MONTHLY;
+
   const stripe = new Stripe(STRIPE_SECRET);
 
   try {
@@ -35,12 +39,12 @@ export async function POST(request: NextRequest) {
       customer_email: email,
       line_items: [
         {
-          price: PRO_PRICE_ID,
+          price: priceId,
           quantity: 1,
         },
       ],
       success_url: `${BASE_URL}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/upgrade`,
+      cancel_url: `${BASE_URL}/upgrade?email=${encodeURIComponent(email)}${body.user_id ? `&user_id=${encodeURIComponent(body.user_id)}` : ''}`,
       metadata: body.user_id ? { user_id: body.user_id } : undefined,
       subscription_data: {
         metadata: body.user_id ? { user_id: body.user_id } : undefined,

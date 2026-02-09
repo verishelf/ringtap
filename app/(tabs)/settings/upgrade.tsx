@@ -51,9 +51,9 @@ export default function UpgradeScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Ionicons name="rocket-outline" size={48} color={colors.accent} />
           <Text style={[styles.title, { color: colors.text }]}>Upgrade to Pro</Text>
-          <Text style={[styles.price, { color: colors.text }]}>$9/month</Text>
+          <Text style={[styles.price, { color: colors.text }]}>$9/mo or $99/yr</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Unlimited links, themes, analytics, and video intro. Billing handled securely by Stripe.
+            Unlimited links, themes, analytics, and video intro. Choose monthly or yearly in the browser. Billing by Stripe.
           </Text>
         </View>
 
@@ -73,7 +73,7 @@ export default function UpgradeScreen() {
         </Pressable>
 
         <Text style={[styles.note, { color: colors.textSecondary }]}>
-          Opens Safari (or your default browser) to complete payment. $9/month, cancel anytime. Secure checkout by Stripe.
+          Opens the browser to choose $9/month or $99/year and complete payment. Cancel anytime from Settings → Manage subscription.
         </Text>
       </ScrollView>
     </ThemedView>
