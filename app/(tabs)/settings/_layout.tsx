@@ -7,6 +7,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="pricing" />
       <Stack.Screen name="upgrade" />
       <Stack.Screen name="manage" />
+      <Stack.Screen name="about" />
     </Stack>
   );
 }

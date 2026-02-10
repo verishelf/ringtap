@@ -160,7 +160,10 @@ export function ProfileScanPreview({
               {profile.name?.trim() || 'Your name'}
             </Text>
             {showVerified ? (
-              <Ionicons name="checkmark-circle" size={22} color={accent} style={styles.verifiedBadge} />
+              <Image
+                source={require('@/assets/images/verified.png')}
+                style={styles.verifiedBadge}
+              />
             ) : null}
           </View>
           {profile.title?.trim() ? (

@@ -243,14 +243,33 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Pressable style={[styles.card, styles.menuItem, { backgroundColor: colors.surface }]} onPress={handleSignOut}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
-                <Ionicons name="log-out-outline" size={MENU_ICON_SIZE} color={colors.destructive} />
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Pressable
+              style={[styles.menuItem, styles.rowBorder, { borderBottomColor: colors.borderLight }]}
+              onPress={() => router.push('/(tabs)/settings/about')}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="information-circle-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>About & attributions</Text>
               </View>
-              <Text style={[styles.menuText, styles.signOutText, { color: colors.destructive }]}>Sign out</Text>
-            </View>
-          </Pressable>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </Pressable>
+            <Pressable
+              style={styles.menuItem}
+              onPress={handleSignOut}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="log-out-outline" size={MENU_ICON_SIZE} color={colors.destructive} />
+                </View>
+                <Text style={[styles.menuText, styles.signOutText, { color: colors.destructive }]}>Sign out</Text>
+              </View>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </ThemedView>

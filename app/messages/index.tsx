@@ -2,19 +2,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Animated,
-  ListRenderItem,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Animated,
+    ListRenderItem,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { FlatList, RectButton, Swipeable } from 'react-native-gesture-handler';
 
-import { ProAvatar, NameWithVerified } from '@/components/ProBadge';
+import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { deleteConversation, getConversations, type ConversationWithPeer } from '@/lib/api';
 import { Pressable } from 'react-native';
 

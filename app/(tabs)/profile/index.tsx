@@ -539,7 +539,10 @@ export default function ProfileEditorScreen() {
                     {profile.name?.trim() || 'Your name'}
                   </Text>
                   {isPro ? (
-                    <Ionicons name="checkmark-circle" size={22} color={colors.accent} style={styles.verifiedBadge} />
+                    <Image
+                      source={require('@/assets/images/verified.png')}
+                      style={styles.verifiedBadgeImage}
+                    />
                   ) : null}
                 </View>
                 {profile.title?.trim() ? (
@@ -720,6 +723,7 @@ const styles = StyleSheet.create({
   viewCardNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   viewCardName: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
   verifiedBadge: { marginLeft: 2 },
+  verifiedBadgeImage: { width: 22, height: 22, marginLeft: 2 },
   viewCardTitle: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
   viewCardTagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center' },
   viewCardVideoWrap: { width: '100%', aspectRatio: 16 / 9, marginBottom: Layout.rowGap, borderRadius: Layout.radiusMd, overflow: 'hidden' },
