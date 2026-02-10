@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Layout } from '@/constants/theme';
 import { CashAppIcon } from '@/components/CashAppIcon';
+import { VenmoIcon, PayPalIcon, ZelleIcon } from '@/components/PaymentIcons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ButtonShape, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 
@@ -257,9 +258,11 @@ export function ProfileScanPreview({
                     style={[styles.socialChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
                     onPress={() => openSocialUrl(normalizeSocialUrl(key, url))}
                   >
-                    {key === 'cashapp' ? (
-                      <CashAppIcon size={20} />
-                    ) : (
+                    {key === 'cashapp' && <CashAppIcon size={20} />}
+                    {key === 'venmo' && <VenmoIcon size={20} />}
+                    {key === 'paypal' && <PayPalIcon size={20} />}
+                    {key === 'zelle' && <ZelleIcon size={20} />}
+                    {key !== 'cashapp' && key !== 'venmo' && key !== 'paypal' && key !== 'zelle' && (
                       <Ionicons
                         name={SOCIAL_ICONS[key as SocialPlatform] ?? 'link'}
                         size={20}

@@ -48,6 +48,8 @@ export default function HomeScreen() {
   const [recentIsProByUserId, setRecentIsProByUserId] = useState<Record<string, boolean>>({});
   const [tapsThisWeek, setTapsThisWeek] = useState(0);
   const [viewsThisWeek, setViewsThisWeek] = useState(0);
+  const [displayTaps, setDisplayTaps] = useState(0);
+  const [displayViews, setDisplayViews] = useState(0);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
   const glowAnim = useRef(new Animated.Value(0.5)).current;
@@ -126,6 +128,37 @@ export default function HomeScreen() {
       setLoadingDashboard(false);
     }
   }, [user?.id, profile?.id]);
+
+  // Animate stat numbers when they change
+  useEffect(() => {
+    let frame: number;
+    const duration = 500;
+
+    // Always animate from 0 up to the latest values
+    const startTaps = 0;
+    const endTaps = tapsThisWeek;
+    const startViews = 0;
+    const endViews = viewsThisWeek;
+    const startTime = Date.now();
+
+    const step = () => {
+      const now = Date.now();
+      const progress = Math.min(1, (now - startTime) / duration);
+      const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+
+      setDisplayTaps(Math.round(startTaps + (endTaps - startTaps) * ease));
+      setDisplayViews(Math.round(startViews + (endViews - startViews) * ease));
+
+      if (progress < 1) {
+        frame = requestAnimationFrame(step);
+      }
+    };
+
+    frame = requestAnimationFrame(step);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [tapsThisWeek, viewsThisWeek]);
 
   useEffect(() => {
     loadDashboard();
@@ -217,12 +250,12 @@ export default function HomeScreen() {
             ) : (
               <View style={styles.statsRow}>
                 <View style={styles.stat}>
-                  <Text style={[styles.statValue, { color: colors.text }]}>{tapsThisWeek}</Text>
+                  <Text style={[styles.statValue, { color: colors.text }]}>{displayTaps}</Text>
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Taps</Text>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
                 <View style={styles.stat}>
-                  <Text style={[styles.statValue, { color: colors.text }]}>{viewsThisWeek}</Text>
+                  <Text style={[styles.statValue, { color: colors.text }]}>{displayViews}</Text>
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Views</Text>
                 </View>
               </View>

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ResizeMode, Video } from 'expo-av';
 import { useFocusEffect } from '@react-navigation/native';
+import { ResizeMode, Video } from 'expo-av';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,8 +18,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ProfileScanPreview } from '@/components/ProfileScanPreview';
 import { CashAppIcon } from '@/components/CashAppIcon';
+import { ProfileScanPreview } from '@/components/ProfileScanPreview';
 import { ThemedView } from '@/components/themed-view';
 import { Layout, Tokens } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
