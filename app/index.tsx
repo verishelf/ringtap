@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 
 import { useSession } from '@/hooks/useSession';
 
@@ -19,7 +20,10 @@ export default function IndexScreen() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" />
+      <Image
+        source={require('@/assets/images/loading.gif')}
+        style={{ width: 64, height: 64 }}
+      />
     </View>
   );
 }

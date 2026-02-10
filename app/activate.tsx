@@ -10,6 +10,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RingModelViewer } from '@/components/RingModelViewer';
@@ -92,7 +93,10 @@ export default function ActivateScreen() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <Image
+          source={require('@/assets/images/loading.gif')}
+          style={{ width: 64, height: 64 }}
+        />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading ring...</Text>
       </ThemedView>
     );

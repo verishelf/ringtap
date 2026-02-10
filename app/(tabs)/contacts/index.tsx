@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   ListRenderItem,
@@ -11,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 
 import { ProAvatar, NameWithVerified } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
@@ -145,7 +145,10 @@ export default function ContactsScreen() {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <Image
+          source={require('@/assets/images/loading.gif')}
+          style={{ width: 64, height: 64 }}
+        />
       </View>
     );
   }

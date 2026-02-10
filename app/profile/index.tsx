@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 
 import { ThemedView } from '@/components/themed-view';
 import { useSession } from '@/hooks/useSession';
@@ -26,7 +27,10 @@ export default function ProfileDeepLinkScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ActivityIndicator size="large" />
+      <Image
+        source={require('@/assets/images/loading.gif')}
+        style={{ width: 64, height: 64 }}
+      />
     </ThemedView>
   );
 }

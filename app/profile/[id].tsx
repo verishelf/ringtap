@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileScanPreview } from '@/components/ProfileScanPreview';
@@ -118,7 +118,10 @@ export default function ProfileByIdScreen() {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <Image
+          source={require('@/assets/images/loading.gif')}
+          style={{ width: 64, height: 64 }}
+        />
       </View>
     );
   }

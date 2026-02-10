@@ -223,6 +223,9 @@ export default function StorePage() {
             <Link href="/privacy" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Privacy Policy
             </Link>
+            <Link href="/terms" className="text-sm text-muted-light hover:text-foreground transition-colors">
+              Terms of Use
+            </Link>
             <Link href="/#download" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Download
             </Link>
@@ -235,6 +238,8 @@ export default function StorePage() {
           <Link href="/#faq" className="hover:text-foreground transition-colors">FAQ</Link>
           <span className="text-border-light">·</span>
           <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          <span className="text-border-light">·</span>
+          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
         </div>
       </footer>
     </div>

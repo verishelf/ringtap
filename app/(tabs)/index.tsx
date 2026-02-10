@@ -208,7 +208,12 @@ export default function HomeScreen() {
           <View style={[styles.statsCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>This week</Text>
             {loadingDashboard ? (
-              <ActivityIndicator size="small" color={colors.accent} style={styles.dashLoader} />
+              <View style={styles.dashLoader}>
+                <Image
+                  source={require('@/assets/images/loading.gif')}
+                  style={{ width: 32, height: 32 }}
+                />
+              </View>
             ) : (
               <View style={styles.statsRow}>
                 <View style={styles.stat}>
@@ -242,7 +247,12 @@ export default function HomeScreen() {
               </Link>
             </View>
             {loadingDashboard ? (
-              <ActivityIndicator size="small" color={colors.accent} style={styles.dashLoader} />
+              <View style={styles.dashLoader}>
+                <Image
+                  source={require('@/assets/images/loading.gif')}
+                  style={{ width: 32, height: 32 }}
+                />
+              </View>
             ) : recentMessages.length === 0 ? (
               <Text style={[styles.recentEmpty, { color: colors.textSecondary }]}>
                 No messages yet. Message a saved contact to start.
@@ -290,7 +300,12 @@ export default function HomeScreen() {
               </Link>
             </View>
             {loadingDashboard ? (
-              <ActivityIndicator size="small" color={colors.accent} style={styles.dashLoader} />
+              <View style={styles.dashLoader}>
+                <Image
+                  source={require('@/assets/images/loading.gif')}
+                  style={{ width: 32, height: 32 }}
+                />
+              </View>
             ) : recentContacts.length === 0 ? (
               <Text style={[styles.recentEmpty, { color: colors.textSecondary }]}>
                 No scanned or saved contacts yet. Save a profile in the app or scan a card to see them here.
@@ -414,7 +429,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: Layout.tightGap,
   },
-  dashLoader: { paddingVertical: Layout.rowGap },
+  dashLoader: {
+    paddingVertical: Layout.rowGap,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',

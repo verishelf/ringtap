@@ -11,6 +11,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
+import { Image } from 'expo-image';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
@@ -178,7 +179,10 @@ export default function LinksScreen() {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <Image
+            source={require('@/assets/images/loading.gif')}
+            style={{ width: 64, height: 64 }}
+          />
         </View>
       ) : links.length === 0 ? (
         <View style={styles.empty}>
