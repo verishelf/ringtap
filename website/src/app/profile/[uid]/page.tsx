@@ -171,7 +171,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className=\"min-h-screen bg-background flex items-center justify-center px-6\">
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <img src="/loading.gif" alt="Loading profile" className="w-16 h-16" />
       </div>
     );
@@ -179,7 +179,7 @@ export default function ProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className=\"min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-4\">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-4">
         <p className="text-destructive">{error ?? 'Profile not found'}</p>
         <Link href="/" className="text-accent hover:underline">Back to RingTap</Link>
       </div>
