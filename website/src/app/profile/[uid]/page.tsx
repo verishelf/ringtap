@@ -151,15 +151,15 @@ export default function ProfilePage() {
     try {
       const res = await fetch(`${API_BASE}/api/profile?uid=${encodeURIComponent(uid)}`);
       if (!res.ok) {
-        if (res.status === 404) setError(\"Profile not found\");
-        else setError(\"Failed to load\");
+        if (res.status === 404) setError('Profile not found');
+        else setError('Failed to load');
         setLoading(false);
         return;
       }
       const json = await res.json();
       setProfile(json);
     } catch {
-      setError(\"Failed to load\");
+      setError('Failed to load');
     } finally {
       setLoading(false);
     }
