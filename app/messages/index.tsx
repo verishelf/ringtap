@@ -2,13 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Animated,
-    ListRenderItem,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Animated,
+  ListRenderItem,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { FlatList, RectButton, Swipeable } from 'react-native-gesture-handler';
 
 import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
@@ -129,7 +130,10 @@ export default function MessagesScreen() {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <Image
+          source={require('@/assets/images/loading.gif')}
+          style={{ width: 64, height: 64 }}
+        />
       </View>
     );
   }

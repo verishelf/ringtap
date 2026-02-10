@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -86,31 +87,47 @@ function SocialIcon({ platform, className = 'w-6 h-6' }: { platform: string; cla
         </svg>
       );
     case 'cashapp':
+      // Simplified Cash App badge
       return (
-        <svg className={c} viewBox="0 0 34 24" aria-hidden>
-          <rect width="34" height="24" rx="4" fill="white" />
+        <svg className={c} viewBox="0 0 24 24" aria-hidden>
+          <rect x="2" y="2" width="20" height="20" rx="4" fill="white" />
           <path
-            d="M17.8071 10.5742C20.3356 11.1161 21.4915 12.1636 21.4915 13.9336C21.4915 16.1525 19.6847 17.7904 16.8642 17.9637L16.589 19.2762C16.5621 19.4045 16.4489 19.4964 16.3179 19.4964H14.1479C13.9691 19.4964 13.8371 19.3294 13.8784 19.1554L14.2267 17.6877C12.8286 17.2899 11.7036 16.5161 11.0477 15.5609C10.9652 15.4407 10.9926 15.2764 11.1077 15.1868L12.6244 14.0072C12.7494 13.91 12.9286 13.9385 13.021 14.0671C13.8246 15.1856 15.0575 15.8481 16.5428 15.8481C17.8793 15.8481 18.8907 15.1979 18.8907 14.2587C18.8907 13.5362 18.385 13.2111 16.6873 12.8499C13.7614 12.2358 12.6055 11.1522 12.6055 9.38219C12.6055 7.32855 14.3314 5.77721 16.9349 5.57572L17.2191 4.22015C17.246 4.09187 17.3591 4 17.4902 4H19.631C19.8076 4 19.9391 4.16305 19.9017 4.33565L19.5726 5.85451C20.6929 6.19935 21.6051 6.81594 22.1729 7.5768C22.2609 7.69474 22.2383 7.86174 22.1245 7.95505L20.7408 9.08972C20.6205 9.18832 20.445 9.16679 20.3472 9.04587C19.6439 8.17604 18.5368 7.68446 17.3375 7.68446C16.001 7.68446 15.1702 8.26241 15.1702 9.09322C15.1702 9.77954 15.8204 10.1408 17.8071 10.5742Z"
+            d="M12 6.75c-1.933 0-3.5 1.233-3.5 3 0 1.59 1.137 2.437 2.863 2.82l.89.2c.86.192 1.247.47 1.247.98 0 .63-.62 1.1-1.5 1.1-1.028 0-1.797-.43-2.24-1.217a.5.5 0 0 0-.7-.18l-.97.6a.5.5 0 0 0-.17.68C9.55 16.52 10.7 17.25 12 17.25c2.047 0 3.5-1.22 3.5-3.05 0-1.64-1.102-2.46-2.887-2.86l-.83-.19c-.87-.2-1.283-.47-1.283-.98 0-.58.57-1.02 1.5-1.02.86 0 1.52.35 1.96 1.01a.5.5 0 0 0 .71.13l.93-.68a.5.5 0 0 0 .12-.68C15.06 7.36 13.7 6.75 12 6.75Z"
             fill="black"
           />
         </svg>
       );
     case 'venmo':
+      // Venmo blue circle with white V, so it stays visible on all backgrounds
       return (
-        <svg className={c} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.802 8.99l-2.302 2.302-8.636-8.634z" />
+        <svg className={c} viewBox="0 0 24 24" aria-hidden>
+          <circle cx="12" cy="12" r="10" fill="#3D95CE" />
+          <path
+            d="M9 8.5h2.1l1.1 4.2 1.7-4.2H17l-3.1 7H11L9 8.5Z"
+            fill="white"
+          />
         </svg>
       );
     case 'paypal':
+      // Simple rounded P badge
       return (
-        <svg className={c} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.802 8.99l-2.302 2.302-8.636-8.634z" />
+        <svg className={c} viewBox="0 0 24 24" aria-hidden>
+          <circle cx="12" cy="12" r="10" fill="white" />
+          <path
+            d="M10 7.5h3c1.66 0 2.75 1.02 2.75 2.5 0 1.6-1.2 2.75-2.97 2.75H11.3L11 16.5H9L10 7.5Zm2.7 3.7c.68 0 1.13-.4 1.13-.95 0-.54-.37-.9-.98-.9h-1.1l-.27 1.85h1.22Z"
+            fill="currentColor"
+          />
         </svg>
       );
     case 'zelle':
+      // Simple rounded Z badge
       return (
-        <svg className={c} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M12.186 24h-.007c-3.381 0-6.354-.923-8.549-2.509C1.406 19.921 0 17.458 0 14.648V9.376c0-2.689 1.395-5.134 3.695-6.648C5.89 1.212 8.863.289 12.244.289h.014c2.746 0 5.35.673 7.591 1.968 2.582 1.506 4.157 3.978 4.157 6.723v5.273c0 2.745-1.575 5.217-4.158 6.723-2.241 1.295-4.845 1.967-7.591 1.967h-.012zM12.212 2.49c-2.944 0-5.53.795-7.441 2.272C2.86 6.24 1.875 8.211 1.875 9.376v5.272c0 1.165.985 3.137 2.896 4.614 1.911 1.477 4.497 2.272 7.441 2.272h.007c2.944 0 5.53-.795 7.442-2.272 1.91-1.477 2.895-3.449 2.895-4.614V9.376c0-1.165-.984-3.136-2.895-4.614C17.742 3.285 15.156 2.49 12.212 2.49zm.028 4.376c1.507 0 2.718 1.24 2.718 2.757v5.754c0 1.518-1.21 2.757-2.718 2.757-1.507 0-2.718-1.24-2.718-2.757V9.623c0-1.518 1.21-2.757 2.718-2.757zm0 1.875c-.472 0-.844.39-.844.882v5.754c0 .492.372.882.844.882.472 0 .844-.39.844-.882V9.623c0-.492-.372-.882-.844-.882z" />
+        <svg className={c} viewBox="0 0 24 24" aria-hidden>
+          <circle cx="12" cy="12" r="10" fill="white" />
+          <path
+            d="M9 8.5h6v1.5l-3.5 4.1H15V16H9v-1.5l3.5-4.1H9V8.5Z"
+            fill="currentColor"
+          />
         </svg>
       );
     default:
@@ -323,7 +340,11 @@ export default function UsernameProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
-        <p className="text-muted-light">Loading profile...</p>
+        <Image
+          src={require('../../../../assets/images/loading.gif')}
+          alt="Loading profile"
+          className="w-16 h-16"
+        />
       </div>
     );
   }
@@ -387,10 +408,12 @@ export default function UsernameProfilePage() {
             <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
               {profile.name?.trim() || 'No name'}
               {profile.plan === 'pro' ? (
-                <span className="text-accent inline-flex shrink-0" title="Verified Pro">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                  </svg>
+                <span className="inline-flex shrink-0" title="Verified Pro">
+                  <Image
+                    src={require('../../../../assets/images/verified.png')}
+                    alt="Verified"
+                    className="w-5 h-5"
+                  />
                 </span>
               ) : null}
             </h1>

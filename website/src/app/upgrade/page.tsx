@@ -134,7 +134,11 @@ export default function UpgradePage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-          <p className="text-muted-light">Loading…</p>
+          <img
+            src="/loading.gif"
+            alt="Loading"
+            className="w-16 h-16"
+          />
         </div>
       }
     >

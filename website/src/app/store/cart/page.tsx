@@ -184,7 +184,11 @@ export default function StoreCartPage() {
         <div className="min-h-screen bg-background">
           <Header variant="store" />
           <div className="px-6 pt-24 flex justify-center">
-            <p className="text-muted-light">Loading cart…</p>
+            <img
+              src="/loading.gif"
+              alt="Loading cart"
+              className="w-16 h-16"
+            />
           </div>
         </div>
       }
