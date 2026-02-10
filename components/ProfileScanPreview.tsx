@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Layout } from '@/constants/theme';
+import { CashAppIcon } from '@/components/CashAppIcon';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ButtonShape, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 
@@ -17,6 +18,10 @@ const SOCIAL_LABELS: Record<string, string> = {
   youtube: 'YouTube',
   threads: 'Threads',
   x: 'X',
+  cashapp: 'Cash App',
+  venmo: 'Venmo',
+  paypal: 'PayPal',
+  zelle: 'Zelle',
   other: 'Link',
 };
 
@@ -28,6 +33,10 @@ const SOCIAL_ICONS: Record<SocialPlatform, keyof typeof Ionicons.glyphMap> = {
   tiktok: 'logo-tiktok',
   threads: 'logo-instagram',
   x: 'logo-twitter',
+  cashapp: 'cash-outline',
+  venmo: 'logo-venmo',
+  paypal: 'logo-paypal',
+  zelle: 'card-outline',
   other: 'link',
 };
 
@@ -36,6 +45,33 @@ function openSocialUrl(url: string) {
   if (!u) return;
   const withProtocol = /^https?:\/\//i.test(u) ? u : `https://${u}`;
   Linking.openURL(withProtocol).catch(() => {});
+}
+
+function normalizeSocialUrl(key: string, raw: string): string {
+  let value = raw.trim();
+  if (!value) return value;
+
+  // Cash App: allow $cashtag or username, or full link
+  if (key === 'cashapp') {
+    // If full link already, leave as-is
+    if (/^https?:\/\//i.test(value) || value.includes('cash.app')) return value;
+    // Ensure it starts with $
+    if (!value.startsWith('$')) {
+      value = `$${value}`;
+    }
+    return `https://cash.app/${value}`;
+  }
+
+  // Venmo: allow @handle, handle, or full link
+  if (key === 'venmo') {
+    if (/^https?:\/\//i.test(value) || value.includes('venmo.com')) return value;
+    if (value.startsWith('@')) {
+      value = value.slice(1);
+    }
+    return `https://venmo.com/${value}`;
+  }
+
+  return value;
 }
 
 function buttonRadius(shape: ButtonShape): number {
@@ -62,11 +98,22 @@ interface ProfileScanPreviewProps {
   showVerified?: boolean;
   /** When true, show a gold ring around the profile avatar (e.g. for Pro). */
   showProRing?: boolean;
+  /** When false, suppress the \"About Me\" section (bio) in the body to avoid repeating it. */
+  showAboutSection?: boolean;
 }
 
 const PRO_RING_COLOR = '#D4AF37';
 
-export function ProfileScanPreview({ profile, links, onSaveContact, onMessage, footerText, showVerified, showProRing }: ProfileScanPreviewProps) {
+export function ProfileScanPreview({
+  profile,
+  links,
+  onSaveContact,
+  onMessage,
+  footerText,
+  showVerified,
+  showProRing,
+  showAboutSection = true,
+}: ProfileScanPreviewProps) {
   const colors = useThemeColors();
   const accent = profile.theme?.accentColor ?? colors.accent;
   const shape = profile.theme?.buttonShape ?? 'rounded';
@@ -145,7 +192,7 @@ export function ProfileScanPreview({ profile, links, onSaveContact, onMessage, f
           <>
             <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
 
-            {profile.bio?.trim() ? (
+            {showAboutSection && profile.bio?.trim() ? (
               <>
                 <Text style={[styles.sectionHeading, { color: colors.text }]}>About Me</Text>
                 <Text style={[styles.bio, { color: colors.textSecondary }]}>
@@ -205,13 +252,17 @@ export function ProfileScanPreview({ profile, links, onSaveContact, onMessage, f
                   <Pressable
                     key={key}
                     style={[styles.socialChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]}
-                    onPress={() => openSocialUrl(url)}
+                    onPress={() => openSocialUrl(normalizeSocialUrl(key, url))}
                   >
-                    <Ionicons
-                      name={SOCIAL_ICONS[key as SocialPlatform] ?? 'link'}
-                      size={20}
-                      color={colors.accent}
-                    />
+                    {key === 'cashapp' ? (
+                      <CashAppIcon size={20} />
+                    ) : (
+                      <Ionicons
+                        name={SOCIAL_ICONS[key as SocialPlatform] ?? 'link'}
+                        size={20}
+                        color={colors.accent}
+                      />
+                    )}
                     <Text style={[styles.socialChipText, { color: colors.text }]} numberOfLines={1}>{label}</Text>
                   </Pressable>
                 ))}

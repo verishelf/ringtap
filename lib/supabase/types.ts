@@ -14,6 +14,10 @@ export type SocialPlatform =
   | 'youtube'
   | 'threads'
   | 'x'
+  | 'cashapp'
+  | 'venmo'
+  | 'paypal'
+  | 'zelle'
   | 'other';
 
 export type ButtonShape = 'rounded' | 'pill' | 'square';

@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileScanPreview } from '@/components/ProfileScanPreview';
+import { CashAppIcon } from '@/components/CashAppIcon';
 import { ThemedView } from '@/components/themed-view';
 import { Layout, Tokens } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
@@ -40,6 +41,13 @@ const SOCIAL_PLATFORMS: { key: SocialPlatform; label: string; placeholder: strin
   { key: 'x', label: 'X / Twitter', placeholder: 'x.com/username' },
 ];
 
+const PAYMENT_PLATFORMS: { key: SocialPlatform; label: string; placeholder: string }[] = [
+  { key: 'cashapp', label: 'Cash App', placeholder: 'cash.app/$cashtag or full link' },
+  { key: 'venmo', label: 'Venmo', placeholder: 'venmo.com/username or full link' },
+  { key: 'paypal', label: 'PayPal', placeholder: 'paypal.me/username or full link' },
+  { key: 'zelle', label: 'Zelle', placeholder: 'Payment link or email/phone' },
+];
+
 const SOCIAL_ICONS: Record<SocialPlatform, keyof typeof Ionicons.glyphMap> = {
   instagram: 'logo-instagram',
   facebook: 'logo-facebook',
@@ -48,6 +56,10 @@ const SOCIAL_ICONS: Record<SocialPlatform, keyof typeof Ionicons.glyphMap> = {
   tiktok: 'logo-tiktok',
   threads: 'logo-instagram',
   x: 'logo-twitter',
+  cashapp: 'cash-outline',
+  venmo: 'logo-venmo',
+  paypal: 'logo-paypal',
+  zelle: 'card-outline',
   other: 'link',
 };
 
@@ -429,6 +441,32 @@ export default function ProfileEditorScreen() {
                   />
                 </View>
               ))}
+              <Text style={[styles.sectionTitle, { color: colors.text, marginTop: Layout.sectionGap }]}>Payment links</Text>
+              <Text style={[styles.hint, { color: colors.textSecondary, marginBottom: Layout.rowGap }]}>
+                Add your payment links so people can pay you quickly from your card.
+              </Text>
+              {PAYMENT_PLATFORMS.map(({ key, label, placeholder }) => (
+                <View key={key} style={styles.socialInputRow}>
+                  {key === 'cashapp' ? (
+                    <View style={styles.socialInputIcon}>
+                      <CashAppIcon size={20} />
+                    </View>
+                  ) : (
+                    <Ionicons name={SOCIAL_ICONS[key]} size={20} color={colors.textSecondary} style={styles.socialInputIcon} />
+                  )}
+                  <TextInput
+                    style={[styles.input, styles.socialInput, { borderColor: colors.borderLight, color: colors.text }]}
+                    placeholder={placeholder}
+                    placeholderTextColor={colors.textSecondary}
+                    value={editForm.socialLinks[key] ?? ''}
+                    onChangeText={(v) =>
+                      setEditForm((f) => (f ? { ...f, socialLinks: { ...f.socialLinks, [key]: v } } : f))
+                    }
+                    autoCapitalize="none"
+                    keyboardType="url"
+                  />
+                </View>
+              ))}
             </View>
             {isPro && (
               <View style={styles.section}>
@@ -621,6 +659,7 @@ export default function ProfileEditorScreen() {
               footerText={profile.username ? 'Tap or scan the QR to connect instantly via RingTap.' : undefined}
               showVerified={isPro}
               showProRing={isPro}
+              showAboutSection={false}
             />
           </ScrollView>
         </View>

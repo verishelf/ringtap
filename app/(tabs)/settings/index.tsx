@@ -133,26 +133,6 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Widget</Text>
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => router.push('/share/lock-screen')}
-            >
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
-                  <Ionicons name="phone-portrait-outline" size={MENU_ICON_SIZE} color={colors.accent} />
-                </View>
-                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>QR on Lock Screen</Text>
-              </View>
-              <View style={styles.menuItemRight} pointerEvents="none">
-                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
-              </View>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={[styles.row, styles.rowBorder, { borderBottomColor: colors.borderLight }]}>
