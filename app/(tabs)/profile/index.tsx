@@ -603,13 +603,26 @@ export default function ProfileEditorScreen() {
                   ) : null}
                   {Object.entries(profile.socialLinks || {}).some(([, v]) => v?.trim()) ? (
                     <View style={styles.viewCardSocial}>
-                      {SOCIAL_PLATFORMS.map(({ key, label }) => {
+                      {[...SOCIAL_PLATFORMS, ...PAYMENT_PLATFORMS].map(({ key, label }) => {
                         const url = profile.socialLinks?.[key]?.trim();
                         if (!url) return null;
                         return (
-                          <Pressable key={key} style={[styles.viewCardSocialChip, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight }]} onPress={() => openSocialUrl(url)}>
-                            <Ionicons name={SOCIAL_ICONS[key]} size={20} color={colors.accent} />
-                            <Text style={[styles.viewCardSocialChipText, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+                          <Pressable
+                            key={key}
+                            style={[
+                              styles.viewCardSocialChip,
+                              { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
+                            ]}
+                            onPress={() => openSocialUrl(url)}
+                          >
+                            {key === 'cashapp' ? (
+                              <CashAppIcon size={20} />
+                            ) : (
+                              <Ionicons name={SOCIAL_ICONS[key]} size={20} color={colors.accent} />
+                            )}
+                            <Text style={[styles.viewCardSocialChipText, { color: colors.text }]} numberOfLines={1}>
+                              {label}
+                            </Text>
                           </Pressable>
                         );
                       })}
