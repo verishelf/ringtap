@@ -10,6 +10,7 @@ type ProfileRow = {
   bio: string;
   avatar_url: string | null;
   video_intro_url: string | null;
+  background_image_url: string | null;
   email: string;
   phone: string;
   website: string;
@@ -22,7 +23,7 @@ function resolveStorageUrl(supabaseUrl: string, url: string | null): string | nu
   const u = url.trim();
   if (/^https?:\/\//i.test(u)) return u;
   const base = supabaseUrl.replace(/\/$/, '');
-  if (u.startsWith('avatars/') || u.startsWith('intros/')) {
+  if (u.startsWith('avatars/') || u.startsWith('intros/') || u.startsWith('backgrounds/')) {
     return `${base}/storage/v1/object/public/profiles/${u}`;
   }
   return u;
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
       const pattern = slug.replace(/%/g, '\\%').replace(/_/g, '\\_');
       const { data: row, error: lookupErr } = await supabase
         .from('profiles')
-        .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, email, phone, website, theme, custom_buttons, social_links')
+        .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, background_image_url, email, phone, website, theme, custom_buttons, social_links')
         .ilike('username', pattern)
         .maybeSingle();
       profile = row as ProfileRow | null;
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest) {
     } else if (uid?.trim()) {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, email, phone, website, theme, custom_buttons, social_links')
+        .select('id, user_id, username, name, title, bio, avatar_url, video_intro_url, background_image_url, email, phone, website, theme, custom_buttons, social_links')
         .eq('user_id', uid.trim())
         .single();
       profile = data as ProfileRow | null;
@@ -126,6 +127,7 @@ export async function GET(request: NextRequest) {
 
     const avatarUrl = resolveStorageUrl(supabaseUrl, profile.avatar_url);
     const videoIntroUrl = resolveStorageUrl(supabaseUrl, profile.video_intro_url ?? null);
+    const backgroundImageUrl = resolveStorageUrl(supabaseUrl, (profile as { background_image_url?: string | null }).background_image_url ?? null);
 
     const theme = (profile as { theme?: { profileBorderColor?: string; accentColor?: string; buttonShape?: string } }).theme ?? {};
     return NextResponse.json({
@@ -137,6 +139,7 @@ export async function GET(request: NextRequest) {
       bio: profile.bio,
       avatar_url: avatarUrl ?? profile.avatar_url,
       video_intro_url: videoIntroUrl ?? profile.video_intro_url ?? null,
+      background_image_url: backgroundImageUrl ?? (profile as { background_image_url?: string | null }).background_image_url ?? null,
       email: profile.email,
       phone: profile.phone,
       website: profile.website,

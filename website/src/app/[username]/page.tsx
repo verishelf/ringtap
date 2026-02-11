@@ -178,6 +178,7 @@ type ProfileData = {
   bio: string;
   avatar_url: string | null;
   video_intro_url?: string | null;
+  background_image_url?: string | null;
   email?: string;
   phone?: string;
   website?: string;
@@ -387,45 +388,57 @@ export default function UsernameProfilePage() {
           className="rounded-2xl border bg-surface overflow-hidden"
           style={cardBorderColor ? { borderColor: cardBorderColor, borderWidth: 2 } : { borderColor: 'var(--border-light)', borderWidth: 1 }}
         >
-          {/* Centered header: avatar, name, title, tagline */}
-          <div className="pt-8 pb-4 px-6 text-center">
-            <div
-              className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-surface-elevated ${profile.plan === 'pro' ? 'w-[94px] h-[94px] border-[3px]' : 'w-[88px] h-[88px] border border-border-light'}`}
-              style={profile.plan === 'pro' ? { borderColor: proBorderColor } : undefined}
-            >
-              {profile.avatar_url ? (
+          {/* Centered header: background behind avatar, name, title, tagline */}
+          <div className="relative pt-8 pb-4 px-6 text-center">
+            {profile.background_image_url?.trim() ? (
+              <>
                 <img
-                  src={profile.avatar_url}
+                  src={profile.background_image_url}
                   alt=""
-                  className="h-[88px] w-[88px] rounded-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
-              ) : (
-                <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-surface-elevated text-3xl text-muted-light">
-                  {profile.name?.charAt(0) ?? '?'}
-                </div>
-              )}
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
-              {profile.name?.trim() || 'No name'}
-              {profile.plan === 'pro' ? (
-                <span className="inline-flex shrink-0" title="Verified Pro">
-                  <Image
-                    src={require('../../../../assets/images/verified.png')}
-                    alt="Verified"
-                    className="w-5 h-5"
+                <div className="absolute inset-0 bg-surface/60" aria-hidden />
+              </>
+            ) : null}
+            <div className="relative">
+              <div
+                className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-surface-elevated ${profile.plan === 'pro' ? 'w-[94px] h-[94px] border-[3px]' : 'w-[88px] h-[88px] border border-border-light'}`}
+                style={profile.plan === 'pro' ? { borderColor: proBorderColor } : undefined}
+              >
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt=""
+                    className="h-[88px] w-[88px] rounded-full object-cover"
                   />
-                </span>
+                ) : (
+                  <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-surface-elevated text-3xl text-muted-light">
+                    {profile.name?.charAt(0) ?? '?'}
+                  </div>
+                )}
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
+                {profile.name?.trim() || 'No name'}
+                {profile.plan === 'pro' ? (
+                  <span className="inline-flex shrink-0" title="Verified Pro">
+                    <Image
+                      src={require('../../../../assets/images/verified.png')}
+                      alt="Verified"
+                      className="w-5 h-5"
+                    />
+                  </span>
+                ) : null}
+              </h1>
+              {profile.title?.trim() ? (
+                <p className="text-muted-light mt-1">{profile.title}</p>
               ) : null}
-            </h1>
-            {profile.title?.trim() ? (
-              <p className="text-muted-light mt-1">{profile.title}</p>
-            ) : null}
-            {profile.bio?.trim() ? (
-              <p className="text-muted-light text-sm mt-2 max-w-md mx-auto line-clamp-2">
-                {profile.bio}
-              </p>
-            ) : null}
-            <p className="text-muted text-xs mt-2">ringtap.me/{profile.username}</p>
+              {profile.bio?.trim() ? (
+                <p className="text-muted-light text-sm mt-2 max-w-md mx-auto line-clamp-2">
+                  {profile.bio}
+                </p>
+              ) : null}
+              <p className="text-muted text-xs mt-2">ringtap.me/{profile.username}</p>
+            </div>
           </div>
 
           {profile.video_intro_url?.trim() ? (

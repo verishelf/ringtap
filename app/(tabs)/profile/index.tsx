@@ -26,7 +26,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { getLinks, getProfileUrl, uploadAvatar, uploadVideoIntro } from '@/lib/api';
+import { getLinks, getProfileUrl, uploadAvatar, uploadBackgroundImage, uploadVideoIntro } from '@/lib/api';
 import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
@@ -80,7 +80,7 @@ const PROFILE_BORDER_COLORS = [
   '#E4E4E7', '#D4D4D8', '#A1A1AA', '#71717A', '#52525B', '#3F3F46', '#27272A',
 ];
 
-type EditForm = Pick<UserProfile, 'username' | 'name' | 'title' | 'bio' | 'avatarUrl' | 'videoIntroUrl' | 'email' | 'phone' | 'website' | 'socialLinks' | 'theme'>;
+type EditForm = Pick<UserProfile, 'username' | 'name' | 'title' | 'bio' | 'avatarUrl' | 'videoIntroUrl' | 'backgroundImageUrl' | 'email' | 'phone' | 'website' | 'socialLinks' | 'theme'>;
 
 function initEditForm(profile: UserProfile): EditForm {
   return {
@@ -90,6 +90,7 @@ function initEditForm(profile: UserProfile): EditForm {
     bio: profile.bio,
     avatarUrl: profile.avatarUrl,
     videoIntroUrl: profile.videoIntroUrl,
+    backgroundImageUrl: profile.backgroundImageUrl,
     email: profile.email,
     phone: profile.phone,
     website: profile.website,
@@ -110,6 +111,7 @@ export default function ProfileEditorScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
   const [previewLinks, setPreviewLinks] = useState<UserLink[]>([]);
 
   // Sync editForm when entering edit mode
@@ -184,6 +186,36 @@ export default function ProfileEditorScreen() {
       setUploadingVideo(false);
     }
   }, [user?.id, updateProfile, refresh, isPro, isEditing, editForm]);
+
+  const pickBackground = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to photos to set a profile background.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+    if (result.canceled || !user?.id) return;
+    setUploadingBackground(true);
+    try {
+      const { url, error } = await uploadBackgroundImage(user.id, result.assets[0].uri);
+      if (url) {
+        await updateProfile({ backgroundImageUrl: url });
+        await refresh();
+        if (isEditing && editForm) setEditForm((f) => ({ ...f, backgroundImageUrl: url }));
+      } else {
+        Alert.alert('Upload failed', error ?? 'Try again.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to upload background image');
+    } finally {
+      setUploadingBackground(false);
+    }
+  }, [user?.id, updateProfile, refresh, isEditing, editForm]);
 
   const startEditing = useCallback(() => {
     if (profile) setEditForm(initEditForm(profile));
@@ -337,6 +369,27 @@ export default function ProfileEditorScreen() {
                 )}
                 {uploadingImage && (
                   <View style={styles.avatarOverlay}>
+                    <ActivityIndicator color={colors.text} />
+                  </View>
+                )}
+              </Pressable>
+            </View>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Profile background</Text>
+              <Text style={[styles.hint, { color: colors.textSecondary, marginBottom: Layout.rowGap }]}>
+                Shown above the video on your profile (app and web).
+              </Text>
+              <Pressable onPress={pickBackground} disabled={uploadingBackground} style={[styles.backgroundButton, { borderColor: colors.borderLight }]}>
+                {editForm.backgroundImageUrl ? (
+                  <Image source={{ uri: editForm.backgroundImageUrl }} style={styles.backgroundPreview} />
+                ) : (
+                  <View style={[styles.backgroundPlaceholder, { backgroundColor: colors.borderLight }]}>
+                    <Ionicons name="image-outline" size={32} color={colors.textSecondary} />
+                    <Text style={[styles.backgroundPlaceholderText, { color: colors.textSecondary }]}>Add background</Text>
+                  </View>
+                )}
+                {uploadingBackground && (
+                  <View style={styles.backgroundOverlay}>
                     <ActivityIndicator color={colors.text} />
                   </View>
                 )}
@@ -799,6 +852,28 @@ const styles = StyleSheet.create({
     borderRadius: Layout.radiusMd,
   },
   videoButtonText: { fontWeight: '600' },
+  backgroundButton: {
+    width: '100%',
+    height: 120,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  backgroundPreview: { width: '100%', height: '100%', resizeMode: 'cover' },
+  backgroundPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backgroundPlaceholderText: { fontSize: Layout.bodySmall, marginTop: 6 },
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.inputGap, marginBottom: Layout.rowGap },
   colorRowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: Layout.rowGap },
   colorDot: { width: 36, height: 36, borderRadius: 18 },

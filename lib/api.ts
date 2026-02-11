@@ -95,6 +95,7 @@ function mapProfileFromDb(row: Record<string, unknown>): UserProfile {
     bio: row.bio as string,
     avatarUrl: resolveStorageUrlIfPath((row.avatar_url as string) ?? null),
     videoIntroUrl: resolveStorageUrlIfPath((row.video_intro_url as string) ?? null),
+    backgroundImageUrl: resolveStorageUrlIfPath((row.background_image_url as string) ?? null),
     email: row.email as string,
     phone: row.phone as string,
     website: row.website as string,
@@ -142,6 +143,7 @@ export async function upsertProfile(
     bio: updates.bio ?? '',
     avatar_url: updates.avatarUrl ?? undefined,
     video_intro_url: updates.videoIntroUrl ?? undefined,
+    background_image_url: updates.backgroundImageUrl ?? undefined,
     email: updates.email ?? '',
     phone: updates.phone ?? '',
     website: updates.website ?? '',
@@ -669,6 +671,23 @@ export async function uploadVideoIntro(userId: string, uri: string): Promise<Upl
     const { data, mimeType } = await readFileAsArrayBuffer(uri, 'video/mp4');
     const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {
       contentType: ext === 'mov' ? 'video/quicktime' : mimeType,
+      upsert: true,
+    });
+    if (uploadError) return { url: null, error: uploadError.message };
+    const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
+    return { url: urlData?.publicUrl ?? null };
+  } catch (e) {
+    return { url: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function uploadBackgroundImage(userId: string, uri: string): Promise<UploadResult> {
+  const ext = uri.split('.').pop()?.split('?')[0] ?? 'jpg';
+  const path = `backgrounds/${userId}/${Date.now()}.${ext}`;
+  try {
+    const { data, mimeType } = await readFileAsArrayBuffer(uri);
+    const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {
+      contentType: mimeType,
       upsert: true,
     });
     if (uploadError) return { url: null, error: uploadError.message };

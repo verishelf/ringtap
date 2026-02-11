@@ -145,38 +145,46 @@ export function ProfileScanPreview({
   return (
     <View style={styles.wrapper}>
       <View style={[styles.card, { borderColor: cardBorderColor, backgroundColor: colors.surface }]}>
-        {/* Centered header: avatar, name, title, tagline */}
-        <View style={styles.headerCentered}>
-          <View style={[styles.avatarWrap, showProRing && [styles.avatarProRing, { borderColor }]]}>
-            {profile.avatarUrl ? (
-              <Image source={{ uri: profile.avatarUrl }} style={styles.avatarLarge} />
-            ) : (
-              <View style={[styles.avatarLargePlaceholder, { backgroundColor: colors.borderLight }]}>
-                <Ionicons name="person" size={48} color={colors.textSecondary} />
-              </View>
-            )}
-          </View>
-          <View style={styles.nameRow}>
-            <Text style={[styles.nameCentered, { color: colors.text }]} numberOfLines={1}>
-              {profile.name?.trim() || 'Your name'}
-            </Text>
-            {showVerified ? (
-              <Image
-                source={require('@/assets/images/verified.png')}
-                style={styles.verifiedBadge}
-              />
+        {/* Header with optional background behind avatar, name, title, tagline */}
+        <View style={styles.headerOuter}>
+          {profile.backgroundImageUrl ? (
+            <View style={styles.headerBackgroundWrap}>
+              <Image source={{ uri: profile.backgroundImageUrl }} style={styles.headerBackgroundImage} contentFit="cover" />
+              <View style={[styles.headerBackgroundOverlay, { backgroundColor: colors.surface + '99' }]} />
+            </View>
+          ) : null}
+          <View style={styles.headerCentered}>
+            <View style={[styles.avatarWrap, showProRing && [styles.avatarProRing, { borderColor }]]}>
+              {profile.avatarUrl ? (
+                <Image source={{ uri: profile.avatarUrl }} style={styles.avatarLarge} />
+              ) : (
+                <View style={[styles.avatarLargePlaceholder, { backgroundColor: colors.borderLight }]}>
+                  <Ionicons name="person" size={48} color={colors.textSecondary} />
+                </View>
+              )}
+            </View>
+            <View style={styles.nameRow}>
+              <Text style={[styles.nameCentered, { color: colors.text }]} numberOfLines={1}>
+                {profile.name?.trim() || 'Your name'}
+              </Text>
+              {showVerified ? (
+                <Image
+                  source={require('@/assets/images/verified.png')}
+                  style={styles.verifiedBadge}
+                />
+              ) : null}
+            </View>
+            {profile.title?.trim() ? (
+              <Text style={[styles.titleCentered, { color: colors.textSecondary }]} numberOfLines={1}>
+                {profile.title}
+              </Text>
+            ) : null}
+            {profile.bio?.trim() ? (
+              <Text style={[styles.tagline, { color: colors.textSecondary }]} numberOfLines={2}>
+                {profile.bio}
+              </Text>
             ) : null}
           </View>
-          {profile.title?.trim() ? (
-            <Text style={[styles.titleCentered, { color: colors.textSecondary }]} numberOfLines={1}>
-              {profile.title}
-            </Text>
-          ) : null}
-          {profile.bio?.trim() ? (
-            <Text style={[styles.tagline, { color: colors.textSecondary }]} numberOfLines={2}>
-              {profile.bio}
-            </Text>
-          ) : null}
         </View>
 
         {profile.videoIntroUrl ? (
@@ -351,6 +359,19 @@ const styles = StyleSheet.create({
   verifiedBadge: { marginLeft: 2 },
   titleCentered: { fontSize: Layout.body, marginTop: 4, textAlign: 'center' },
   tagline: { fontSize: Layout.bodySmall, lineHeight: 20, marginTop: 6, textAlign: 'center', paddingHorizontal: 8 },
+  headerOuter: { position: 'relative', width: '100%' },
+  headerBackgroundWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerBackgroundImage: { width: '100%', height: '100%' },
+  headerBackgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
   videoWrap: { width: '100%', aspectRatio: 16 / 9, marginBottom: Layout.rowGap, borderRadius: Layout.radiusMd, overflow: 'hidden' },
   videoIntro: { width: '100%', height: '100%' },
   separator: { height: StyleSheet.hairlineWidth, marginVertical: Layout.rowGap },

@@ -13,6 +13,7 @@ export interface Database {
           bio: string;
           avatar_url: string | null;
           video_intro_url: string | null;
+          background_image_url: string | null;
           email: string;
           phone: string;
           website: string;

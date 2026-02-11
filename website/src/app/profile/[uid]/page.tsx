@@ -13,6 +13,7 @@ type ProfileData = {
   title: string;
   bio: string;
   avatar_url: string | null;
+  background_image_url?: string | null;
   email?: string;
   phone?: string;
   website?: string;
@@ -193,27 +194,40 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background py-12 px-6">
       <div className="max-w-lg mx-auto">
-        <div className="rounded-2xl border border-border-light bg-surface p-6 space-y-6">
-          <div className="flex items-center gap-4">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt=""
-                className="w-20 h-20 rounded-full object-cover bg-surface-elevated"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-surface-elevated flex items-center justify-center text-2xl text-muted">
-                {profile.name?.charAt(0) ?? '?'}
+        <div className="rounded-2xl border border-border-light bg-surface overflow-hidden">
+          <div className="relative p-6">
+            {profile.background_image_url?.trim() ? (
+              <>
+                <img
+                  src={profile.background_image_url}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-surface/60" aria-hidden />
+              </>
+            ) : null}
+            <div className={`flex items-center gap-4 ${profile.background_image_url?.trim() ? 'relative' : ''}`}>
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  className="w-20 h-20 rounded-full object-cover bg-surface-elevated shrink-0"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-surface-elevated flex items-center justify-center text-2xl text-muted shrink-0">
+                  {profile.name?.charAt(0) ?? '?'}
+                </div>
+              )}
+              <div>
+                <h1 className="text-xl font-bold text-foreground">{profile.name || 'No name'}</h1>
+                {profile.title ? <p className="text-muted-light">{profile.title}</p> : null}
+                {profile.username ? (
+                  <p className="text-sm text-muted">ringtap.me/{profile.username}</p>
+                ) : null}
               </div>
-            )}
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{profile.name || 'No name'}</h1>
-              {profile.title ? <p className="text-muted-light">{profile.title}</p> : null}
-              {profile.username ? (
-                <p className="text-sm text-muted">ringtap.me/{profile.username}</p>
-              ) : null}
             </div>
           </div>
+          <div className="px-6 pb-6 space-y-4">
           {profile.bio ? (
             <p className="text-foreground">{profile.bio}</p>
           ) : null}
@@ -250,6 +264,7 @@ export default function ProfilePage() {
               })}
             </div>
           ) : null}
+          </div>
         </div>
         <p className="mt-8 text-center text-sm text-muted">
           <Link href="/" className="text-accent hover:underline">RingTap</Link>

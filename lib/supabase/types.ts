@@ -52,6 +52,7 @@ export interface UserProfile {
   bio: string;
   avatarUrl: string | null;
   videoIntroUrl: string | null;
+  backgroundImageUrl: string | null;
   email: string;
   phone: string;
   website: string;
