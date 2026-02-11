@@ -182,7 +182,7 @@ export default function Home() {
             Simple pricing
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
-            Free forever for your profile and 2 links. Pro adds unlimited links, your theme on the web, and analytics (taps, views, clicks).
+            Free forever for your profile and 2 links. Pro adds unlimited links, your theme on the web, and analytics. Choose monthly or yearly billing.
           </p>
           <div className="mt-16 grid gap-8 sm:grid-cols-2">
             <div className="rounded-2xl border border-border-light bg-surface p-8">
@@ -219,8 +219,8 @@ export default function Home() {
                 Pro
               </span>
               <h3 className="text-xl font-bold text-foreground">Pro</h3>
-              <p className="mt-2 text-3xl font-bold text-accent">$9</p>
-              <p className="mt-1 text-sm text-muted-light">/ month</p>
+              <p className="mt-2 text-2xl font-bold text-accent">$9<span className="text-base font-normal text-muted-light">/month</span></p>
+              <p className="mt-0.5 text-sm text-muted-light">or $99/year <span className="text-accent font-medium">(save when you pay yearly)</span></p>
               <ul className="mt-6 space-y-3 text-sm text-muted-light">
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
@@ -243,16 +243,16 @@ export default function Home() {
                   Analytics (views, taps, clicks, NFC, QR)
                 </li>
               </ul>
-              <a
-                href="#download"
+              <Link
+                href="/upgrade"
                 className="mt-8 block w-full rounded-xl bg-accent py-3 text-center text-sm font-semibold text-background hover:bg-muted-light transition-colors"
               >
                 Upgrade to Pro
-              </a>
+              </Link>
             </div>
           </div>
           <p className="mt-8 text-center text-xs text-muted">
-            Billing via Stripe. Cancel anytime. Free plan never expires.
+            Monthly or yearly billing via Stripe. Cancel anytime. Free plan never expires.
           </p>
         </div>
       </section>
@@ -283,7 +283,7 @@ export default function Home() {
               },
               {
                 q: "What's included in Pro?",
-                a: "Pro ($9/month) includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Billing is handled securely by Stripe; you can cancel anytime.",
+                a: "Pro is $9/month or $99/year (save when you pay yearly). It includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Billing is handled securely by Stripe; you can cancel anytime.",
               },
             ].map((faq) => (
               <div key={faq.q}>

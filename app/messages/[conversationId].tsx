@@ -13,9 +13,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ProAvatar, PRO_RING_COLOR } from '@/components/ProBadge';
+import { ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -118,7 +119,7 @@ export default function ChatScreen() {
           <ProAvatar avatarUrl={avatarUrl} isPro={showPro} size="small" />
           {showPro ? (
             <View style={styles.verifiedBadgeOnAvatar}>
-              <Ionicons name="checkmark-circle" size={18} color={PRO_RING_COLOR} />
+              <Image source={require('@/assets/images/verified.png')} style={styles.verifiedBadgeImage} />
             </View>
           ) : null}
         </View>
@@ -238,8 +239,8 @@ const styles = StyleSheet.create({
     height: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
   },
+  verifiedBadgeImage: { width: 18, height: 18 },
   bubbleWithTime: { maxWidth: '75%' },
   bubbleWithTimeMe: { alignItems: 'flex-end' },
   bubbleWithTimeThem: { alignItems: 'flex-start' },

@@ -79,7 +79,10 @@ export function NameWithVerified({ name, isPro, numberOfLines = 1, nameStyle, co
         {name}
       </Text>
       {isPro ? (
-        <Ionicons name="checkmark-circle" size={18} color={PRO_RING_COLOR} style={styles.verifiedIcon} />
+        <Image
+          source={require('@/assets/images/verified.png')}
+          style={styles.verifiedBadge}
+        />
       ) : null}
     </View>
   );
@@ -90,5 +93,5 @@ const styles = StyleSheet.create({
   placeholderText: { fontSize: 18, fontWeight: '600' },
   nameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 },
   nameText: { fontSize: 16, fontWeight: '600', flexShrink: 1 },
-  verifiedIcon: { marginLeft: 4, flexShrink: 0 },
+  verifiedBadge: { width: 22, height: 22, marginLeft: 4, flexShrink: 0 },
 });

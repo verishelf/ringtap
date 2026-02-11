@@ -70,7 +70,6 @@ export default function AnalyticsScreen() {
   useFocusEffect(
     useCallback(() => {
       trackMeasured.current = false;
-      setTrackWidth(0);
       if (user?.id && isPro) refresh();
     }, [user?.id, isPro, refresh])
   );
@@ -91,10 +90,9 @@ export default function AnalyticsScreen() {
     );
   }, [signOut]);
 
-  // Reset track measurement when period or data changes (must be before any early return)
+  // Allow re-measure when period or data changes; don't clear trackWidth or the bar will flash off
   useEffect(() => {
     trackMeasured.current = false;
-    setTrackWidth(0);
   }, [period, data]);
 
   if (!isPro) {

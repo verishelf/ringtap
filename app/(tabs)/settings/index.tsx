@@ -11,7 +11,7 @@ import { useNotifications } from '@/contexts/NotificationsContext';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { deleteAccount, unlinkMyRings } from '@/lib/api';
+import { deleteAccount } from '@/lib/api';
 
 const MENU_ICON_SIZE = 22;
 const CHEVRON_SIZE = 20;
@@ -25,36 +25,11 @@ export default function SettingsScreen() {
   const { prefs: notifPrefs, setPrefs: setNotifPrefs, permissionStatus, requestPermission } = useNotifications();
   const colors = useThemeColors();
   const router = useRouter();
-  const [unlinking, setUnlinking] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const handleNewMessagesToggle = async (on: boolean) => {
     setNotifPrefs({ newMessages: on });
     if (on) await requestPermission();
-  };
-
-  const handleUnlinkRing = () => {
-    Alert.alert(
-      'Unlink ring',
-      'This will unlink your NFC ring from your account. You can link it again later by tapping it and claiming it.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unlink',
-          style: 'destructive',
-          onPress: async () => {
-            setUnlinking(true);
-            const result = await unlinkMyRings();
-            setUnlinking(false);
-            if (result.success) {
-              Alert.alert('Done', 'Your ring has been unlinked.');
-            } else {
-              Alert.alert('Error', result.error ?? 'Could not unlink ring');
-            }
-          },
-        },
-      ]
-    );
   };
 
   const handleSignOut = () => {
@@ -162,27 +137,6 @@ export default function SettingsScreen() {
               <View style={styles.menuItemRight} pointerEvents="none">
                 <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
               </View>
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleUnlinkRing}
-              disabled={unlinking}
-            >
-              <View style={styles.menuItemLeft}>
-                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
-                  <Ionicons name="link-outline" size={MENU_ICON_SIZE} color={colors.accent} />
-                </View>
-                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Unlink ring</Text>
-              </View>
-              {unlinking ? (
-                <View style={styles.menuItemRight}>
-                  <ActivityIndicator size="small" color={colors.accent} />
-                </View>
-              ) : (
-                <View style={styles.menuItemRight} pointerEvents="none">
-                  <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
-                </View>
-              )}
             </Pressable>
           </View>
         </View>

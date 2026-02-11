@@ -6,25 +6,23 @@ import * as Linking from 'expo-linking';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Animated,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from 'react-native';
 
-import { ProAvatar, NameWithVerified } from '@/components/ProBadge';
+import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import type { ConversationWithPeer, SavedContact } from '@/lib/api';
 import { getAnalytics, getConversations, getProfile, getSavedContacts, getScannedContacts, getSubscription } from '@/lib/api';
-import type { SavedContact } from '@/lib/api';
-import type { ConversationWithPeer } from '@/lib/api';
 import type { ScannedContact } from '@/lib/supabase/types';
 
 dayjs.extend(relativeTime);
@@ -307,9 +305,12 @@ export default function HomeScreen() {
                           <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
                         ) : null}
                         <NameWithVerified
-                          name={`${conv.peerName || 'Unknown'}${conv.hasUnread ? ' · New' : ''}`}
+                          name={conv.peerName || 'Unknown'}
                           isPro={conv.peerIsPro}
                         />
+                        {conv.hasUnread ? (
+                          <Text style={[styles.recentNewLabel, { color: colors.accent }]}> · New</Text>
+                        ) : null}
                       </View>
                       <Text style={[styles.recentTime, { color: colors.textSecondary }]} numberOfLines={1}>
                         {conv.lastMessageBody || 'No messages yet'}
@@ -495,6 +496,7 @@ const styles = StyleSheet.create({
   unreadBadgeText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   unreadDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
   recentNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'nowrap' },
+  recentNewLabel: { fontSize: 16, fontWeight: '600', flexShrink: 0 },
   seeAll: { fontSize: Layout.caption, fontWeight: '600' },
   recentEmpty: { fontSize: Layout.bodySmall, fontStyle: 'italic', paddingVertical: 8 },
   recentRow: {
@@ -502,6 +504,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    direction: 'ltr',
   },
   recentAvatar: {
     width: 36,
