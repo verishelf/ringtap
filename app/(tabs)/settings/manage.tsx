@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
@@ -11,14 +11,17 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { supabase } from '@/lib/supabase/supabaseClient';
 
 const PORTAL_API_BASE = 'https://www.ringtap.me';
+/** App Store subscription management - open to manage IAP subscriptions */
+const APPLE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscriptions';
+const GOOGLE_PLAY_SUBSCRIPTIONS_URL = 'https://play.google.com/store/account/subscriptions';
 
 export default function ManageSubscriptionScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const { plan, status, refresh } = useSubscription();
+  const { plan, status, refresh, hasStripeSubscription } = useSubscription();
   const [loading, setLoading] = useState(false);
 
-  const openPortal = async () => {
+  const openStripePortal = async () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -54,6 +57,20 @@ export default function ManageSubscriptionScreen() {
     }
   };
 
+  const openStoreSubscriptions = async () => {
+    const url = Platform.OS === 'ios' ? APPLE_SUBSCRIPTIONS_URL : GOOGLE_PLAY_SUBSCRIPTIONS_URL;
+    const opened = await Linking.openURL(url);
+    if (!opened) Alert.alert('Error', 'Could not open store.');
+  };
+
+  const handleManage = async () => {
+    if (hasStripeSubscription) {
+      await openStripePortal();
+    } else {
+      await openStoreSubscriptions();
+    }
+  };
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -65,7 +82,7 @@ export default function ManageSubscriptionScreen() {
 
         <Pressable
           style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
-          onPress={openPortal}
+          onPress={handleManage}
           disabled={loading}
         >
           {loading ? (
@@ -73,7 +90,9 @@ export default function ManageSubscriptionScreen() {
           ) : (
             <>
               <Ionicons name="open-outline" size={22} color={colors.text} />
-              <Text style={[styles.buttonText, { color: colors.text }]}>Manage or cancel subscription</Text>
+              <Text style={[styles.buttonText, { color: colors.text }]}>
+                {hasStripeSubscription ? 'Manage or cancel subscription' : 'Manage in App Store'}
+              </Text>
             </>
           )}
         </Pressable>
