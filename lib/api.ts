@@ -342,6 +342,18 @@ export async function getSubscription(userId: string) {
   return data;
 }
 
+/** Fetch plan for display (e.g. verified badge) from website API. Use when direct subscription read may be blocked by RLS. */
+export async function getProfilePlanFromApi(userId: string): Promise<'free' | 'pro'> {
+  try {
+    const res = await fetch(`${PROFILE_URL_BASE}/api/profile?uid=${encodeURIComponent(userId)}`);
+    if (!res.ok) return 'free';
+    const data = (await res.json()) as { plan?: string };
+    return data?.plan === 'pro' ? 'pro' : 'free';
+  } catch {
+    return 'free';
+  }
+}
+
 // --- Analytics ---
 const ANALYTICS_TYPES = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan'] as const;
 

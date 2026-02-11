@@ -23,6 +23,7 @@ import {
   getOrCreateConversation,
   saveContact,
   getSubscription,
+  getProfilePlanFromApi,
   type UserProfile,
   type UserLink,
 } from '@/lib/api';
@@ -49,7 +50,12 @@ export default function ProfileByIdScreen() {
       const [p, l, sub] = await Promise.all([getProfile(id), getLinks(id), getSubscription(id)]);
       setProfile(p ?? null);
       setLinks(l ?? []);
-      setProfileIsPro((sub?.plan as string) === 'pro');
+      let isPro = (sub?.plan as string) === 'pro';
+      if (!isPro && p) {
+        const planFromApi = await getProfilePlanFromApi(id);
+        isPro = planFromApi === 'pro';
+      }
+      setProfileIsPro(isPro);
       if (!p) setError('Profile not found');
     } catch {
       setError('Failed to load profile');
