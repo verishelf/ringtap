@@ -112,9 +112,9 @@ export default function Home() {
               },
               {
                 step: "3",
-                title: "Share with NFC or QR",
+                title: "Link your ring & share",
                 description:
-                  "Tap your NFC ring or card to someone's phone, or show your QR code. Their browser opens your profile instantly—no app required for them.",
+                  "In the app, use \"Link ring\" (Share → NFC or Settings → Manage ring) to write your profile URL to your NFC ring or card—no other apps needed. Tap to share, or show your QR code. Their browser opens your profile instantly.",
               },
               {
                 step: "4",
@@ -158,12 +158,12 @@ export default function Home() {
               {
                 title: "NFC & QR",
                 description:
-                  "Tap your NFC ring or card to someone's phone, or let them scan your QR code. Your profile opens in their browser instantly—no typing, no searching. Works with any NFC-capable ring or card you program with your ringtap.me URL.",
+                  "The app has a built-in NFC writer: link your profile to your ring or card in one tap (Share → NFC → Link ring, or Settings → Manage ring). No other apps needed. Then tap to share, or show your QR code. Your profile opens in their browser instantly.",
               },
               {
                 title: "Free & Pro",
                 description:
-                  "Free: profile, 2 links, QR, NFC sharing. Pro: unlimited links, custom theme (accent color, button shape, Pro border on card and avatar), video intro, and analytics. Your ringtap.me page uses your theme so you look the same everywhere. Billing via Stripe; cancel anytime.",
+                  "Free: profile, 2 links, link ring (NFC writer), QR, contacts, messages. Pro: unlimited links, theme (accent, button shape, Pro border), video intro, analytics. Your ringtap.me page uses your theme. Monthly or yearly billing via Stripe; cancel anytime.",
               },
             ].map((f) => (
               <div key={f.title} className="rounded-2xl border border-border-light bg-surface p-6">
@@ -171,6 +171,92 @@ export default function Home() {
                 <p className="mt-2 text-sm text-muted-light leading-relaxed">{f.description}</p>
               </div>
             ))}
+          </div>
+
+          {/* Everything in the app */}
+          <h2 className="text-center text-2xl font-bold text-foreground mt-20 mb-6">
+            Everything in the app
+          </h2>
+          <p className="mx-auto max-w-2xl text-center text-muted-light text-sm mb-10">
+            One place to build your card, link your ring, share, and stay in touch.
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Profile</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>Name, photo, title, bio, username (ringtap.me/you)</li>
+                <li>Social links (Instagram, TikTok, LinkedIn, X, etc.)</li>
+                <li>Payment links (Cash App, Venmo, PayPal, Zelle)</li>
+                <li>Theme: accent color, button shape (Pro: border color)</li>
+                <li>Video intro (Pro), copy profile link</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Link your ring</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>In-app NFC writer — write your profile URL to ring or card</li>
+                <li>No Shortcuts or third-party apps needed</li>
+                <li>Claim ring (link hardware to your account)</li>
+                <li>Manage ring in Settings</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Share</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>QR code — generate, save image, share</li>
+                <li>Share with NFC — how-to, Link ring, test your link</li>
+                <li>Tap to share from home (opens share flow)</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Contacts</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>Saved contacts (people you’ve saved from profiles)</li>
+                <li>Scanned contacts (from NFC/QR scans)</li>
+                <li>View any profile by ID, save contact, open in messages</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Links</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>Add, edit, delete custom links (social, payment, other)</li>
+                <li>Free: 2 links; Pro: unlimited</li>
+                <li>Reorder and show on your profile & ringtap.me</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Messages</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>Conversations with contacts who have the app</li>
+                <li>Recent messages on home, full list in Messages tab</li>
+                <li>Push notifications (optional), delete conversation</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Analytics (Pro)</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>Profile views, link clicks, NFC taps, QR scans</li>
+                <li>Chart by day; 7, 30, or 90 day range</li>
+                <li>This week taps & views on home dashboard</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Settings</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>Appearance (light / dark)</li>
+                <li>Notifications (new messages)</li>
+                <li>Manage ring, manage subscription, upgrade to Pro</li>
+                <li>About, sign out, delete account</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border-light bg-surface p-5">
+              <h3 className="text-base font-semibold text-foreground">Web & store</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-light">
+                <li>Your ringtap.me page matches your app theme (Pro)</li>
+                <li>Store: NFC rings & cards (ringtap.me/store)</li>
+                <li>Upgrade to Pro on web (monthly or yearly)</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -257,6 +343,48 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section id="testimonials" className="border-t border-border-light/50 py-24 px-6">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
+            What people say about RingTap
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
+            Real users sharing how RingTap fits into their networking and events.
+          </p>
+          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                quote: "I got tired of typing my LinkedIn at conferences. Now I tap my ring and my profile opens on their phone. So much faster and it always looks polished.",
+                name: "Jordan M.",
+                role: "Sales lead, tech events",
+              },
+              {
+                quote: "The in-app NFC writer is a game changer. I didn't need Shortcuts or another app—just Link ring in the app and hold my card to my phone. Done.",
+                name: "Sam K.",
+                role: "Freelance designer",
+              },
+              {
+                quote: "I use the QR code on my laptop sticker and the ring when I'm in person. One link for everything. Pro analytics let me see how many people actually viewed my profile.",
+                name: "Alex R.",
+                role: "Startup founder",
+              },
+            ].map((t, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-border-light bg-surface p-6 flex flex-col"
+              >
+                <p className="text-foreground text-sm leading-relaxed flex-1">&ldquo;{t.quote}&rdquo;</p>
+                <div className="mt-4 pt-4 border-t border-border-light">
+                  <p className="font-semibold text-foreground text-sm">{t.name}</p>
+                  <p className="text-muted-light text-xs mt-0.5">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="border-t border-border-light/50 py-24 px-6">
         <div className="mx-auto max-w-2xl">
@@ -279,7 +407,7 @@ export default function Home() {
               },
               {
                 q: "How do I add my profile to an NFC ring or card?",
-                a: "Write your ringtap.me/username URL to the NFC tag using your phone's built-in NFC tools (e.g. Shortcuts on iOS, NFC Tools on Android) or a compatible app. Then when someone taps your ring or card to their phone, your profile opens.",
+                a: "Use the RingTap app's built-in NFC writer. Set a username in Profile, then go to Share → Share with NFC → \"Link ring\" (or Settings → Manage ring). Hold your ring or card to the back of your phone; the app writes your ringtap.me/username URL. No other apps needed.",
               },
               {
                 q: "What's included in Pro?",
@@ -357,6 +485,9 @@ export default function Home() {
             </Link>
             <a href="#pricing" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Pricing
+            </a>
+            <a href="#testimonials" className="text-sm text-muted-light hover:text-foreground transition-colors">
+              Testimonials
             </a>
             <a href="#faq" className="text-sm text-muted-light hover:text-foreground transition-colors">
               FAQ
