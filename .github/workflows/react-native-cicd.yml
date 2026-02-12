@@ -43,16 +43,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: "yarn"
+
+      - name: 📦 Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: 📦 Setup yarn cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: yarn install
 
       - name: 🧪 Run TypeScript check
-        run: npx tsc --noEmit
+        run: yarn tsc
 
       - name: 🧹 Run ESLint
-        run: npm run lint
+        run: yarn lint
+
+      - name: 🎨 Run Prettier check
+        run: yarn format:check
 
   build-and-deploy:
     needs: test
@@ -66,13 +81,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: "yarn"
+
+      - name: 📦 Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: 📦 Setup yarn cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
       - name: 📦 Install dependencies
-        run: npm ci
-
-      - name: 📦 Install EAS CLI
-        run: npm install -g eas-cli@latest
+        run: |
+          yarn install
+          yarn global add eas-cli@latest
 
       - name: 📱 Setup EAS build cache
         uses: actions/cache@v3
