@@ -71,13 +71,20 @@ export default function ManageSubscriptionScreen() {
     }
   };
 
+  const subscriptionSource = hasStripeSubscription ? 'Stripe' : 'App Store';
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[styles.planName, { color: colors.text }]}>Pro</Text>
           <Text style={[styles.status, { color: colors.textSecondary }]}>{status ?? 'active'}</Text>
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>Update payment method or cancel your subscription. You keep Pro until the end of the current billing period.</Text>
+          <Text style={[styles.sourceLabel, { color: colors.textSecondary }]}>
+            Billed via {subscriptionSource}
+          </Text>
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>
+            Update payment method or cancel. You keep Pro until the end of the current billing period.
+          </Text>
         </View>
 
         <Pressable
@@ -91,7 +98,9 @@ export default function ManageSubscriptionScreen() {
             <>
               <Ionicons name="open-outline" size={22} color={colors.text} />
               <Text style={[styles.buttonText, { color: colors.text }]}>
-                {hasStripeSubscription ? 'Manage or cancel subscription' : 'Manage in App Store'}
+                {hasStripeSubscription
+                  ? 'Manage Stripe billing'
+                  : 'Manage in App Store'}
               </Text>
             </>
           )}
@@ -111,6 +120,7 @@ const styles = StyleSheet.create({
   },
   planName: { fontSize: 20, fontWeight: '700' },
   status: { fontSize: Layout.bodySmall, marginTop: Layout.tightGap, textTransform: 'capitalize' },
+  sourceLabel: { fontSize: Layout.bodySmall, marginTop: Layout.tightGap, fontWeight: '500' },
   hint: { fontSize: Layout.bodySmall, marginTop: Layout.rowGap, lineHeight: 20 },
   button: {
     flexDirection: 'row',
