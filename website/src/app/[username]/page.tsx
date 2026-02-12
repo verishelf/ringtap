@@ -271,6 +271,9 @@ export default function UsernameProfilePage() {
   const [exchangeSubmitting, setExchangeSubmitting] = useState(false);
   const [exchangeError, setExchangeError] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInSending, setSignInSending] = useState(false);
+  const [signInSent, setSignInSent] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     if (!slug) {
@@ -319,16 +322,15 @@ export default function UsernameProfilePage() {
     }
   }, [slug, router]);
 
-  // If opened inside RingTap app (WebView), redirect to app with user's UUID
   const userId = profile?.user_id;
   const isInApp = typeof window !== 'undefined' && (
     /RingTap|Expo/i.test(navigator.userAgent) ||
-    (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('inapp') === '1')
+    new URLSearchParams(window.location.search).get('inapp') === '1'
   );
+  // If opened inside RingTap app (WebView), redirect to app to view profile natively
   useEffect(() => {
     if (!userId || !profile || !isInApp) return;
-    const deepLink = `${DEEP_LINK_SCHEME}profile/${userId}`;
-    window.location.replace(deepLink);
+    window.location.replace(`${DEEP_LINK_SCHEME}profile/${userId}`);
   }, [userId, profile, isInApp]);
 
   // Record view for analytics (shows in app Analytics tab) — once per load. Link, NFC, and QR all record here.
@@ -352,6 +354,21 @@ export default function UsernameProfilePage() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  // Re-check session when returning from magic link (Supabase adds token to URL)
+  useEffect(() => {
+    if (!exchangeModalOpen || hasSession) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const check = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) setHasSession(true);
+      });
+    };
+    check();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => check());
+    return () => subscription.unsubscribe();
+  }, [exchangeModalOpen, hasSession]);
 
   if (loading) {
     return (
@@ -598,11 +615,17 @@ export default function UsernameProfilePage() {
               <button
                 type="button"
                 onClick={() => {
+                  if (isInApp) {
+                    window.location.href = `${DEEP_LINK_SCHEME}profile/${userId}`;
+                    return;
+                  }
                   setExchangeModalOpen(true);
                   setExchangeError(null);
                   setExchangeName('');
                   setExchangePhone('');
                   setExchangeEmail('');
+                  setSignInSent(false);
+                  setSignInEmail('');
                   const supabase = getSupabase();
                   if (supabase) {
                     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -652,15 +675,62 @@ export default function UsernameProfilePage() {
                 {hasSession === false ? (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-light">
-                      Sign in to exchange contacts. Open this profile in the RingTap app to exchange.
+                      Sign in to exchange contacts. Enter your email for a magic link.
                     </p>
-                    <a
-                      href={`${DEEP_LINK_SCHEME}profile/${userId}`}
-                      className={`block w-full ${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90`}
-                      style={accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : undefined}
-                    >
-                      Open in RingTap App
-                    </a>
+                    {signInSent ? (
+                      <p className="text-sm text-accent font-medium">
+                        Check your email for the sign-in link.
+                      </p>
+                    ) : (
+                      <>
+                        <input
+                          type="email"
+                          placeholder="Your email"
+                          value={signInEmail}
+                          onChange={(e) => setSignInEmail(e.target.value)}
+                          className="w-full h-12 px-4 rounded-xl border border-border-light bg-surface-elevated text-foreground text-sm placeholder:text-muted-light"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const email = signInEmail.trim();
+                            if (!email || signInSending) return;
+                            setSignInSending(true);
+                            setExchangeError(null);
+                            const supabase = getSupabase();
+                            try {
+                              const { error: otpError } = await supabase?.auth.signInWithOtp({
+                                email,
+                                options: {
+                                  emailRedirectTo: typeof window !== 'undefined' ? window.location.href : undefined,
+                                },
+                              }) ?? { error: new Error('Supabase not configured') };
+                              if (otpError) {
+                                setExchangeError(otpError.message);
+                              } else {
+                                setSignInSent(true);
+                              }
+                            } catch (err) {
+                              setExchangeError(err instanceof Error ? err.message : 'Failed to send');
+                            } finally {
+                              setSignInSending(false);
+                            }
+                          }}
+                          disabled={signInSending || !signInEmail.trim()}
+                          className={`w-full ${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 disabled:opacity-50`}
+                          style={accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : undefined}
+                        >
+                          {signInSending ? 'Sending…' : 'Send magic link'}
+                        </button>
+                      </>
+                    )}
+                    {exchangeError && <p className="text-sm text-destructive">{exchangeError}</p>}
+                    <p className="text-xs text-muted-light mt-2">
+                      Have the app?{' '}
+                      <a href={`${DEEP_LINK_SCHEME}profile/${userId}`} className="text-accent hover:underline">
+                        Open in RingTap app
+                      </a>
+                    </p>
                   </div>
                 ) : (
                   <form
