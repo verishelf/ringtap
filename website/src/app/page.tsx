@@ -254,7 +254,7 @@ export default function Home() {
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Your ringtap.me page matches your app theme (Pro)</li>
                 <li>Store: NFC rings & cards (ringtap.me/store)</li>
-                <li>Upgrade to Pro in the app</li>
+                <li>Upgrade to Pro on web (monthly or yearly)</li>
               </ul>
             </div>
           </div>
@@ -305,8 +305,8 @@ export default function Home() {
                 Pro
               </span>
               <h3 className="text-xl font-bold text-foreground">Pro</h3>
-              <p className="mt-2 text-2xl font-bold text-accent">From $9.99<span className="text-base font-normal text-muted-light">/month</span></p>
-              <p className="mt-0.5 text-sm text-muted-light">or $99.99/year. Get the app to upgrade.</p>
+              <p className="mt-2 text-2xl font-bold text-accent">$9<span className="text-base font-normal text-muted-light">/month</span></p>
+              <p className="mt-0.5 text-sm text-muted-light">or $99/year <span className="text-accent font-medium">(save when you pay yearly)</span></p>
               <ul className="mt-6 space-y-3 text-sm text-muted-light">
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
@@ -329,16 +329,16 @@ export default function Home() {
                   Analytics (views, taps, clicks, NFC, QR)
                 </li>
               </ul>
-              <a
-                href="#download"
+              <Link
+                href="/upgrade"
                 className="mt-8 block w-full rounded-xl bg-accent py-3 text-center text-sm font-semibold text-background hover:bg-muted-light transition-colors"
               >
                 Upgrade to Pro
-              </a>
+              </Link>
             </div>
           </div>
           <p className="mt-8 text-center text-xs text-muted">
-            Get the app to upgrade to Pro. Cancel anytime. Free plan never expires.
+            Monthly or yearly billing via Stripe. Cancel anytime. Free plan never expires.
           </p>
         </div>
       </section>
@@ -411,7 +411,7 @@ export default function Home() {
               },
               {
                 q: "What's included in Pro?",
-                a: "Pro includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Get the app to upgrade—pricing varies by region; cancel anytime.",
+                a: "Pro is $9/month or $99/year (save when you pay yearly). It includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Billing is handled securely by Stripe; you can cancel anytime.",
               },
             ].map((faq) => (
               <div key={faq.q}>
@@ -462,7 +462,7 @@ export default function Home() {
             </a>
           </div>
           <p className="mt-6 text-xs text-muted">
-            Free to start. Get the app to upgrade to Pro—unlimited links, your theme on ringtap.me, and analytics.
+            Free to start. Pro unlocks unlimited links, your theme on ringtap.me, and analytics. Billing via Stripe.
           </p>
         </div>
       </section>
