@@ -61,3 +61,9 @@ export function useStorefrontCountry(): StorefrontResult {
     }
   }, [locales]);
 }
+
+/** Convenience hook: returns true if US storefront (external links allowed). */
+export function useIsUSStorefront(): boolean {
+  const { isUSStorefront } = useStorefrontCountry();
+  return isUSStorefront;
+}

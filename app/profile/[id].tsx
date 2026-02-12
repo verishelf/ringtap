@@ -22,6 +22,7 @@ import {
   getSavedContacts,
   getOrCreateConversation,
   saveContact,
+  exchangeContact,
   getSubscription,
   getProfilePlanFromApi,
   type UserProfile,
@@ -99,6 +100,32 @@ export default function ProfileByIdScreen() {
     }
   }, [user, profile]);
 
+  const handleExchangeContact = useCallback(
+    async (info: { name: string; phone: string; email: string }) => {
+      if (!user || !profile || profile.userId === user.id) return;
+      setSaving(true);
+      try {
+        const result = await exchangeContact(
+          profile.userId,
+          info,
+          profile.name,
+          profile.avatarUrl ?? undefined
+        );
+        if (result.success) {
+          setIsAlreadySaved(true);
+          Alert.alert('Contact exchanged!', 'Your info was shared and they were saved to your contacts.');
+        } else {
+          Alert.alert('Could not exchange', result.error ?? 'Try again.');
+        }
+      } catch {
+        Alert.alert('Error', 'Could not exchange contact.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [user, profile]
+  );
+
   const handleMessage = useCallback(async () => {
     if (!user || !profile || profile.userId === user.id) return;
     setSaving(true);
@@ -163,6 +190,7 @@ export default function ProfileByIdScreen() {
           profile={profile}
           links={links}
           onSaveContact={user?.id !== profile.userId && !isAlreadySaved ? handleSaveContact : undefined}
+          onExchangeContact={user?.id !== profile.userId ? handleExchangeContact : undefined}
           onMessage={user?.id !== profile.userId ? handleMessage : undefined}
           showProRing={profileIsPro}
           showVerified={profileIsPro}

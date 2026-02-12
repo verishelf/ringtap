@@ -28,7 +28,7 @@ This guide covers configuring IAP for RingTap Pro to comply with Apple Guideline
 
 The app uses **expo-localization** `regionCode` as a proxy for App Store storefront:
 
-- **US** (`regionCode === 'US'`) → Redirects to Stripe (web checkout) to buy Pro
+- **US** (`regionCode === 'US'`) → Shows BOTH IAP + external link ("Pay with external link (cheaper)")
 - **Non-US** → IAP only; no external payment links
 
 This is conservative: device locale can differ from App Store country. For more accurate detection, you can add a native module.

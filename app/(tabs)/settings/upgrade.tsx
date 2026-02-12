@@ -2,8 +2,9 @@
  * Upgrade to Pro screen
  *
  * Per Apple Guideline 3.1.1:
- * - US storefront: Redirect to Stripe (web checkout) to buy Pro
+ * - US storefront: Show BOTH IAP + external link ("Pay with external link (cheaper)")
  * - Non-US: IAP only (no external payment links)
+ * - Web: Stripe only (no IAP)
  */
 
 import { Ionicons } from '@expo/vector-icons';
@@ -55,9 +56,9 @@ export default function UpgradeScreen() {
     return { accessToken: session.access_token, userId: session.user.id };
   }, []);
 
-  // IAP only for non-US storefronts (Apple requires IAP outside US)
+  // IAP for all native storefronts (US + non-US); web has no IAP
   useEffect(() => {
-    if (Platform.OS === 'web' || isUSStorefront) {
+    if (Platform.OS === 'web') {
       setIapState('idle');
       return;
     }
@@ -143,7 +144,11 @@ export default function UpgradeScreen() {
   const monthlyProduct = products.find((p) => p.productId === '006');
   const yearlyProduct = products.find((p) => p.productId === '007');
   const primaryProduct = monthlyProduct ?? products[0];
-  const showStripe = isUSStorefront || Platform.OS === 'web';
+  const showIAP = Platform.OS !== 'web';
+  const hasProducts = !!primaryProduct;
+  const showExternalLink = isUSStorefront && Platform.OS !== 'web';
+  const showStripeFallback = showExternalLink && (iapState === 'error' || (iapState === 'idle' && !hasProducts));
+  const isWebOnly = Platform.OS === 'web';
 
   return (
     <ThemedView style={styles.container}>
@@ -156,8 +161,8 @@ export default function UpgradeScreen() {
           </Text>
         </View>
 
-        {showStripe ? (
-          /* US or web: Stripe checkout */
+        {isWebOnly ? (
+          /* Web: Stripe only (no IAP) */
           <>
             <Text style={[styles.price, { color: colors.text }]}>$9.99/mo or $99.99/yr</Text>
             <Pressable
@@ -179,7 +184,7 @@ export default function UpgradeScreen() {
             </Text>
           </>
         ) : (
-          /* Non-US: IAP only */
+          /* Native: IAP always shown; external link only for US */
           <>
             {(iapState === 'connecting' || iapState === 'loading') && (
               <View style={styles.loadingRow}>
@@ -190,7 +195,7 @@ export default function UpgradeScreen() {
               </View>
             )}
 
-            {iapState === 'idle' && primaryProduct && (
+            {iapState === 'idle' && showIAP && hasProducts && primaryProduct && (
               <>
                 <Pressable
                   style={[styles.button, { backgroundColor: colors.accent }]}
@@ -223,9 +228,40 @@ export default function UpgradeScreen() {
                     Restore purchases
                   </Text>
                 </Pressable>
-                <Text style={[styles.note, { color: colors.textSecondary }]}>
-                  Subscribe via the App Store. Manage or cancel from Settings → Manage subscription.
-                </Text>
+
+                {showExternalLink && (
+                  <View style={styles.externalSection}>
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                    <Text style={[styles.externalLabel, { color: colors.textSecondary }]}>
+                      Also available via App Store in your region.
+                    </Text>
+                    <Pressable
+                      style={[styles.buttonSecondary, { borderColor: colors.border, borderWidth: 1 }]}
+                      onPress={handleExternalUpgrade}
+                      disabled={externalLoading}
+                    >
+                      {externalLoading ? (
+                        <ActivityIndicator color={colors.textSecondary} size="small" />
+                      ) : (
+                        <>
+                          <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
+                          <Text style={[styles.buttonTextSecondary, { color: colors.textSecondary }]}>
+                            Pay with external link (cheaper)
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Text style={[styles.note, { color: colors.textSecondary }]}>
+                      Opens the browser to subscribe via Stripe ($9.99/mo or $99.99/yr). Cancel anytime from Settings.
+                    </Text>
+                  </View>
+                )}
+
+                {!showExternalLink && (
+                  <Text style={[styles.note, { color: colors.textSecondary }]}>
+                    Subscribe via the App Store. Manage or cancel from Settings → Manage subscription.
+                  </Text>
+                )}
               </>
             )}
 
@@ -238,10 +274,33 @@ export default function UpgradeScreen() {
               </View>
             )}
 
-            {iapState === 'error' && (
-              <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                In‑app purchase is temporarily unavailable. Try again later.
-              </Text>
+            {(iapState === 'error' || (iapState === 'idle' && showIAP && !hasProducts)) && (
+              <>
+                <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+                  In‑app purchase is temporarily unavailable. Try again later.
+                </Text>
+                {showStripeFallback && (
+                  <View style={styles.externalSection}>
+                    <Pressable
+                      style={[styles.button, { backgroundColor: colors.accent }, externalLoading && styles.buttonDisabled]}
+                      onPress={handleExternalUpgrade}
+                      disabled={externalLoading}
+                    >
+                      {externalLoading ? (
+                        <ActivityIndicator color={colors.text} size="small" />
+                      ) : (
+                        <>
+                          <Ionicons name="open-outline" size={22} color={colors.text} />
+                          <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro (Stripe)</Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Text style={[styles.note, { color: colors.textSecondary }]}>
+                      Subscribe via Stripe ($9.99/mo or $99.99/yr). Cancel anytime from Settings.
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
           </>
         )}
@@ -297,7 +356,8 @@ const styles = StyleSheet.create({
   },
   loadingText: { fontSize: Layout.bodySmall },
   errorText: { fontSize: Layout.bodySmall, marginBottom: Layout.sectionGap, textAlign: 'center' },
-  externalSection: { marginTop: Layout.tightGap },
+  externalSection: { marginTop: Layout.sectionGap },
+  externalLabel: { fontSize: Layout.bodySmall, marginBottom: Layout.tightGap, textAlign: 'center' },
   divider: { height: 1, marginVertical: Layout.sectionGap },
   note: {
     fontSize: Layout.caption,
