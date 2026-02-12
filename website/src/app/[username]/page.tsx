@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
 declare global {
   interface Window {
@@ -169,6 +170,13 @@ function ContactIcon({ type, className = 'w-4 h-4 shrink-0 text-muted' }: { type
 
 const DEEP_LINK_SCHEME = 'ringtap://';
 
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
 type ProfileData = {
   id: string;
   user_id?: string;
@@ -256,6 +264,13 @@ export default function UsernameProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exchangeModalOpen, setExchangeModalOpen] = useState(false);
+  const [exchangeName, setExchangeName] = useState('');
+  const [exchangePhone, setExchangePhone] = useState('');
+  const [exchangeEmail, setExchangeEmail] = useState('');
+  const [exchangeSubmitting, setExchangeSubmitting] = useState(false);
+  const [exchangeError, setExchangeError] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (!slug) {
@@ -568,7 +583,7 @@ export default function UsernameProfilePage() {
             </div>
           )}
 
-          {/* Save contact .vcf + Save in App — always shown */}
+          {/* Save contact .vcf + Exchange Contact + Save in App */}
           <div className="border-t border-border-light px-6 py-4 space-y-3">
             <button
               type="button"
@@ -579,6 +594,29 @@ export default function UsernameProfilePage() {
               <span aria-hidden>↓</span>
               Save contact
             </button>
+            {userId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setExchangeModalOpen(true);
+                  setExchangeError(null);
+                  setExchangeName('');
+                  setExchangePhone('');
+                  setExchangeEmail('');
+                  const supabase = getSupabase();
+                  if (supabase) {
+                    supabase.auth.getSession().then(({ data: { session } }) => {
+                      setHasSession(!!session);
+                    });
+                  } else {
+                    setHasSession(false);
+                  }
+                }}
+                className={`block w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors`}
+              >
+                Exchange Contact
+              </button>
+            )}
             {userId && (
               <a
                 href={`${DEEP_LINK_SCHEME}profile/${userId}`}
@@ -592,6 +630,133 @@ export default function UsernameProfilePage() {
               {userId ? ' · Open in RingTap app to save there' : ''}
             </p>
           </div>
+
+          {exchangeModalOpen && userId && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+              onClick={() => setExchangeModalOpen(false)}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="exchange-modal-title"
+            >
+              <div
+                className="bg-surface rounded-xl p-6 w-full max-w-sm border border-border-light"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h2 id="exchange-modal-title" className="text-lg font-bold text-foreground mb-1">
+                  Exchange Contact
+                </h2>
+                <p className="text-sm text-muted-light mb-4">
+                  Share your info with {profile.name?.trim() || 'this contact'}
+                </p>
+                {hasSession === false ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-light">
+                      Sign in to exchange contacts. Open this profile in the RingTap app to exchange.
+                    </p>
+                    <a
+                      href={`${DEEP_LINK_SCHEME}profile/${userId}`}
+                      className={`block w-full ${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90`}
+                      style={accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : undefined}
+                    >
+                      Open in RingTap App
+                    </a>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const name = exchangeName.trim();
+                      if (!name || exchangeSubmitting) return;
+                      setExchangeSubmitting(true);
+                      setExchangeError(null);
+                      const supabase = getSupabase();
+                      const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+                      if (!session?.access_token) {
+                        setHasSession(false);
+                        setExchangeSubmitting(false);
+                        return;
+                      }
+                      try {
+                        const res = await fetch('/api/exchange-contact', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${session.access_token}`,
+                          },
+                          body: JSON.stringify({
+                            contact_user_id: userId,
+                            name,
+                            phone: exchangePhone.trim() || undefined,
+                            email: exchangeEmail.trim() || undefined,
+                            display_name: profile.name,
+                            avatar_url: profile.avatar_url,
+                          }),
+                        });
+                        const data = (await res.json()) as { success?: boolean; error?: string };
+                        if (!res.ok) {
+                          setExchangeError(data.error ?? 'Failed to exchange');
+                          return;
+                        }
+                        setExchangeModalOpen(false);
+                        setExchangeName('');
+                        setExchangePhone('');
+                        setExchangeEmail('');
+                      } catch (err) {
+                        setExchangeError(err instanceof Error ? err.message : 'Network error');
+                      } finally {
+                        setExchangeSubmitting(false);
+                      }
+                    }}
+                    className="space-y-3"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={exchangeName}
+                      onChange={(e) => setExchangeName(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border border-border-light bg-surface-elevated text-foreground text-sm placeholder:text-muted-light"
+                      required
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone"
+                      value={exchangePhone}
+                      onChange={(e) => setExchangePhone(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border border-border-light bg-surface-elevated text-foreground text-sm placeholder:text-muted-light"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={exchangeEmail}
+                      onChange={(e) => setExchangeEmail(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border border-border-light bg-surface-elevated text-foreground text-sm placeholder:text-muted-light"
+                    />
+                    {exchangeError && (
+                      <p className="text-sm text-destructive">{exchangeError}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setExchangeModalOpen(false)}
+                        className="flex-1 h-12 rounded-xl border border-border-light text-muted-light font-semibold text-sm hover:bg-surface-elevated"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={exchangeSubmitting || !exchangeName.trim()}
+                        className={`flex-1 h-12 rounded-xl bg-accent text-background font-semibold text-sm hover:opacity-90 disabled:opacity-50`}
+                        style={accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : undefined}
+                      >
+                        {exchangeSubmitting ? 'Exchanging…' : 'Exchange'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
         </div>
           );
         })()}
