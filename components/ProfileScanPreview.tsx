@@ -2,16 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
-import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Layout } from '@/constants/theme';
 import { CashAppIcon } from '@/components/CashAppIcon';
@@ -99,8 +91,6 @@ interface ProfileScanPreviewProps {
   links: UserLink[];
   /** Called when "Save Contact" is pressed (e.g. copy profile link). If provided, the Save Contact button is shown. */
   onSaveContact?: () => void;
-  /** Called when "Exchange Contact" is submitted with name/phone/email. If provided, the Exchange Contact button is shown. */
-  onExchangeContact?: (info: { name: string; phone: string; email: string }) => void | Promise<void>;
   /** Called when "Message" is pressed. If provided, the Message button is shown. */
   onMessage?: () => void;
   /** Optional footer line(s) shown below the main CTA. */
@@ -119,7 +109,6 @@ export function ProfileScanPreview({
   profile,
   links,
   onSaveContact,
-  onExchangeContact,
   onMessage,
   footerText,
   showVerified,
@@ -128,11 +117,6 @@ export function ProfileScanPreview({
 }: ProfileScanPreviewProps) {
   const colors = useThemeColors();
   const accent = profile.theme?.accentColor ?? colors.accent;
-  const [modalVisible, setModalVisible] = useState(false);
-  const [exchangeName, setExchangeName] = useState('');
-  const [exchangePhone, setExchangePhone] = useState('');
-  const [exchangeEmail, setExchangeEmail] = useState('');
-  const [exchangeSubmitting, setExchangeSubmitting] = useState(false);
   const shape = profile.theme?.buttonShape ?? 'rounded';
   const radius = buttonRadius(shape);
 
@@ -330,16 +314,6 @@ export function ProfileScanPreview({
               </Pressable>
             )}
 
-            {onExchangeContact && (
-              <Pressable
-                style={[styles.saveContactButton, styles.exchangeButton, { borderColor: accent, borderRadius: radius }]}
-                onPress={() => setModalVisible(true)}
-              >
-                <Ionicons name="swap-horizontal-outline" size={22} color={accent} />
-                <Text style={[styles.saveContactText, { color: accent }]}>Exchange Contact</Text>
-              </Pressable>
-            )}
-
             {onMessage && (
               <Pressable
                 style={[styles.saveContactButton, styles.messageButton, { borderColor: accent, borderRadius: radius }]}
@@ -358,82 +332,6 @@ export function ProfileScanPreview({
           <Text style={[styles.placeholder, { color: colors.textSecondary }]}>Add info and links to see your card here.</Text>
         )}
       </View>
-
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setModalVisible(false)}
-        >
-          <Pressable style={[styles.modalContent, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Exchange Contact</Text>
-            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              Share your info with {profile.name?.trim() || 'this contact'}
-            </Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Name"
-              placeholderTextColor={colors.textSecondary}
-              value={exchangeName}
-              onChangeText={setExchangeName}
-              autoCapitalize="words"
-            />
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Phone"
-              placeholderTextColor={colors.textSecondary}
-              value={exchangePhone}
-              onChangeText={setExchangePhone}
-              keyboardType="phone-pad"
-            />
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight, color: colors.text }]}
-              placeholder="Email"
-              placeholderTextColor={colors.textSecondary}
-              value={exchangeEmail}
-              onChangeText={setExchangeEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <View style={styles.modalActions}>
-              <Pressable
-                style={[styles.modalButton, { borderColor: colors.border }]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={[{ color: colors.textSecondary }]}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, { backgroundColor: accent }]}
-                onPress={async () => {
-                  const name = exchangeName.trim();
-                  if (!name) return;
-                  setExchangeSubmitting(true);
-                  try {
-                    await onExchangeContact?.({ name, phone: exchangePhone.trim(), email: exchangeEmail.trim() });
-                    setModalVisible(false);
-                    setExchangeName('');
-                    setExchangePhone('');
-                    setExchangeEmail('');
-                  } finally {
-                    setExchangeSubmitting(false);
-                  }
-                }}
-                disabled={exchangeSubmitting || !exchangeName.trim()}
-              >
-                {exchangeSubmitting ? (
-                  <ActivityIndicator color={colors.text} size="small" />
-                ) : (
-                  <Text style={[styles.modalButtonText, { color: colors.primary }]}>Exchange</Text>
-                )}
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
@@ -511,40 +409,7 @@ const styles = StyleSheet.create({
     marginBottom: Layout.rowGap,
   },
   messageButton: { backgroundColor: 'transparent', borderWidth: 2 },
-  exchangeButton: { backgroundColor: 'transparent', borderWidth: 2 },
   saveContactText: { fontSize: Layout.body, fontWeight: '700' },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Layout.screenPadding,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: Layout.radiusLg,
-    padding: Layout.cardPadding,
-  },
-  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: Layout.tightGap },
-  modalSubtitle: { fontSize: Layout.bodySmall, marginBottom: Layout.sectionGap },
-  modalInput: {
-    height: Layout.inputHeight,
-    borderWidth: 1,
-    borderRadius: Layout.radiusMd,
-    paddingHorizontal: Layout.cardPadding,
-    marginBottom: Layout.rowGap,
-    fontSize: Layout.body,
-  },
-  modalActions: { flexDirection: 'row', gap: Layout.rowGap, marginTop: Layout.sectionGap },
-  modalButton: {
-    flex: 1,
-    height: Layout.buttonHeight,
-    borderRadius: Layout.radiusMd,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalButtonText: { fontSize: Layout.body, fontWeight: '600' },
   footer: { fontSize: Layout.caption, textAlign: 'center', lineHeight: 18 },
   placeholder: { fontSize: Layout.caption, fontStyle: 'italic' },
 });

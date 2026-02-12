@@ -207,29 +207,6 @@ export async function saveContact(
   return { success: true };
 }
 
-/** Exchange contact: share your info (name, phone, email) and save them to your contacts. */
-export async function exchangeContact(
-  contactUserId: string,
-  sharedInfo: { name: string; phone?: string; email?: string },
-  profileDisplayName?: string,
-  profileAvatarUrl?: string | null
-): Promise<{ success: boolean; error?: string }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Sign in to exchange contacts' };
-
-  const { error: exchangeError } = await supabase.from('contact_exchanges').insert({
-    from_user_id: user.id,
-    to_user_id: contactUserId,
-    name: (sharedInfo.name ?? '').trim(),
-    phone: (sharedInfo.phone ?? '').trim() || null,
-    email: (sharedInfo.email ?? '').trim() || null,
-  });
-  if (exchangeError) return { success: false, error: exchangeError.message };
-
-  const saveResult = await saveContact(contactUserId, profileDisplayName, profileAvatarUrl ?? undefined);
-  return saveResult;
-}
-
 // --- Links ---
 export async function getLinks(userId: string): Promise<UserLink[]> {
   const { data, error } = await supabase
