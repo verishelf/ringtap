@@ -1,4 +1,6 @@
 import { Header } from "@/components/Header";
+import { MarketingMarquee } from "@/components/MarketingMarquee";
+import { TypewriterHero } from "@/components/TypewriterHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -30,14 +32,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Header variant="home" />
+      <MarketingMarquee />
 
       {/* Hero — clear H1 and intro for SEO */}
       <section className="relative pt-32 pb-24 px-6 md:pt-40 md:pb-32" aria-label="Introduction">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-            Your digital business card.{" "}
-            <span className="text-accent">At your fingertip.</span>
-          </h1>
+          <TypewriterHero />
           <p className="mt-6 text-lg text-muted-light max-w-2xl mx-auto leading-relaxed">
             Share your profile instantly with NFC and QR. Wear it on your ring or
             keep it on your phone—your name, photo, links, and contact info in one
@@ -182,7 +182,12 @@ export default function Home() {
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Profile</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Profile</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Name, photo, title, bio, username (ringtap.me/you)</li>
                 <li>Social links (Instagram, TikTok, LinkedIn, X, etc.)</li>
@@ -192,7 +197,13 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Link your ring</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12a3 3 0 106 0 3 3 0 00-6 0z" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Link your ring</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>In-app NFC writer — write your profile URL to ring or card</li>
                 <li>No Shortcuts or third-party apps needed</li>
@@ -201,7 +212,12 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Share</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Share</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>QR code — generate, save image, share</li>
                 <li>Share with NFC — how-to, Link ring, test your link</li>
@@ -209,7 +225,12 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Contacts</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Contacts</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Saved contacts (people you’ve saved from profiles)</li>
                 <li>Scanned contacts (from NFC/QR scans)</li>
@@ -217,7 +238,12 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Links</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Links</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Add, edit, delete custom links (social, payment, other)</li>
                 <li>Free: 2 links; Pro: unlimited</li>
@@ -225,7 +251,12 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Messages</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Messages</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Conversations with contacts who have the app</li>
                 <li>Recent messages on home, full list in Messages tab</li>
@@ -233,7 +264,12 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Analytics (Pro)</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Analytics (Pro)</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Profile views, link clicks, NFC taps, QR scans</li>
                 <li>Chart by day; 7, 30, or 90 day range</li>
@@ -241,7 +277,13 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Settings</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Settings</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Appearance (light / dark)</li>
                 <li>Notifications (new messages)</li>
@@ -250,7 +292,12 @@ export default function Home() {
               </ul>
             </div>
             <div className="rounded-2xl border border-border-light bg-surface p-5">
-              <h3 className="text-base font-semibold text-foreground">Web & store</h3>
+              <div className="flex items-center gap-3">
+                <svg className="h-6 w-6 shrink-0 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                </svg>
+                <h3 className="text-base font-semibold text-foreground">Web & store</h3>
+              </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Your ringtap.me page matches your app theme (Pro)</li>
                 <li>Store: NFC rings & cards (ringtap.me/store)</li>
