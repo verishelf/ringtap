@@ -55,14 +55,20 @@ function RootLayoutNav() {
   let fontMap: Record<string, unknown> = {};
   try {
     const sg = require('@expo-google-fonts/space-grotesk');
+    const orbitron = require('@expo-google-fonts/orbitron');
+    const ralewayDots = require('@expo-google-fonts/raleway-dots');
+    const zenDots = require('@expo-google-fonts/zen-dots');
     fontMap = {
       SpaceGrotesk_400Regular: sg.SpaceGrotesk_400Regular,
       SpaceGrotesk_500Medium: sg.SpaceGrotesk_500Medium,
       SpaceGrotesk_600SemiBold: sg.SpaceGrotesk_600SemiBold,
       SpaceGrotesk_700Bold: sg.SpaceGrotesk_700Bold,
+      Orbitron_400Regular: orbitron.Orbitron_400Regular,
+      RalewayDots_400Regular: ralewayDots.RalewayDots_400Regular,
+      ZenDots_400Regular: zenDots.ZenDots_400Regular,
     };
   } catch {
-    // Package not installed: run npx expo install @expo-google-fonts/space-grotesk expo-font
+    // Fallback if packages not installed
   }
   const [fontsLoaded, fontError] = useFonts(fontMap as Parameters<typeof useFonts>[0]);
 

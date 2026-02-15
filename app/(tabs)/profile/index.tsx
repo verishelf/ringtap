@@ -27,6 +27,7 @@ import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { getLinks, getProfileUrl, uploadAvatar, uploadBackgroundImage, uploadVideoIntro } from '@/lib/api';
+import { getProfileFontFamily, TYPOGRAPHY_OPTIONS } from '@/lib/profileFonts';
 import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
@@ -553,6 +554,24 @@ export default function ProfileEditorScreen() {
                     />
                   ))}
                 </View>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Typography</Text>
+                <View style={styles.typographyRow}>
+                  {TYPOGRAPHY_OPTIONS.map((opt) => (
+                    <Pressable
+                      key={opt.value}
+                      style={[
+                        styles.typographyButton,
+                        { borderColor: colors.borderLight },
+                        editForm.theme.typography === opt.value && { borderColor: colors.accent, backgroundColor: colors.surface },
+                      ]}
+                      onPress={() => updateTheme({ typography: opt.value })}
+                    >
+                      <Text style={[styles.typographyButtonText, { color: colors.text }, { fontFamily: getProfileFontFamily(opt.value) }]}>
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>Button shape</Text>
                 <View style={styles.row}>
                   {(['rounded', 'pill', 'square'] as const).map((shape) => (
@@ -588,7 +607,7 @@ export default function ProfileEditorScreen() {
                   )}
                 </View>
                 <View style={styles.viewCardNameRow}>
-                  <Text style={[styles.viewCardName, { color: colors.text }]} numberOfLines={1}>
+                  <Text style={[styles.viewCardName, { color: colors.text, fontFamily: getProfileFontFamily(profile.theme?.typography) }]} numberOfLines={1}>
                     {profile.name?.trim() || 'Your name'}
                   </Text>
                   {isPro ? (
@@ -599,10 +618,10 @@ export default function ProfileEditorScreen() {
                   ) : null}
                 </View>
                 {profile.title?.trim() ? (
-                  <Text style={[styles.viewCardTitle, { color: colors.textSecondary }]} numberOfLines={1}>{profile.title}</Text>
+                  <Text style={[styles.viewCardTitle, { color: colors.textSecondary, fontFamily: getProfileFontFamily(profile.theme?.typography) }]} numberOfLines={1}>{profile.title}</Text>
                 ) : null}
                 {profile.bio?.trim() ? (
-                  <Text style={[styles.viewCardTagline, { color: colors.textSecondary }]} numberOfLines={2}>{profile.bio}</Text>
+                  <Text style={[styles.viewCardTagline, { color: colors.textSecondary, fontFamily: getProfileFontFamily(profile.theme?.typography) }]} numberOfLines={2}>{profile.bio}</Text>
                 ) : null}
               </View>
 
@@ -879,6 +898,14 @@ const styles = StyleSheet.create({
   colorDot: { width: 36, height: 36, borderRadius: 18 },
   colorDotSelected: { borderWidth: 3, borderColor: '#000' },
   row: { flexDirection: 'row', gap: Layout.rowGap, marginBottom: Layout.rowGap },
+  typographyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.rowGap, marginBottom: Layout.sectionGap },
+  typographyButton: {
+    paddingHorizontal: Layout.cardPadding,
+    paddingVertical: 10,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+  },
+  typographyButtonText: { fontSize: Layout.bodySmall },
   shapeButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,

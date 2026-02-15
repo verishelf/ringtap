@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getProfileFontFamilyWeb } from '@/lib/profileFonts';
 
 declare global {
   interface Window {
@@ -189,6 +190,7 @@ type ProfileData = {
     profileBorderColor?: string;
     accentColor?: string;
     buttonShape?: 'rounded' | 'pill' | 'square';
+    typography?: string;
   };
 };
 
@@ -417,7 +419,7 @@ export default function UsernameProfilePage() {
                   </div>
                 )}
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>
                 {profile.name?.trim() || 'No name'}
                 {profile.plan === 'pro' ? (
                   <span className="inline-flex shrink-0" title="Verified Pro">
@@ -430,10 +432,10 @@ export default function UsernameProfilePage() {
                 ) : null}
               </h1>
               {profile.title?.trim() ? (
-                <p className="text-muted-light mt-1">{profile.title}</p>
+                <p className="text-muted-light mt-1" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>{profile.title}</p>
               ) : null}
               {profile.bio?.trim() ? (
-                <p className="text-muted-light text-sm mt-2 max-w-md mx-auto line-clamp-2">
+                <p className="text-muted-light text-sm mt-2 max-w-md mx-auto line-clamp-2" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>
                   {profile.bio}
                 </p>
               ) : null}
@@ -461,15 +463,15 @@ export default function UsernameProfilePage() {
             <div className="border-t border-border-light px-6 py-4 space-y-4">
               {profile.bio?.trim() ? (
                 <>
-                  <h2 className="text-foreground font-bold text-base">About Me</h2>
-                  <p className="text-muted-light text-sm leading-relaxed">{profile.bio}</p>
+                  <h2 className="text-foreground font-bold text-base" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>About Me</h2>
+                  <p className="text-muted-light text-sm leading-relaxed" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>{profile.bio}</p>
                   <div className="border-t border-border-light my-3" />
                 </>
               ) : null}
 
               {hasContact ? (
                 <>
-                  <h2 className="text-foreground font-bold text-base">Contact</h2>
+                  <h2 className="text-foreground font-bold text-base" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>Contact</h2>
                   <div className="space-y-2 text-sm">
                     {profile.email?.trim() ? (
                       <a
