@@ -28,6 +28,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
 import {
+  IAP_FALLBACK_PRICES,
   iapConnect,
   iapDisconnect,
   iapGetProducts,
@@ -146,6 +147,8 @@ export default function UpgradeScreen() {
   const primaryProduct = monthlyProduct ?? products[0];
   const showIAP = Platform.OS !== 'web';
   const hasProducts = !!primaryProduct;
+  const monthlyPrice = monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly;
+  const yearlyPrice = yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly;
   const showExternalLink = isUSStorefront && Platform.OS !== 'web';
   const showStripeFallback = showExternalLink && (iapState === 'error' || (iapState === 'idle' && !hasProducts));
   const isWebOnly = Platform.OS === 'web';
@@ -184,8 +187,11 @@ export default function UpgradeScreen() {
             </Text>
           </>
         ) : (
-          /* Native: IAP always shown; external link only for US */
+          /* Native: IAP always shown; external link only for US. Prices from store or fallback (Expo Go). */
           <>
+            <Text style={[styles.price, { color: colors.text }]}>
+              {monthlyPrice}/mo or {yearlyPrice}/yr
+            </Text>
             {(iapState === 'connecting' || iapState === 'loading') && (
               <View style={styles.loadingRow}>
                 <ActivityIndicator color={colors.accent} size="small" />
@@ -276,8 +282,21 @@ export default function UpgradeScreen() {
 
             {(iapState === 'error' || (iapState === 'idle' && showIAP && !hasProducts)) && (
               <>
+                <View style={styles.iapFallback}>
+                  <Pressable style={[styles.button, { backgroundColor: colors.surface, opacity: 0.7 }]} disabled>
+                    <Ionicons name="cart-outline" size={22} color={colors.textSecondary} />
+                    <Text style={[styles.buttonTextSecondary, { color: colors.textSecondary }]}>
+                      Subscribe via App Store – {monthlyPrice}/mo
+                    </Text>
+                  </Pressable>
+                  <Pressable style={[styles.buttonSecondary, { borderColor: colors.border, borderWidth: 1, opacity: 0.7 }]} disabled>
+                    <Text style={[styles.buttonTextSecondary, { color: colors.textSecondary }]}>
+                      {yearlyPrice}/yr
+                    </Text>
+                  </Pressable>
+                </View>
                 <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                  In‑app purchase is temporarily unavailable. Try again later.
+                  In‑app purchase requires a development build (npx expo run:ios). {showStripeFallback ? 'Or use the external link below.' : ''}
                 </Text>
                 {showStripeFallback && (
                   <View style={styles.externalSection}>
@@ -355,6 +374,7 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   loadingText: { fontSize: Layout.bodySmall },
+  iapFallback: { marginBottom: Layout.sectionGap },
   errorText: { fontSize: Layout.bodySmall, marginBottom: Layout.sectionGap, textAlign: 'center' },
   externalSection: { marginTop: Layout.sectionGap },
   externalLabel: { fontSize: Layout.bodySmall, marginBottom: Layout.tightGap, textAlign: 'center' },

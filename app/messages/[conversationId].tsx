@@ -1,35 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  KeyboardAvoidingView,
-  ListRenderItem,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    KeyboardAvoidingView,
+    ListRenderItem,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
 import { useProfile } from '@/hooks/useProfile';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import {
-  getConversation,
-  getMessages,
-  getProfile,
-  getSubscription,
-  sendMessage,
-  triggerPushForMessage,
-  type Message,
+    getConversation,
+    getMessages,
+    getProfile,
+    getSubscription,
+    sendMessage,
+    triggerPushForMessage,
+    type Message,
 } from '@/lib/api';
 
 export default function ChatScreen() {

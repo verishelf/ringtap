@@ -7,8 +7,8 @@ This guide covers configuring IAP for RingTap Pro to comply with Apple Guideline
 ### Create Subscription Products
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com) → Your App → Subscriptions
-2. Create a Subscription Group (e.g. "RingTap Pro")
-3. Add two auto-renewable subscriptions:
+2. Use Subscription Group ID: **21929407** (RingTap Pro)
+3. Add two auto-renewable subscriptions to this group:
    - **Product ID**: `006` — $14.99/month
    - **Product ID**: `007` — $119.99/year
 

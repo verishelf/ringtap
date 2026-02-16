@@ -1,7 +1,7 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
+import { StyleSheet, View } from 'react-native';
 
 import { useSession } from '@/hooks/useSession';
 

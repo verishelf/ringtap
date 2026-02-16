@@ -10,6 +10,9 @@ import { Platform } from 'react-native';
 
 const RING_API_BASE = 'https://www.ringtap.me';
 
+/** Subscription group ID from App Store Connect (Subscriptions → Subscription Group) */
+export const IAP_SUBSCRIPTION_GROUP_ID = '21929407';
+
 /** Lazy-load expo-in-app-purchases (crashes in Expo Go if imported at top level) */
 function getIAP() {
   try {
@@ -26,6 +29,12 @@ export const IAP_PRODUCT_IDS = Platform.select({
   android: ['006', '007'],
   default: [] as string[],
 });
+
+/** Fallback prices when IAP unavailable (Expo Go, etc.) - must match App Store Connect */
+export const IAP_FALLBACK_PRICES = {
+  monthly: '$14.99',
+  yearly: '$119.99',
+};
 
 export type IAPProduct = {
   productId: string;
@@ -211,7 +220,8 @@ export async function iapRestore(
     }
 
     // Find Pro subscription receipts to validate
-    const proPurchases = results.filter((p) =>
+    type PurchaseRecord = { productId: string; purchaseTime?: number; transactionReceipt?: string };
+    const proPurchases = (results as PurchaseRecord[]).filter((p: PurchaseRecord) =>
       IAP_PRODUCT_IDS.includes(p.productId)
     );
     if (proPurchases.length === 0) {
@@ -220,9 +230,9 @@ export async function iapRestore(
 
     // Use the most recent Pro purchase receipt for validation
     const latest = proPurchases.sort(
-      (a, b) => (b.purchaseTime ?? 0) - (a.purchaseTime ?? 0)
+      (a: PurchaseRecord, b: PurchaseRecord) => (b.purchaseTime ?? 0) - (a.purchaseTime ?? 0)
     )[0];
-    const receipt = (latest as { transactionReceipt?: string }).transactionReceipt;
+    const receipt = latest.transactionReceipt;
     if (!receipt) {
       return { restored: false, error: 'Receipt not available' };
     }
