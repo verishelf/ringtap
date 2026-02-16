@@ -1,6 +1,11 @@
 import { Header } from "@/components/Header";
 import { MarketingMarquee } from "@/components/MarketingMarquee";
+import { NewsletterSignup } from "@/components/NewsletterSignup";
+import { SampleProfilePreview } from "@/components/SampleProfilePreview";
+import { ShareSection } from "@/components/ShareSection";
+import { TrustBanner } from "@/components/TrustBanner";
 import { TypewriterHero } from "@/components/TypewriterHero";
+import { PRODUCTS } from "@/data/products";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -33,6 +38,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Header variant="home" />
       <MarketingMarquee />
+      <TrustBanner />
 
       {/* Hero — clear H1 and intro for SEO */}
       <section className="relative pt-32 pb-24 px-6 md:pt-40 md:pb-32" aria-label="Introduction">
@@ -63,16 +69,20 @@ export default function Home() {
           </ul>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <a
-              href="#download"
+              href="https://apps.apple.com/app/ringtap"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-background font-semibold hover:bg-muted-light transition-colors"
             >
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
               </svg>
-              App Store
+              Download free
             </a>
             <a
-              href="#download"
+              href="https://play.google.com/store/apps/details?id=me.ringtap.app"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border-light px-6 text-foreground font-semibold hover:border-accent hover:bg-surface transition-colors"
             >
               <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden>
@@ -81,7 +91,7 @@ export default function Home() {
                   fill="currentColor"
                 />
               </svg>
-              Google Play
+              Get on Google Play
             </a>
           </div>
         </div>
@@ -135,6 +145,69 @@ export default function Home() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Sample profile preview */}
+      <section id="sample-profile" className="border-t border-border-light/50 py-24 px-6">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
+            Your profile, one tap
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
+            When someone taps your NFC ring or scans your QR code, they see your profile instantly—no app required.
+          </p>
+          <div className="mt-16">
+            <SampleProfilePreview />
+          </div>
+        </div>
+      </section>
+
+      {/* Store products */}
+      <section id="store" className="border-t border-border-light/50 py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
+            NFC rings & cards
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
+            Tap to share your profile. Rings and cards work with the RingTap app—one tap opens your ringtap.me link. From $19.
+          </p>
+          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {PRODUCTS.map((product) => (
+              <Link
+                key={product.id}
+                href="/store"
+                className="group relative rounded-2xl border border-border-light bg-surface p-6 flex flex-col hover:border-accent transition-colors"
+              >
+                {(product.id === "classic" || product.id === "metal-card") && (
+                  <span className="absolute top-4 right-4 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-background">
+                    {product.id === "classic" ? "Bestseller" : "Popular"}
+                  </span>
+                )}
+                <div className="flex h-24 w-full items-center justify-center rounded-xl bg-surface-elevated text-4xl text-accent mb-4">
+                  {product.image}
+                </div>
+                <h3 className="text-lg font-bold text-foreground group-hover:text-accent transition-colors">
+                  {product.name}
+                </h3>
+                <p className="mt-2 text-sm text-muted-light leading-relaxed flex-1">
+                  {product.description}
+                </p>
+                <p className="mt-4 text-xl font-bold text-accent">${product.price}</p>
+                <span className="mt-4 text-sm font-semibold text-accent group-hover:underline">
+                  Shop in store →
+                </span>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/store"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-accent px-6 text-background font-semibold hover:bg-muted-light transition-colors"
+            >
+              View all products
+            </Link>
           </div>
         </div>
       </section>
@@ -344,7 +417,7 @@ export default function Home() {
                 href="#download"
                 className="mt-8 block w-full rounded-xl border border-border-light py-3 text-center text-sm font-semibold text-foreground hover:border-accent hover:bg-surface-elevated transition-colors"
               >
-                Get started free
+                Start free — no credit card
               </a>
             </div>
             <div className="rounded-2xl border-2 border-accent bg-surface-elevated p-8 relative">
@@ -511,6 +584,24 @@ export default function Home() {
           <p className="mt-6 text-xs text-muted">
             Free to start. Pro unlocks unlimited links, your theme on ringtap.me, and analytics. Billing via Stripe.
           </p>
+          <div className="mt-10 pt-10 border-t border-border-light/50">
+            <ShareSection />
+          </div>
+        </div>
+      </section>
+
+      {/* Stay updated */}
+      <section className="border-t border-border-light/50 py-16 px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-xl font-bold text-foreground">
+            Get tips & early access
+          </h2>
+          <p className="mt-2 text-sm text-muted-light">
+            We&apos;ll send updates on new features, NFC tips, and exclusive offers. No spam.
+          </p>
+          <div className="mt-6">
+            <NewsletterSignup />
+          </div>
         </div>
       </section>
 
@@ -526,6 +617,12 @@ export default function Home() {
             </a>
             <a href="#how-it-works" className="text-sm text-muted-light hover:text-foreground transition-colors">
               How it works
+            </a>
+            <a href="#sample-profile" className="text-sm text-muted-light hover:text-foreground transition-colors">
+              Sample profile
+            </a>
+            <a href="#store" className="text-sm text-muted-light hover:text-foreground transition-colors">
+              Products
             </a>
             <Link href="/store" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Store

@@ -15,6 +15,7 @@ type NavLinkItem = {
 const homeLinks: NavLinkItem[] = [
   { href: "#features", label: "Features" },
   { href: "#how-it-works", label: "How it works" },
+  { href: "#store", label: "Shop" },
   { href: "/store", label: "Store" },
   { href: "#pricing", label: "Pricing" },
   { href: "#download", label: "Download", cta: true },

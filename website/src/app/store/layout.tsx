@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { StoreCartProvider } from "@/contexts/StoreCartContext";
+import { PRODUCTS } from "@/data/products";
 
 const SITE_URL = "https://www.ringtap.me";
 
 export const metadata: Metadata = {
   title: "NFC Rings & Store — RingTap",
   description:
-    "Shop NFC rings for RingTap. Tap to share your digital business card instantly. Stainless steel, waterproof, US sizes 5–13. Free shipping.",
+    "Shop NFC rings and cards for RingTap. Tap to share your digital business card instantly. Stainless steel, waterproof, US sizes 5–13. Free shipping on orders $50+. Secure checkout.",
   keywords: ["NFC ring", "RingTap ring", "digital business card ring", "NFC jewelry", "contact sharing ring"],
   openGraph: {
     title: "NFC Rings for RingTap — Shop Now",
@@ -25,16 +26,21 @@ export const metadata: Metadata = {
 const storeJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "RingTap NFC Rings Store",
+  name: "RingTap NFC Rings & Cards Store",
   url: `${SITE_URL}/store`,
-  description: "Shop NFC rings that work with RingTap. Tap to share your digital business card.",
+  description: "Shop NFC rings and cards that work with RingTap. Tap to share your digital business card.",
   mainEntity: {
     "@type": "ItemList",
-    itemListElement: [
-      { "@type": "Product", name: "Classic NFC Ring", offers: { "@type": "Offer", price: "49", priceCurrency: "USD" } },
-      { "@type": "Product", name: "Carbon NFC Ring", offers: { "@type": "Offer", price: "59", priceCurrency: "USD" } },
-      { "@type": "Product", name: "Silver Band NFC Ring", offers: { "@type": "Offer", price: "54", priceCurrency: "USD" } },
-    ],
+    itemListElement: PRODUCTS.map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "Product",
+        name: p.name,
+        description: p.description,
+        offers: { "@type": "Offer", price: String(p.price), priceCurrency: "USD" },
+      },
+    })),
   },
 };
 

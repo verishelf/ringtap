@@ -1,71 +1,13 @@
 "use client";
 
 import { Header } from "@/components/Header";
+import { TrustBanner } from "@/components/TrustBanner";
 import { useStoreCart } from "@/contexts/StoreCartContext";
+import { PRODUCTS } from "@/data/products";
 import Link from "next/link";
 import { useState } from "react";
 
 const RING_SIZES = ["5", "6", "7", "8", "9", "10", "11", "12", "13"];
-
-type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  type: "ring" | "card";
-};
-
-const PRODUCTS: Product[] = [
-  {
-    id: "classic",
-    name: "Classic NFC Ring",
-    description: "Sleek, minimal NFC ring. Tap to share your RingTap profile. Stainless steel, waterproof.",
-    price: 49,
-    image: "⌖",
-    type: "ring",
-  },
-  {
-    id: "carbon",
-    name: "Carbon NFC Ring",
-    description: "Lightweight matte black. NFC chip built in—tap any phone to open your profile.",
-    price: 59,
-    image: "◆",
-    type: "ring",
-  },
-  {
-    id: "silver",
-    name: "Silver Band NFC Ring",
-    description: "Polished silver band. Works with RingTap—one tap shares your ringtap.me link.",
-    price: 54,
-    image: "○",
-    type: "ring",
-  },
-  {
-    id: "metal-card",
-    name: "Metal NFC Card",
-    description: "Premium metal card with NFC. Wallet-friendly—tap to share your RingTap profile. Brushed finish.",
-    price: 34,
-    image: "▢",
-    type: "card",
-  },
-  {
-    id: "metal-card-black",
-    name: "Black Metal NFC Card",
-    description: "Matte black metal NFC card. Same tap-to-share as the ring—fits in your wallet.",
-    price: 36,
-    image: "▪",
-    type: "card",
-  },
-  {
-    id: "classic-card",
-    name: "Classic NFC Card",
-    description: "White plastic NFC card. Program with your ringtap.me link. Slim and durable.",
-    price: 19,
-    image: "□",
-    type: "card",
-  },
-];
 
 export default function StorePage() {
   const { addItem, count } = useStoreCart();
@@ -93,6 +35,7 @@ export default function StorePage() {
   return (
     <div className="min-h-screen bg-background">
       <Header variant="store" cartCount={count} />
+      <TrustBanner />
 
       {/* Store hero — centered with balanced padding */}
       <section className="border-b border-border-light/50 px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
@@ -178,13 +121,14 @@ export default function StorePage() {
             ))}
           </div>
 
-          <p className="mt-10 text-center text-sm text-muted">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
             <Link href="/store/cart" className="text-accent font-medium hover:underline">
               View cart ({count})
             </Link>
-            {" · "}
-            Secure checkout with Stripe.
-          </p>
+            <span>Secure checkout (Stripe)</span>
+            <span>Free shipping on orders $50+</span>
+            <span>30-day satisfaction guarantee</span>
+          </div>
         </div>
       </section>
 
