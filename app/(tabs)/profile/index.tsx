@@ -473,6 +473,18 @@ export default function ProfileEditorScreen() {
                 autoCapitalize="none"
                 keyboardType="url"
               />
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Calendly (e.g. calendly.com/username)"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.theme.calendlyUrl ?? ''}
+                onChangeText={(v) => updateTheme({ calendlyUrl: v.trim() || undefined })}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+              <Text style={[styles.hint, { color: colors.textSecondary }]}>
+                Embed a scheduling link on your profile so visitors can book time with you.
+              </Text>
             </View>
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Social links</Text>

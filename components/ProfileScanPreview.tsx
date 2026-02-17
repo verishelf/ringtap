@@ -305,6 +305,16 @@ export function ProfileScanPreview({
               </View>
             )}
 
+            {profile.theme?.calendlyUrl?.trim() ? (
+              <Pressable
+                style={[styles.saveContactButton, styles.messageButton, { borderColor: accent, borderRadius: radius }]}
+                onPress={() => openSocialUrl(profile.theme!.calendlyUrl!.trim())}
+              >
+                <Ionicons name="calendar-outline" size={22} color={accent} />
+                <Text style={[styles.saveContactText, { color: accent }]}>Schedule</Text>
+              </Pressable>
+            ) : null}
+
             {onSaveContact && (
               <Pressable
                 style={[styles.saveContactButton, { backgroundColor: accent, borderRadius: radius }]}

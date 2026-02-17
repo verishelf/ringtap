@@ -191,6 +191,7 @@ type ProfileData = {
     accentColor?: string;
     buttonShape?: 'rounded' | 'pill' | 'square';
     typography?: string;
+    calendlyUrl?: string;
   };
 };
 
@@ -456,6 +457,20 @@ export default function UsernameProfilePage() {
                 >
                   Your browser does not support the video tag.
                 </video>
+              </div>
+            </div>
+          ) : null}
+
+          {profile.theme?.calendlyUrl?.trim() ? (
+            <div className="px-6 pb-4">
+              <h2 className="text-foreground font-bold text-base mb-3" style={{ fontFamily: profileFont }}>Schedule a call</h2>
+              <div className="rounded-xl overflow-hidden border border-border-light bg-white min-h-[630px]">
+                <iframe
+                  src={ensureUrl(profile.theme.calendlyUrl)}
+                  title="Schedule a meeting"
+                  className="w-full min-h-[630px] border-0"
+                  style={{ minHeight: 630 }}
+                />
               </div>
             </div>
           ) : null}

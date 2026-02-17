@@ -30,6 +30,8 @@ export interface ProfileTheme {
   typography: TypographyStyle;
   /** Pro: border color for profile card and avatar ring (app preview + web) */
   profileBorderColor?: string;
+  /** Calendly URL for scheduling (e.g. https://calendly.com/username) */
+  calendlyUrl?: string;
 }
 
 export interface UserLink {
