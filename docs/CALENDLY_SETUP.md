@@ -66,8 +66,8 @@ Access tokens expire (typically 24h). If API calls fail with 401, the user can d
 1. User taps "Connect Calendly" in Settings
 2. App opens Calendly OAuth in browser
 3. User authorizes → Calendly redirects to `calendly-oauth` with `?code=...&state=user_id`
-4. Edge Function exchanges code for tokens, stores in `calendly_users`, redirects to `ringtap://oauth/success`
-5. App receives deep link, navigates to Connect screen (shows connected)
+4. Edge Function exchanges code for tokens, stores in `calendly_users`, redirects to `https://www.ringtap.me/oauth/calendly?status=success`
+5. In-app browser closes when that URL loads; app parses result and shows connected
 6. App calls `calendly-register-webhook` to subscribe to invitee.created / invitee.canceled
 7. When someone books or cancels, Calendly POSTs to `calendly-webhook?user_id=xxx`
 8. Webhook inserts/updates `appointments` table

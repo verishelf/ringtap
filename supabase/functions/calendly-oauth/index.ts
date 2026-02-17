@@ -86,9 +86,10 @@ export async function GET(req: Request) {
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state'); // user_id passed as state
 
+    const oauthBase = 'https://www.ringtap.me/oauth/calendly';
+
     if (!code || !state) {
-      const errorUrl = `ringtap://oauth/error?error=missing_params`;
-      return Response.redirect(errorUrl, 302);
+      return Response.redirect(`${oauthBase}?status=error&error=missing_params`, 302);
     }
 
     const userId = state;
@@ -118,13 +119,13 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error('calendly-oauth db error', error);
-      return Response.redirect(`ringtap://oauth/error?error=db_failed`, 302);
+      return Response.redirect(`${oauthBase}?status=error&error=db_failed`, 302);
     }
 
-    return Response.redirect('ringtap://oauth/success', 302);
+    return Response.redirect(`${oauthBase}?status=success`, 302);
   } catch (e) {
     console.error('calendly-oauth', e);
     const msg = encodeURIComponent(e instanceof Error ? e.message : 'Unknown error');
-    return Response.redirect(`ringtap://oauth/error?error=${msg}`, 302);
+    return Response.redirect(`https://www.ringtap.me/oauth/calendly?status=error&error=${msg}`, 302);
   }
 }

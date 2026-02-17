@@ -1,11 +1,10 @@
 /**
  * Calendly OAuth flow for RingTap
  * - Generates OAuth URL
- * - Opens browser, waits for deep link ringtap://oauth/success
+ * - Opens browser, waits for redirect to https://www.ringtap.me/oauth/calendly
  * - Verifies tokens stored in Supabase
  */
 
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase, supabaseUrl } from '@/lib/supabase/supabaseClient';
 
@@ -28,18 +27,22 @@ export async function openCalendlyOAuth(userId: string): Promise<{ success: bool
   }
 
   const url = getCalendlyOAuthUrl(userId);
-  const result = await WebBrowser.openAuthSessionAsync(url, 'ringtap://oauth/success');
+  const redirectUrl = 'https://www.ringtap.me/oauth/calendly';
+  const result = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
 
   if (result.type === 'success' && result.url) {
-    const parsed = Linking.parse(result.url);
-    if (parsed.path === 'oauth/success' || parsed.hostname === 'oauth') {
-      return { success: true };
-    }
-    if (parsed.path === 'oauth/error' || parsed.queryParams?.error) {
-      return {
-        success: false,
-        error: (parsed.queryParams?.error as string) ?? 'OAuth failed',
-      };
+    try {
+      const parsed = new URL(result.url);
+      const status = parsed.searchParams.get('status');
+      const errorParam = parsed.searchParams.get('error');
+      if (status === 'success') return { success: true };
+      if (status === 'error' || errorParam) {
+        return { success: false, error: errorParam ?? 'OAuth failed' };
+      }
+    } catch {
+      // Fallback for ringtap:// deep link (useActivation may have handled it)
+      if (result.url.includes('oauth/success')) return { success: true };
+      if (result.url.includes('oauth/error')) return { success: false, error: 'OAuth failed' };
     }
   }
 
