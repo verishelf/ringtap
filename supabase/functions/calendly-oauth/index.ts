@@ -1,131 +1,153 @@
 /**
- * Calendly OAuth callback handler
- * - Receives ?code from Calendly redirect
- * - Exchanges code for access + refresh tokens
- * - Stores tokens in calendly_users
- * - Redirects to ringtap://oauth/success
+ * Calendly OAuth callback handler (fixed)
+ * - Includes debug mode
+ * - Uses serve()
+ * - Prevents hangs
+ * - Validates env vars before doing anything
  */
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface TokenResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  expires_in: number;
-  scope: string;
+// ---------- UTILITIES ---------- //
+
+function env(key: string) {
+  const value = Deno.env.get(key);
+  if (!value) throw new Error(`Missing env variable: ${key}`);
+  return value;
 }
 
-interface UserResponse {
-  resource: {
-    uri: string;
-    name: string;
-    email: string;
-    scheduling_url: string;
-    current_organization: string;
-  };
-}
+// ---------- TOKEN HANDLERS ---------- //
 
-async function fetchTokens(code: string): Promise<TokenResponse> {
-  const clientId = Deno.env.get('CALENDLY_CLIENT_ID');
-  const clientSecret = Deno.env.get('CALENDLY_CLIENT_SECRET');
-  const redirectUri = Deno.env.get('CALENDLY_REDIRECT_URI');
-
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error('Missing CALENDLY_CLIENT_ID, CALENDLY_CLIENT_SECRET, or CALENDLY_REDIRECT_URI');
-  }
+async function fetchTokens(code: string) {
+  const clientId = env("CALENDLY_CLIENT_ID");
+  const clientSecret = env("CALENDLY_CLIENT_SECRET");
+  const redirectUri = env("CALENDLY_REDIRECT_URI");
 
   const body = new URLSearchParams({
-    grant_type: 'authorization_code',
+    grant_type: "authorization_code",
     code,
     redirect_uri: redirectUri,
     client_id: clientId,
     client_secret: clientSecret,
   });
 
-  const res = await fetch('https://auth.calendly.com/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  const res = await fetch("https://auth.calendly.com/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Token exchange failed: ${res.status} ${text}`);
+    const txt = await res.text();
+    throw new Error(`Token exchange failed: ${res.status} ${txt}`);
   }
 
-  return (await res.json()) as TokenResponse;
+  return await res.json();
 }
 
-async function fetchCalendlyUser(accessToken: string): Promise<UserResponse> {
-  const res = await fetch('https://api.calendly.com/users/me', {
+async function fetchCalendlyUser(accessToken: string) {
+  const res = await fetch("https://api.calendly.com/users/me", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Calendly user fetch failed: ${res.status} ${text}`);
+    const txt = await res.text();
+    throw new Error(`Calendly user fetch failed: ${res.status} ${txt}`);
   }
 
-  const json = await res.json();
-  return json as UserResponse;
+  return await res.json();
 }
 
-export async function GET(req: Request) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+// ---------- MAIN FUNCTION ---------- //
+
+serve(async (req) => {
+  const url = new URL(req.url);
+
+  // Preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  // ---------- DEBUG MODE ---------- //
+  if (url.searchParams.get("debug") === "1") {
+    try {
+      const client = Deno.env.get("CALENDLY_CLIENT_ID");
+      const secret = Deno.env.get("CALENDLY_CLIENT_SECRET");
+      const redirect = Deno.env.get("CALENDLY_REDIRECT_URI");
+      const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+      return new Response(
+        JSON.stringify({
+          calendly_client_id_present: !!client,
+          calendly_client_secret_present: !!secret,
+          calendly_redirect_present: !!redirect,
+          service_role_present: !!service,
+          message: "Debug mode active",
+        }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      return new Response(`Debug error: ${e.message}`, { status: 500 });
+    }
+  }
+
+  // ---------- NORMAL OAUTH FLOW ---------- //
+
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+
+  // Redirect on missing params
+  if (!code || !state) {
+    return Response.redirect(
+      "https://www.ringtap.me/oauth/calendly?status=error&error=missing_params",
+      302
+    );
   }
 
   try {
-    const url = new URL(req.url);
-    const code = url.searchParams.get('code');
-    const state = url.searchParams.get('state'); // user_id passed as state
-
-    const oauthBase = 'https://www.ringtap.me/oauth/calendly';
-
-    if (!code || !state) {
-      return Response.redirect(`${oauthBase}?status=error&error=missing_params`, 302);
-    }
-
-    const userId = state;
-
     const tokens = await fetchTokens(code);
     const calendlyUser = await fetchCalendlyUser(tokens.access_token);
 
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabaseUrl = env("SUPABASE_URL");
+    const serviceRole = env("SUPABASE_SERVICE_ROLE_KEY");
+    const supabase = createClient(supabaseUrl, serviceRole);
 
-    const { error } = await supabase.from('calendly_users').upsert(
+    const { error } = await supabase.from("calendly_users").upsert(
       {
-        user_id: userId,
+        user_id: state,
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
-        token_type: tokens.token_type || 'Bearer',
+        token_type: tokens.token_type || "Bearer",
         expires_at: expiresAt.toISOString(),
         calendly_user_uri: calendlyUser.resource.uri,
         calendly_organization: calendlyUser.resource.current_organization,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'user_id' }
+      { onConflict: "user_id" }
     );
 
     if (error) {
-      console.error('calendly-oauth db error', error);
-      return Response.redirect(`${oauthBase}?status=error&error=db_failed`, 302);
+      throw new Error("DB insert failed: " + error.message);
     }
 
-    return Response.redirect(`${oauthBase}?status=success`, 302);
+    return Response.redirect(
+      "https://www.ringtap.me/oauth/calendly?status=success",
+      302
+    );
   } catch (e) {
-    console.error('calendly-oauth', e);
-    const msg = encodeURIComponent(e instanceof Error ? e.message : 'Unknown error');
-    return Response.redirect(`https://www.ringtap.me/oauth/calendly?status=error&error=${msg}`, 302);
+    console.error("OAuth error:", e);
+    const err = encodeURIComponent(e.message);
+    return Response.redirect(
+      `https://www.ringtap.me/oauth/calendly?status=error&error=${err}`,
+      302
+    );
   }
-}
+});
