@@ -259,6 +259,7 @@ export default function UsernameProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [calendlyModalOpen, setCalendlyModalOpen] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     if (!slug) {
@@ -461,20 +462,6 @@ export default function UsernameProfilePage() {
             </div>
           ) : null}
 
-          {profile.theme?.calendlyUrl?.trim() ? (
-            <div className="px-6 pb-4">
-              <h2 className="text-foreground font-bold text-base mb-3" style={{ fontFamily: profileFont }}>Schedule a call</h2>
-              <div className="rounded-xl overflow-hidden border border-border-light bg-white min-h-[630px]">
-                <iframe
-                  src={ensureUrl(profile.theme.calendlyUrl)}
-                  title="Schedule a meeting"
-                  className="w-full min-h-[630px] border-0"
-                  style={{ minHeight: 630 }}
-                />
-              </div>
-            </div>
-          ) : null}
-
           {(profile.bio?.trim() || hasContact || socialLinks.length > 0 || links.length > 0) && (
             <div className="border-t border-border-light px-6 py-4 space-y-4">
               {profile.bio?.trim() ? (
@@ -588,6 +575,22 @@ export default function UsernameProfilePage() {
 
           {/* Save contact .vcf + Save in App — always shown */}
           <div className="border-t border-border-light px-6 py-4 space-y-3">
+            {profile.theme?.calendlyUrl?.trim() ? (
+              <button
+                type="button"
+                onClick={() => setCalendlyModalOpen(true)}
+                className={`w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors flex items-center justify-center gap-2`}
+                style={{ fontFamily: profileFont }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Schedule
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => downloadVCard(profile)}
@@ -618,6 +621,45 @@ export default function UsernameProfilePage() {
           <Link href="/" className="text-accent hover:underline" style={accentColor ? { color: accentColor } : undefined}>RingTap</Link>
         </p>
       </div>
+
+      {/* Calendly modal */}
+      {calendlyModalOpen && profile?.theme?.calendlyUrl?.trim() ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          onClick={() => setCalendlyModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Schedule a meeting"
+        >
+          <div
+            className="relative w-full max-w-lg max-h-[90vh] rounded-2xl bg-surface overflow-hidden shadow-xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
+              <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont }}>Schedule a call</h2>
+              <button
+                type="button"
+                onClick={() => setCalendlyModalOpen(false)}
+                className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-elevated transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto">
+              <iframe
+                src={ensureUrl(profile.theme.calendlyUrl)}
+                title="Schedule a meeting"
+                className="w-full min-h-[600px] border-0"
+                style={{ minHeight: 600 }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
