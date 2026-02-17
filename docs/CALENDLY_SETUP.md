@@ -48,11 +48,13 @@ For live appointment updates, add `appointments` to the Realtime publication:
 
 ## 6. Deploy Edge Functions
 
+OAuth and webhook functions receive external callbacks (no auth header), so deploy with `--no-verify-jwt`:
+
 ```bash
-supabase functions deploy calendly-oauth
-supabase functions deploy calendly-webhook
-supabase functions deploy calendly-register-webhook
-supabase functions deploy calendly-links
+npx supabase functions deploy calendly-oauth --project-ref wdffdlznfthxwjhumacs --no-verify-jwt
+npx supabase functions deploy calendly-webhook --project-ref wdffdlznfthxwjhumacs --no-verify-jwt
+npx supabase functions deploy calendly-register-webhook --project-ref wdffdlznfthxwjhumacs
+npx supabase functions deploy calendly-links --project-ref wdffdlznfthxwjhumacs
 ```
 
 ## Token Refresh
