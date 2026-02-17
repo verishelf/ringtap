@@ -122,6 +122,26 @@ export default function SettingsScreen() {
         </View>
 
         <View style={[styles.section, { marginTop: Layout.sectionGap }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Calendly</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Pressable
+              style={[styles.menuItem, styles.rowBorder, { borderBottomColor: colors.borderLight }]}
+              onPress={() => router.push('/calendly/connect')}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="calendar-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Connect Calendly</Text>
+              </View>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={[styles.section, { marginTop: Layout.sectionGap }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Ring</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Pressable

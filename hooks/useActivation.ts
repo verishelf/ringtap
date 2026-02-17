@@ -27,6 +27,16 @@ export function useActivation() {
         return;
       }
 
+      // ringtap://oauth/success or ringtap://oauth/error -> Calendly OAuth callback
+      if (url.includes('oauth/success') || path === 'oauth/success' || (parsed.hostname === 'oauth' && path === 'success')) {
+        router.replace('/calendly/connect');
+        return;
+      }
+      if (url.includes('oauth/error') || path === 'oauth/error' || (parsed.hostname === 'oauth' && path === 'error')) {
+        router.replace('/calendly/connect');
+        return;
+      }
+
       // ringtap://activate?r=... or ringtap://activate?uid=...
       const ringId = (parsed?.queryParams?.r as string) ?? (parsed?.queryParams?.uid as string);
       if (ringId) {

@@ -94,6 +94,7 @@ function RootLayoutNav() {
         <Stack.Screen name="messages" />
         <Stack.Screen name="setup" />
         <Stack.Screen name="share" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="calendly" />
       </Stack>
     </ThemeProvider>
   );
