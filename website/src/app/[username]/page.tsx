@@ -447,8 +447,8 @@ export default function UsernameProfilePage() {
           </div>
 
           {profile.video_intro_url?.trim() ? (
-            <div className="px-6 pb-4">
-              <div className="rounded-xl overflow-hidden bg-black/5 aspect-video max-w-md mx-auto">
+            <div className="px-6 pt-6 pb-6">
+              <div className="rounded-xl overflow-hidden border border-border-light bg-black/5 aspect-video max-w-md mx-auto">
                 <video
                   src={profile.video_intro_url}
                   controls

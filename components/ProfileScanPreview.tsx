@@ -190,7 +190,7 @@ export function ProfileScanPreview({
         </View>
 
         {profile.videoIntroUrl ? (
-          <View style={styles.videoWrap}>
+          <View style={[styles.videoWrap, { borderColor: colors.borderLight }]}>
             <Video
               source={{ uri: profile.videoIntroUrl }}
               style={styles.videoIntro}
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   headerBackgroundOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  videoWrap: { width: '100%', aspectRatio: 16 / 9, marginBottom: Layout.rowGap, borderRadius: Layout.radiusMd, overflow: 'hidden' },
+  videoWrap: { width: '100%', aspectRatio: 16 / 9, marginTop: Layout.sectionGap, marginBottom: Layout.sectionGap, borderRadius: Layout.radiusMd, overflow: 'hidden', borderWidth: 1 },
   videoIntro: { width: '100%', height: '100%' },
   separator: { height: StyleSheet.hairlineWidth, marginVertical: Layout.rowGap },
   sectionHeading: { fontSize: Layout.body, fontWeight: '700', marginBottom: Layout.tightGap },
