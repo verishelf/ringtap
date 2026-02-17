@@ -62,8 +62,8 @@ async function fetchInviteeDetails(
     email: resource.email,
     name: resource.name,
     eventUri,
-    start_time: startTime || resource.start_time ?? '',
-    end_time: endTime || resource.end_time ?? '',
+    start_time: startTime || (resource.start_time ?? ''),
+    end_time: endTime || (resource.end_time ?? ''),
   };
 }
 
