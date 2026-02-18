@@ -17,14 +17,20 @@ export async function GET(request: NextRequest) {
 
   // Must match exactly what was sent in the authorization request (no trailing slash)
   const redirectUri = `${requestUrl.origin}${requestUrl.pathname}`;
-  const selfBase = redirectUri;
 
+  // Return 200 for errors — redirecting to self causes "too many redirects"
   if (errorParam) {
-    return NextResponse.redirect(`${selfBase}?error=${encodeURIComponent(errorParam)}`, 302);
+    return new NextResponse(`Error: ${errorParam}`, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 
   if (!code || !state) {
-    return NextResponse.redirect(`${selfBase}?error=missing_params`, 302);
+    return new NextResponse('Error: missing_params', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 
   const clientId = process.env.CALENDLY_CLIENT_ID?.trim();
@@ -32,7 +38,10 @@ export async function GET(request: NextRequest) {
 
   if (!clientId || !clientSecret) {
     console.error('[Calendly OAuth] Missing CALENDLY_CLIENT_ID or CALENDLY_CLIENT_SECRET');
-    return NextResponse.redirect(`${selfBase}?error=config`, 302);
+    return new NextResponse('Error: config', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 
   try {
@@ -51,7 +60,10 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const text = await tokenRes.text();
       console.error('[Calendly OAuth] Token exchange failed', tokenRes.status, text);
-      return NextResponse.redirect(`${selfBase}?error=token_exchange`, 302);
+      return new NextResponse('Error: token_exchange', {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
     }
 
     const tokens = (await tokenRes.json()) as {
@@ -67,7 +79,10 @@ export async function GET(request: NextRequest) {
 
     if (!supabaseUrl || !serviceKey) {
       console.error('[Calendly OAuth] Missing Supabase config');
-      return NextResponse.redirect(`${selfBase}?error=db_config`, 302);
+      return new NextResponse('Error: db_config', {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -87,7 +102,10 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('[Calendly OAuth] DB error', error);
-      return NextResponse.redirect(`${selfBase}?error=db_failed`, 302);
+      return new NextResponse('Error: db_failed', {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
     }
 
     return new NextResponse('Closing…', {
@@ -97,6 +115,9 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('[Calendly OAuth] Exception', err);
     const msg = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.redirect(`${selfBase}?error=${encodeURIComponent(msg)}`, 302);
+    return new NextResponse(`Error: ${msg}`, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 }

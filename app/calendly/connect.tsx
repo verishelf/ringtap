@@ -45,6 +45,11 @@ export default function ConnectCalendlyScreen() {
     try {
       const { success, error } = await openCalendlyOAuth(user.id);
       if (success) {
+        const verified = await isCalendlyConnected(user.id);
+        if (!verified) {
+          Alert.alert('Connection failed', 'Calendly could not be connected. Please try again.');
+          return;
+        }
         setConnected(true);
         await registerWebhook();
         router.push('/calendly/appointments');
