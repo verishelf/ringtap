@@ -473,8 +473,17 @@ export default function ProfileEditorScreen() {
                 autoCapitalize="none"
                 keyboardType="url"
               />
+              <TextInput
+                style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+                placeholder="Calendly (e.g. calendly.com/username)"
+                placeholderTextColor={colors.textSecondary}
+                value={editForm.theme.calendlyUrl ?? ''}
+                onChangeText={(v) => updateTheme({ calendlyUrl: v.trim() || undefined })}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
               <Text style={[styles.hint, { color: colors.textSecondary }]}>
-                Connect Calendly in Settings or Contacts → Calendly to show a Schedule button on your profile.
+                Add your Calendly link for the Schedule button on your profile. Or connect Calendly in Settings for auto-sync.
               </Text>
             </View>
             <View style={styles.section}>

@@ -129,14 +129,16 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     .single();
   if (error || !data) return null;
   const profile = mapProfileFromDb(data);
-  // Merge Calendly scheduling URL from calendly_users when connected (RLS: only own row)
+  // Merge Calendly URL: connected scheduling_url first, else manual theme.calendlyUrl
   const { data: cu } = await supabase
     .from('calendly_users')
     .select('scheduling_url')
     .eq('user_id', userId)
     .maybeSingle();
-  if (cu?.scheduling_url?.trim()) {
-    profile.theme = { ...profile.theme, calendlyUrl: cu.scheduling_url.trim() };
+  const connectedUrl = cu?.scheduling_url?.trim();
+  const manualUrl = (profile.theme as { calendlyUrl?: string })?.calendlyUrl?.trim();
+  if (connectedUrl || manualUrl) {
+    profile.theme = { ...profile.theme, calendlyUrl: connectedUrl || manualUrl || undefined };
   }
   return profile;
 }
@@ -146,7 +148,6 @@ export async function upsertProfile(
   updates: Partial<Omit<UserProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
 ): Promise<UserProfile | null> {
   const theme = updates.theme ?? defaultTheme();
-  const { calendlyUrl: _omit, ...themeToSave } = theme as ProfileTheme & { calendlyUrl?: string };
   const payload = {
     user_id: userId,
     username: (updates.username ?? '').toLowerCase(),
@@ -159,7 +160,7 @@ export async function upsertProfile(
     email: updates.email ?? '',
     phone: updates.phone ?? '',
     website: updates.website ?? '',
-    theme: themeToSave,
+    theme,
     custom_buttons: updates.customButtons ?? [],
     social_links: updates.socialLinks ?? {},
     updated_at: new Date().toISOString(),

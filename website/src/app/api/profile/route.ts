@@ -139,8 +139,9 @@ export async function GET(request: NextRequest) {
     const backgroundImageUrl = resolveStorageUrl(supabaseUrl, (profile as { background_image_url?: string | null }).background_image_url ?? null);
 
     const theme = (profile as { theme?: { profileBorderColor?: string; accentColor?: string; buttonShape?: string; calendlyUrl?: string } }).theme ?? {};
-    // Use connected Calendly URL when available; fallback to legacy theme.calendlyUrl
-    const themeWithCalendly = calendlyUrl ? { ...theme, calendlyUrl } : theme;
+    // Use connected Calendly URL when available; fallback to manual theme.calendlyUrl
+    const finalCalendlyUrl = calendlyUrl ?? (theme.calendlyUrl?.trim() || null);
+    const themeWithCalendly = finalCalendlyUrl ? { ...theme, calendlyUrl: finalCalendlyUrl } : theme;
     return NextResponse.json({
       id: profile.id,
       user_id: userId,
