@@ -57,6 +57,14 @@ npx supabase functions deploy calendly-register-webhook --project-ref wdffdlznft
 npx supabase functions deploy calendly-links --project-ref wdffdlznfthxwjhumacs
 ```
 
+## WORKER_LIMIT / Compute Resources
+
+If you see `{"code":"WORKER_LIMIT","message":"Function failed due to not having enough compute resources"}`:
+
+- **Retry** — Often transient when the platform is busy
+- **Free tier** — Fewer workers; upgrading to Pro can help
+- **Optimize** — The function is kept minimal (cached Supabase client, lean HTML)
+
 ## Token Refresh
 
 Access tokens expire (typically 24h). If API calls fail with 401, the user can disconnect and re-connect Calendly. For automatic refresh, add logic in Edge Functions to call `https://auth.calendly.com/oauth/token` with `grant_type=refresh_token` when `expires_at` is near.

@@ -1,19 +1,22 @@
 /**
- * Calendly OAuth Callback Handler (Updated)
- * ----------------------------------------
+ * Calendly OAuth Callback Handler
  * - Receives ?code and ?state (user_id)
- * - Exchanges code for tokens
- * - Fetches Calendly user profile
- * - Stores tokens in calendly_users table
- * - Redirects to RingTap OAuth status page
+ * - Exchanges code for tokens, fetches profile, stores in calendly_users
+ * - Returns HTML so auth session matches (no redirect to web)
+ * - Kept minimal to avoid WORKER_LIMIT (Supabase CPU/memory constraints)
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) {
+    const url = Deno.env.get('SUPABASE_URL')!;
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    _supabase = createClient(url, key);
+  }
+  return _supabase;
+}
 
 interface TokenResponse {
   access_token: string;
@@ -103,11 +106,7 @@ export async function GET(req: Request) {
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     // 4. Store tokens in Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-    const { error } = await supabase.from('calendly_users').upsert(
+    const { error } = await getSupabase().from('calendly_users').upsert(
       {
         user_id: userId,
         access_token: tokens.access_token,
@@ -126,8 +125,7 @@ export async function GET(req: Request) {
       return Response.redirect(`${selfBase}?error=db_failed`, 302);
     }
 
-    // 5. Return HTML so URL stays here — auth session matches and closes
-    return htmlResponse('Connected!', null);
+    return htmlResponse('Closing…');
   } catch (err) {
     console.error('[Calendly OAuth] Exception:', err);
     const msg = encodeURIComponent(err instanceof Error ? err.message : 'Unknown error');
@@ -135,9 +133,8 @@ export async function GET(req: Request) {
   }
 }
 
-function htmlResponse(title: string, error: string | null): Response {
-  const body = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0b;color:#fff;text-align:center;padding:20px}*{box-sizing:border-box}</style></head><body><p>${error ? `Error: ${error}` : 'Closing…'}</p></body></html>`;
-  return new Response(body, {
+function htmlResponse(msg: string): Response {
+  return new Response(`<!DOCTYPE html><html><body><p>${msg}</p></body></html>`, {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
