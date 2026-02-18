@@ -103,7 +103,7 @@ export function iapSetPurchaseListener(
   const iap = getIAP();
   if (!iap) return () => {};
 
-  const IAPResponseCode = iap.IAPResponseCode ?? { OK: 0, USER_CANCELED: 1 };
+  const IAPResponseCode = iap.IAPResponseCode ?? { OK: 0, USER_CANCELED: 1, ERROR: 2, DEFERRED: 3 };
   const callback = async (result: {
     responseCode: number;
     results?: Array<{
@@ -112,6 +112,10 @@ export function iapSetPurchaseListener(
       transactionReceipt?: string;
     }>;
   }) => {
+    // DEFERRED (3) = Ask to Buy / parental approval pending on iOS — wait for final callback
+    if (result.responseCode === IAPResponseCode.DEFERRED) {
+      return;
+    }
     if (result.responseCode === IAPResponseCode.OK && result.results?.length) {
       const purchases = result.results;
       let validated = false;
@@ -171,10 +175,16 @@ export async function iapGetProducts(): Promise<IAPProduct[]> {
   try {
     const { responseCode, results } = await iap.getProductsAsync(IAP_PRODUCT_IDS);
     if (responseCode === (iap.IAPResponseCode?.OK ?? 0) && results?.length) {
-      return results;
+      return results as IAPProduct[];
+    }
+    if (__DEV__ && (!results?.length || responseCode !== 0)) {
+      console.warn('[IAP] getProductsAsync: no products or non-OK', { responseCode, count: results?.length });
     }
     return [];
-  } catch {
+  } catch (e) {
+    if (__DEV__ && e instanceof Error) {
+      console.warn('[IAP] getProductsAsync failed:', e.message);
+    }
     return [];
   }
 }
