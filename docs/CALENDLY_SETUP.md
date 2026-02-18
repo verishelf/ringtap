@@ -3,22 +3,25 @@
 ## 1. Calendly Developer App
 
 1. Go to [Calendly Developer](https://developer.calendly.com/)
-2. Create an application
-3. Add redirect URI: `https://wdffdlznfthxwjhumacs.supabase.co/functions/v1/calendly-oauth`
+2. Create an application (or open your existing one)
+3. **Redirect URIs** — Click "Add" and add this **exact** URL (copy-paste, no trailing slash):
+   ```
+   https://www.ringtap.me/api/oauth/calendly
+   ```
+   The URL must match character-for-character. Common mistakes: trailing slash, `http` instead of `https`, `ringtap.me` instead of `www.ringtap.me`.
 4. Copy Client ID and Client Secret
 
-## 2. Supabase Environment Variables
+## 2. Vercel (Website) Environment Variables
 
-Add to Supabase Edge Functions secrets (Dashboard → Project Settings → Edge Functions → Secrets):
+Add to Vercel → Project → Settings → Environment Variables:
 
 ```
-CALENDLY_CLIENT_ID=k1fwPv2YvWrClxKXM07FOGQ77IJkcMhy7lGO6JHztEI
-CALENDLY_CLIENT_SECRET=<your_client_secret>
-CALENDLY_REDIRECT_URI=https://wdffdlznfthxwjhumacs.supabase.co/functions/v1/calendly-oauth
-CALENDLY_WEBHOOK_SIGNING_KEY=<your_webhook_signing_key>
+CALENDLY_CLIENT_ID=your_client_id
+CALENDLY_CLIENT_SECRET=your_client_secret
 ```
 
-**Important:** Never commit the client secret or webhook signing key. Store them only in Supabase secrets.
+The OAuth callback runs on the website (Vercel) to avoid Supabase Edge Function limits.
+Ensure `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are already set.
 
 ## 3. Expo / App Config
 
@@ -46,39 +49,15 @@ For live appointment updates, add `appointments` to the Realtime publication:
 - Supabase Dashboard → Database → Replication
 - Add `appointments` table to `supabase_realtime`
 
-## 6. Deploy Edge Functions
+## 6. Deploy Edge Functions (Webhook only)
 
-OAuth and webhook functions receive external callbacks (no auth header), so deploy with `--no-verify-jwt`:
+OAuth callback is now on Vercel. Deploy only the webhook and other functions:
 
 ```bash
-npx supabase functions deploy calendly-oauth --project-ref wdffdlznfthxwjhumacs --no-verify-jwt
 npx supabase functions deploy calendly-webhook --project-ref wdffdlznfthxwjhumacs --no-verify-jwt
 npx supabase functions deploy calendly-register-webhook --project-ref wdffdlznfthxwjhumacs
 npx supabase functions deploy calendly-links --project-ref wdffdlznfthxwjhumacs
 ```
-
-## 404 / Function Not Found
-
-If you see `Failed to load resource: 404` when the OAuth callback loads:
-
-1. **Deploy the function** (required after code changes):
-   ```bash
-   npx supabase functions deploy calendly-oauth --project-ref wdffdlznfthxwjhumacs --no-verify-jwt
-   ```
-2. **Verify in Dashboard** → Edge Functions → `calendly-oauth` should be listed
-3. **Test URL** (no params): `https://wdffdlznfthxwjhumacs.supabase.co/functions/v1/calendly-oauth` — should redirect to `?error=missing_params`
-
-## WallClockTime Shutdown
-
-If logs show `"reason": "WallClockTime"` — the function hit the wall clock limit (150s free / 400s paid). The Calendly fetch now has a 15s timeout to avoid hanging. If it still happens, check Calendly API status or network latency.
-
-## WORKER_LIMIT / Compute Resources
-
-If you see `{"code":"WORKER_LIMIT","message":"Function failed due to not having enough compute resources"}`:
-
-- **Retry** — Often transient when the platform is busy
-- **Free tier** — Fewer workers; upgrading to Pro can help
-- **Optimize** — The function is kept minimal (cached Supabase client, lean HTML)
 
 ## Token Refresh
 
@@ -88,9 +67,9 @@ Access tokens expire (typically 24h). If API calls fail with 401, the user can d
 
 1. User taps "Connect Calendly" in Settings
 2. App opens Calendly OAuth in browser
-3. User authorizes → Calendly redirects to `calendly-oauth` with `?code=...&state=user_id`
-4. Edge Function exchanges code for tokens, stores in `calendly_users`, returns HTML (URL stays on Edge Function)
-5. Auth session matches Edge Function URL and closes; app parses code/state from URL and shows connected
+3. User authorizes → Calendly redirects to `https://www.ringtap.me/api/oauth/calendly?code=...&state=user_id`
+4. Vercel API route exchanges code for tokens, stores in `calendly_users`, returns "Closing…"
+5. Auth session matches and closes; app parses code/state from URL and shows connected
 6. App calls `calendly-register-webhook` to subscribe to invitee.created / invitee.canceled
 7. When someone books or cancels, Calendly POSTs to `calendly-webhook?user_id=xxx`
 8. Webhook inserts/updates `appointments` table
