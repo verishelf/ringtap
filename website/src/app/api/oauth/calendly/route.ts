@@ -115,10 +115,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return new NextResponse('Closing…', {
-      status: 200,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
+    return new NextResponse(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0b;color:#fff;text-align:center;padding:20px"><p style="font-size:18px">Connected! Closing…</p><p style="font-size:14px;color:#888;margin-top:16px">If this doesn't close, <a href="ringtap://oauth/success" style="color:#0ea5e9">tap here to return to RingTap</a></p></body></html>`,
+      { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
   } catch (err) {
     console.error('[Calendly OAuth] Exception', err);
     const msg = err instanceof Error ? err.message : 'Unknown error';
