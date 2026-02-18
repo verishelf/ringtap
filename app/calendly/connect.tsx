@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
@@ -39,13 +39,30 @@ export default function ConnectCalendlyScreen() {
     checkConnection();
   }, [checkConnection]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (user) checkConnection();
+    }, [user, checkConnection])
+  );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && user) checkConnection();
+    });
+    return () => sub.remove();
+  }, [user, checkConnection]);
+
   const handleConnect = async () => {
     if (!user?.id) return;
     setConnecting(true);
     try {
       const { success, error } = await openCalendlyOAuth(user.id);
       if (success) {
-        const verified = await isCalendlyConnected(user.id);
+        let verified = await isCalendlyConnected(user.id);
+        if (!verified) {
+          await new Promise((r) => setTimeout(r, 800));
+          verified = await isCalendlyConnected(user.id);
+        }
         if (!verified) {
           Alert.alert('Connection failed', 'Calendly could not be connected. Please try again.');
           return;
@@ -58,6 +75,7 @@ export default function ConnectCalendlyScreen() {
       }
     } finally {
       setConnecting(false);
+      checkConnection();
     }
   };
 
