@@ -6,6 +6,7 @@
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { refreshCalendlyTokenIfNeeded } from '../_shared/calendlyRefresh.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,7 +17,7 @@ interface WebhookPayload {
   event: 'invitee.created' | 'invitee.canceled';
   payload: {
     uri: string;
-    event?: string;
+    event?: string; // scheduled event URI
     canceled?: boolean;
     rescheduled?: boolean;
   };
@@ -29,6 +30,7 @@ async function fetchInviteeDetails(
   email?: string;
   name?: string;
   eventUri: string;
+  eventType: string;
   start_time: string;
   end_time: string;
 }> {
@@ -46,6 +48,7 @@ async function fetchInviteeDetails(
 
   let startTime = '';
   let endTime = '';
+  let eventType = '';
   if (eventUri) {
     const eventRes = await fetch(eventUri, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -55,6 +58,7 @@ async function fetchInviteeDetails(
       const ev = eventJson.resource ?? eventJson;
       startTime = ev.start_time ?? '';
       endTime = ev.end_time ?? '';
+      eventType = ev.event_type ?? '';
     }
   }
 
@@ -62,6 +66,7 @@ async function fetchInviteeDetails(
     email: resource.email,
     name: resource.name,
     eventUri,
+    eventType: eventType || eventUri,
     start_time: startTime || (resource.start_time ?? ''),
     end_time: endTime || (resource.end_time ?? ''),
   };
@@ -139,7 +144,7 @@ export async function POST(req: Request) {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: cu } = await supabase
+    let { data: cu } = await supabase
       .from('calendly_users')
       .select('access_token')
       .eq('user_id', userId)
@@ -152,15 +157,28 @@ export async function POST(req: Request) {
       });
     }
 
-    const details = await fetchInviteeDetails(p.uri, cu.access_token);
+    const refreshed = await refreshCalendlyTokenIfNeeded(userId);
+    const accessToken = refreshed?.access_token ?? cu.access_token;
+
+    const details = await fetchInviteeDetails(p.uri, accessToken);
     const status = eventType === 'invitee.canceled' || p.canceled ? 'canceled' : 'booked';
     const finalStatus = p.rescheduled === true ? 'rescheduled' : status;
+
+    // Use event URI (not invitee URI) so webhook and calendly-sync use same identifier
+    const eventUri = details.eventUri || p.event || p.uri;
+    if (!eventUri) {
+      console.error('calendly-webhook: no event URI', { payload: p });
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     await supabase.from('appointments').upsert(
       {
         user_id: userId,
-        event_uri: p.uri,
-        event_type: details.eventUri,
+        event_uri: eventUri,
+        event_type: details.eventType,
         invitee_email: details.email,
         invitee_name: details.name,
         start_time: details.start_time,

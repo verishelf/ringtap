@@ -40,7 +40,7 @@ Run the migrations:
 
 ```bash
 supabase db push
-# or apply manually: 012_calendly_users.sql, 013_appointments.sql
+# or apply manually: 012_calendly_users.sql, 013_appointments.sql, 015_calendly_scheduling_url.sql
 ```
 
 ## 5. Realtime (Optional)
@@ -61,11 +61,22 @@ npx supabase functions deploy calendly-links --project-ref wdffdlznfthxwjhumacs
 npx supabase functions deploy calendly-sync --project-ref wdffdlznfthxwjhumacs
 ```
 
-`calendly-sync` fetches scheduled events from the Calendly API and upserts into `appointments` — catches events missed by the webhook (e.g. if webhook wasn't registered yet).
+`calendly-sync` fetches scheduled events from the Calendly API and upserts into `appointments` — catches events missed by the webhook (e.g. if webhook wasn't registered yet). Also populates `scheduling_url` in `calendly_users` when missing (used for the Schedule button on profiles).
 
-## Token Refresh
+## Token Refresh (Supabase Edge Functions)
 
-Access tokens expire (typically 24h). If API calls fail with 401, the user can disconnect and re-connect Calendly. For automatic refresh, add logic in Edge Functions to call `https://auth.calendly.com/oauth/token` with `grant_type=refresh_token` when `expires_at` is near.
+Calendly access tokens expire (typically 24h). The webhook uses `calendlyRefresh` to refresh tokens automatically. Add these secrets to Supabase so the webhook can refresh:
+
+```bash
+npx supabase secrets set CALENDLY_CLIENT_ID=your_client_id --project-ref wdffdlznfthxwjhumacs
+npx supabase secrets set CALENDLY_CLIENT_SECRET=your_client_secret --project-ref wdffdlznfthxwjhumacs
+```
+
+Without these, the webhook may fail when the token expires. Users can disconnect and re-connect Calendly as a workaround.
+
+## Schedule Button on Profile
+
+The Schedule button on your profile (website and app preview) uses your **connected** Calendly scheduling URL. There is no manual Calendly link field in Edit Profile — connect via Settings or Contacts → Calendly to enable it.
 
 ## Flow
 

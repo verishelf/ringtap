@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
     let { data: cu } = await supabase
       .from('calendly_users')
-      .select('access_token, calendly_user_uri, calendly_organization')
+      .select('access_token, calendly_user_uri, calendly_organization, scheduling_url')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -66,7 +66,9 @@ export async function POST(req: Request) {
       });
     }
 
-    if (!cu.calendly_user_uri && !cu.calendly_organization) {
+    const needsProfile = !cu.calendly_user_uri && !cu.calendly_organization;
+    const needsSchedulingUrl = !cu.scheduling_url;
+    if (needsProfile || needsSchedulingUrl) {
       const meRes = await fetch('https://api.calendly.com/users/me', {
         headers: { Authorization: `Bearer ${cu.access_token}` },
       });
@@ -79,16 +81,18 @@ export async function POST(req: Request) {
       const me = await meRes.json();
       const uri = me.resource?.uri;
       const org = me.resource?.current_organization;
-      if (uri || org) {
+      const schedulingUrl = me.resource?.scheduling_url ?? null;
+      if (uri || org || schedulingUrl) {
         await supabase
           .from('calendly_users')
           .update({
             calendly_user_uri: uri ?? null,
             calendly_organization: org ?? null,
+            scheduling_url: schedulingUrl,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', user.id);
-        cu = { ...cu, calendly_user_uri: uri, calendly_organization: org };
+        cu = { ...cu, calendly_user_uri: uri, calendly_organization: org, scheduling_url: schedulingUrl };
       }
     }
 

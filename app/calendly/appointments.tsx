@@ -20,7 +20,9 @@ import {
   fetchAppointments,
   formatAppointment,
   subscribeToRealtimeAppointments,
+  syncAppointmentsFromCalendly,
 } from '@/lib/calendly/appointments';
+import { isCalendlyConnected } from '@/lib/calendly/calendlyAuth';
 
 function groupByDate(appointments: Appointment[]): { date: string; items: Appointment[] }[] {
   const groups: Record<string, Appointment[]> = {};
@@ -41,14 +43,21 @@ export default function MyAppointmentsScreen() {
   const { user } = useSession();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    if (!user?.id) return;
+    isCalendlyConnected(user.id).then(setConnected);
+  }, [user?.id]);
+
+  const load = useCallback(async (syncFirst = false) => {
     if (!user?.id) {
       setAppointments([]);
       setLoading(false);
       return;
     }
     setLoading(true);
+    if (syncFirst) await syncAppointmentsFromCalendly();
     const list = await fetchAppointments(user.id);
     setAppointments(list);
     setLoading(false);
@@ -64,9 +73,19 @@ export default function MyAppointmentsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (user) load();
+      if (user) {
+        load();
+        isCalendlyConnected(user.id).then(setConnected);
+      }
     }, [user, load])
   );
+
+  const onRefresh = useCallback(() => {
+    if (user?.id) {
+      load(true);
+      isCalendlyConnected(user.id).then(setConnected);
+    }
+  }, [user?.id, load]);
 
   const groups = groupByDate(appointments);
   const futureGroups = groups.filter((g) => new Date(g.date) >= new Date(new Date().setHours(0, 0, 0, 0)));
@@ -127,6 +146,8 @@ export default function MyAppointmentsScreen() {
         data={displayGroups}
         keyExtractor={(item) => item.date}
         renderItem={renderItem}
+        onRefresh={onRefresh}
+        refreshing={loading}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -135,14 +156,18 @@ export default function MyAppointmentsScreen() {
               No upcoming appointments
             </Text>
             <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-              Connect Calendly to sync your schedule
+              {connected
+                ? 'Bookings will appear here when someone schedules with you'
+                : 'Connect Calendly to sync your schedule'}
             </Text>
-            <Pressable
-              style={[styles.connectBtn, { backgroundColor: colors.accent }]}
-              onPress={() => router.push('/calendly/connect')}
-            >
-              <Text style={[styles.connectBtnText, { color: colors.primary }]}>Connect Calendly</Text>
-            </Pressable>
+            {!connected && (
+              <Pressable
+                style={[styles.connectBtn, { backgroundColor: colors.accent }]}
+                onPress={() => router.push('/calendly/connect')}
+              >
+                <Text style={[styles.connectBtnText, { color: colors.primary }]}>Connect Calendly</Text>
+              </Pressable>
+            )}
           </View>
         }
       />
