@@ -486,7 +486,7 @@ export default function ProfileEditorScreen() {
                 keyboardType="url"
               />
               <Text style={[styles.hint, { color: colors.textSecondary }]}>
-                Add your Calendly link for the Schedule button on your profile. Or connect Calendly in Settings for auto-sync.
+                Add your Calendly link for the Schedule button on your profile.
               </Text>
             </View>
             <View style={styles.section}>

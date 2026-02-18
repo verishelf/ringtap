@@ -10,8 +10,7 @@
     "deeplinks": [
       "ringtap://",
       "ringtap://activate",
-      "ringtap://profile",
-      "ringtap://oauth/callback"
+      "ringtap://profile"
     ],
     "newArchEnabled": true,
     "ios": {

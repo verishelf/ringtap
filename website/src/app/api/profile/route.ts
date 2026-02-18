@@ -125,23 +125,11 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
     if (sub?.plan === 'pro') plan = 'pro';
 
-    // Calendly URL from connected Calendly (scheduling_url) — overrides legacy theme.calendlyUrl
-    let calendlyUrl: string | null = null;
-    const { data: cu } = await supabase
-      .from('calendly_users')
-      .select('scheduling_url')
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (cu?.scheduling_url?.trim()) calendlyUrl = cu.scheduling_url.trim();
-
     const avatarUrl = resolveStorageUrl(supabaseUrl, profile.avatar_url);
     const videoIntroUrl = resolveStorageUrl(supabaseUrl, profile.video_intro_url ?? null);
     const backgroundImageUrl = resolveStorageUrl(supabaseUrl, (profile as { background_image_url?: string | null }).background_image_url ?? null);
 
     const theme = (profile as { theme?: { profileBorderColor?: string; accentColor?: string; buttonShape?: string; calendlyUrl?: string } }).theme ?? {};
-    // Use connected Calendly URL when available; fallback to manual theme.calendlyUrl
-    const finalCalendlyUrl = calendlyUrl ?? (theme.calendlyUrl?.trim() || null);
-    const themeWithCalendly = finalCalendlyUrl ? { ...theme, calendlyUrl: finalCalendlyUrl } : theme;
     return NextResponse.json({
       id: profile.id,
       user_id: userId,
@@ -158,7 +146,7 @@ export async function GET(request: NextRequest) {
       social_links: profile.social_links ?? {},
       links,
       plan,
-      theme: themeWithCalendly,
+      theme,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

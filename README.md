@@ -63,14 +63,9 @@ supabase/
   migrations/         # 001_initial.sql
 ```
 
-## Calendly OAuth (TestFlight)
+## Calendly (Schedule button)
 
-**iOS Redirect URI for Calendly:**
-```
-ringtap://oauth/callback
-```
-
-Add this in Calendly Developer → App → Redirect URIs. See `docs/CALENDLY_SETUP.md` for full setup.
+Add your Calendly link in **Profile → Edit**. The Schedule button on your public profile will open it. See `docs/CALENDLY_SETUP.md`.
 
 ## Stripe (subscriptions)
 

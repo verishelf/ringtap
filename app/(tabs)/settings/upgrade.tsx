@@ -1,10 +1,9 @@
 /**
  * Upgrade to Pro screen
  *
- * Per Apple Guideline 3.1.1:
- * - US storefront: Show BOTH IAP + external link ("Pay with external link (cheaper)")
- * - Non-US: IAP only (no external payment links)
- * - Web: Stripe only (no IAP)
+ * Per Apple Guideline 3.1.1: In-app purchase only for App Store builds.
+ * No external payment links (Stripe) in the native app.
+ * Web: Stripe only (no IAP).
  */
 
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +22,6 @@ import {
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
-import { useStorefrontCountry } from '@/hooks/useStorefrontCountry';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
@@ -45,11 +43,9 @@ export default function UpgradeScreen() {
   const colors = useThemeColors();
   const { user } = useSession();
   const { isPro, refresh } = useSubscription();
-  const { isUSStorefront } = useStorefrontCountry();
 
   const [products, setProducts] = useState<IAPProduct[]>([]);
   const [iapState, setIapState] = useState<'idle' | 'connecting' | 'loading' | 'purchasing' | 'restoring' | 'error'>('idle');
-  const [externalLoading, setExternalLoading] = useState(false);
 
   const getAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -91,7 +87,7 @@ export default function UpgradeScreen() {
       mounted = false;
       iapDisconnect();
     };
-  }, [getAuth, refresh, isUSStorefront]);
+  }, [getAuth, refresh]);
 
   const handlePurchase = async (productId: string) => {
     const email = user?.email?.trim();
@@ -128,7 +124,6 @@ export default function UpgradeScreen() {
       Alert.alert('Sign in required', 'Use the email from your RingTap account so your Pro subscription is linked.');
       return;
     }
-    setExternalLoading(true);
     try {
       const params = new URLSearchParams({ email });
       if (user?.id) params.set('user_id', user.id);
@@ -137,8 +132,6 @@ export default function UpgradeScreen() {
       if (!opened) Alert.alert('Error', 'Could not open browser. Try again.');
     } catch {
       Alert.alert('Error', 'Could not open payment page. Try again.');
-    } finally {
-      setExternalLoading(false);
     }
   };
 
@@ -149,8 +142,6 @@ export default function UpgradeScreen() {
   const hasProducts = !!primaryProduct;
   const monthlyPrice = monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly;
   const yearlyPrice = yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly;
-  const showExternalLink = isUSStorefront && Platform.OS !== 'web';
-  const showStripeFallback = showExternalLink && (iapState === 'error' || (iapState === 'idle' && !hasProducts));
   const isWebOnly = Platform.OS === 'web';
 
   return (
@@ -169,25 +160,18 @@ export default function UpgradeScreen() {
           <>
             <Text style={[styles.price, { color: colors.text }]}>$9.99/mo or $99.99/yr</Text>
             <Pressable
-              style={[styles.button, { backgroundColor: colors.accent }, externalLoading && styles.buttonDisabled]}
+              style={[styles.button, { backgroundColor: colors.accent }]}
               onPress={handleExternalUpgrade}
-              disabled={externalLoading}
             >
-              {externalLoading ? (
-                <ActivityIndicator color={colors.text} size="small" />
-              ) : (
-                <>
-                  <Ionicons name="open-outline" size={22} color={colors.text} />
-                  <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro</Text>
-                </>
-              )}
+              <Ionicons name="open-outline" size={22} color={colors.text} />
+              <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro</Text>
             </Pressable>
             <Text style={[styles.note, { color: colors.textSecondary }]}>
               Opens the browser to subscribe via Stripe. Cancel anytime from Settings → Manage subscription.
             </Text>
           </>
         ) : (
-          /* Native: IAP always shown; external link only for US. Prices from store or fallback (Expo Go). */
+          /* Native: IAP only. Prices from store or fallback (Expo Go). */
           <>
             <Text style={[styles.price, { color: colors.text }]}>
               {monthlyPrice}/mo or {yearlyPrice}/yr
@@ -235,39 +219,9 @@ export default function UpgradeScreen() {
                   </Text>
                 </Pressable>
 
-                {showExternalLink && (
-                  <View style={styles.externalSection}>
-                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                    <Text style={[styles.externalLabel, { color: colors.textSecondary }]}>
-                      Also available via App Store in your region.
-                    </Text>
-                    <Pressable
-                      style={[styles.buttonSecondary, { borderColor: colors.border, borderWidth: 1 }]}
-                      onPress={handleExternalUpgrade}
-                      disabled={externalLoading}
-                    >
-                      {externalLoading ? (
-                        <ActivityIndicator color={colors.textSecondary} size="small" />
-                      ) : (
-                        <>
-                          <Ionicons name="open-outline" size={20} color={colors.textSecondary} />
-                          <Text style={[styles.buttonTextSecondary, { color: colors.textSecondary }]}>
-                            Pay with external link (cheaper)
-                          </Text>
-                        </>
-                      )}
-                    </Pressable>
-                    <Text style={[styles.note, { color: colors.textSecondary }]}>
-                      Opens the browser to subscribe via Stripe ($9.99/mo or $99.99/yr). Cancel anytime from Settings.
-                    </Text>
-                  </View>
-                )}
-
-                {!showExternalLink && (
-                  <Text style={[styles.note, { color: colors.textSecondary }]}>
-                    Subscribe via the App Store. Manage or cancel from Settings → Manage subscription.
-                  </Text>
-                )}
+                <Text style={[styles.note, { color: colors.textSecondary }]}>
+                  Subscribe via the App Store. Manage or cancel from Settings → Manage subscription.
+                </Text>
               </>
             )}
 
@@ -296,29 +250,8 @@ export default function UpgradeScreen() {
                   </Pressable>
                 </View>
                 <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                  In‑app purchase requires a development build (npx expo run:ios). {showStripeFallback ? 'Or use the external link below.' : ''}
+                  In‑app purchase requires a development build. Install from the App Store to subscribe.
                 </Text>
-                {showStripeFallback && (
-                  <View style={styles.externalSection}>
-                    <Pressable
-                      style={[styles.button, { backgroundColor: colors.accent }, externalLoading && styles.buttonDisabled]}
-                      onPress={handleExternalUpgrade}
-                      disabled={externalLoading}
-                    >
-                      {externalLoading ? (
-                        <ActivityIndicator color={colors.text} size="small" />
-                      ) : (
-                        <>
-                          <Ionicons name="open-outline" size={22} color={colors.text} />
-                          <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro (Stripe)</Text>
-                        </>
-                      )}
-                    </Pressable>
-                    <Text style={[styles.note, { color: colors.textSecondary }]}>
-                      Subscribe via Stripe ($9.99/mo or $99.99/yr). Cancel anytime from Settings.
-                    </Text>
-                  </View>
-                )}
               </>
             )}
           </>

@@ -128,19 +128,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     .eq('user_id', userId)
     .single();
   if (error || !data) return null;
-  const profile = mapProfileFromDb(data);
-  // Merge Calendly URL: connected scheduling_url first, else manual theme.calendlyUrl
-  const { data: cu } = await supabase
-    .from('calendly_users')
-    .select('scheduling_url')
-    .eq('user_id', userId)
-    .maybeSingle();
-  const connectedUrl = cu?.scheduling_url?.trim();
-  const manualUrl = (profile.theme as { calendlyUrl?: string })?.calendlyUrl?.trim();
-  if (connectedUrl || manualUrl) {
-    profile.theme = { ...profile.theme, calendlyUrl: connectedUrl || manualUrl || undefined };
-  }
-  return profile;
+  return mapProfileFromDb(data);
 }
 
 export async function upsertProfile(

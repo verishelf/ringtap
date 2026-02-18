@@ -24,42 +24,9 @@ This guide covers configuring IAP for RingTap Pro to comply with Apple Guideline
    ```
 4. For the website (receipt validation API): add to `.env.local` or your hosting provider's env vars
 
-## 2. Storefront Detection
+## 2. Payment Options (App Store Compliance)
 
-The app uses **expo-localization** `regionCode` as a proxy for App Store storefront:
-
-- **US** (`regionCode === 'US'`) → Shows BOTH IAP + external link ("Pay with external link (cheaper)")
-- **Non-US** → IAP only; no external payment links
-
-This is conservative: device locale can differ from App Store country. For more accurate detection, you can add a native module.
-
-### Optional: Native Module for Exact Storefront
-
-Apple's `SKPaymentQueue.default().storefront?.countryCode` returns the actual storefront (e.g. `"USA"`). To use it:
-
-1. Create an Expo config plugin and native module
-2. Or use a community package if available (e.g. `react-native-storefront-country`)
-3. Update `useStorefrontCountry` to call the native module when available
-
-**Swift snippet** (for reference, if building a custom module):
-
-```swift
-import StoreKit
-
-@objc(StorefrontModule)
-class StorefrontModule: NSObject {
-  @objc func getCountryCode(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
-    DispatchQueue.main.async {
-      if #available(iOS 13.0, *) {
-        let code = SKPaymentQueue.default().storefront?.countryCode
-        resolve(code ?? "")
-      } else {
-        resolve("")
-      }
-    }
-  }
-}
-```
+Per Apple Guideline 3.1.1, the **native app uses in-app purchase only**. No external payment links (Stripe) are shown in the app. Stripe remains available on the website for web users.
 
 ## 3. Testing
 
@@ -71,10 +38,8 @@ class StorefrontModule: NSObject {
 
 ### Test Scenarios
 
-- **US storefront**: Set device region to United States (Settings → General → Language & Region)
-- **Non-US storefront**: Set region to e.g. United Kingdom → external link should be hidden
 - **Restore**: Purchase Pro, delete app, reinstall, tap "Restore purchases"
-- **Web + IAP**: Subscribe on web (US device) → app should show Pro; Manage opens Stripe portal
+- **Web**: Subscribe on web → app should show Pro (if same account); Manage opens App Store subscriptions
 
 ## 4. Product IDs
 
@@ -94,7 +59,5 @@ Current IDs: `006` (monthly $14.99), `007` (yearly $119.99). To change, update:
 
 When submitting for review, you can note:
 
-- IAP is implemented and functional for Pro subscription
-- US users may optionally use web checkout (Guideline 3.1.1(a))
-- Non-US users see only IAP
-- Pro status syncs from backend for web-purchased subscriptions (Guideline 3.1.3(b))
+- IAP is implemented and functional for Pro subscription (Guideline 3.1.1)
+- Pro subscriptions are purchased only via App Store in-app purchase
