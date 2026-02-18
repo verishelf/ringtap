@@ -83,14 +83,12 @@ export async function GET(req: Request) {
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state'); // user_id (state param)
 
-    const redirectBase = `https://www.ringtap.me/oauth/calendly`;
+    const selfUrl = new URL(req.url);
+    const selfBase = `${selfUrl.origin}${selfUrl.pathname}`;
 
-    // Missing required params
+    // Missing required params — redirect to self with error (keeps URL matching auth session)
     if (!code || !state) {
-      return Response.redirect(
-        `${redirectBase}?status=error&error=missing_params`,
-        302
-      );
+      return Response.redirect(`${selfBase}?error=missing_params`, 302);
     }
 
     const userId = state;
@@ -125,25 +123,22 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error('[Calendly OAuth] Database error:', error);
-      return Response.redirect(
-        `${redirectBase}?status=error&error=db_failed`,
-        302
-      );
+      return Response.redirect(`${selfBase}?error=db_failed`, 302);
     }
 
-    // 5. Redirect to success page
-    return Response.redirect(
-      `${redirectBase}?status=success`,
-      302
-    );
-
+    // 5. Return HTML so URL stays here — auth session matches and closes
+    return htmlResponse('Connected!', null);
   } catch (err) {
     console.error('[Calendly OAuth] Exception:', err);
-    const message = encodeURIComponent(err instanceof Error ? err.message : 'Unknown error');
-
-    return Response.redirect(
-      `https://www.ringtap.me/oauth/calendly?status=error&error=${message}`,
-      302
-    );
+    const msg = encodeURIComponent(err instanceof Error ? err.message : 'Unknown error');
+    return Response.redirect(`${selfBase}?error=${msg}`, 302);
   }
+}
+
+function htmlResponse(title: string, error: string | null): Response {
+  const body = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0b;color:#fff;text-align:center;padding:20px}*{box-sizing:border-box}</style></head><body><p>${error ? `Error: ${error}` : 'Closing…'}</p></body></html>`;
+  return new Response(body, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
 }

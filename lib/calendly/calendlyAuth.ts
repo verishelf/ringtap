@@ -27,21 +27,26 @@ export async function openCalendlyOAuth(userId: string): Promise<{ success: bool
   }
 
   const url = getCalendlyOAuthUrl(userId);
-  const redirectUrl = 'https://www.ringtap.me/oauth/calendly';
+  // Use Edge Function URL as redirectUrl — iOS ASWebAuthenticationSession doesn't fire
+  // for HTTPS web URLs; it matches when Calendly redirects here (before our 302 to web).
+  const redirectUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/calendly-oauth`;
   const result = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
 
   if (result.type === 'success' && result.url) {
     try {
       const parsed = new URL(result.url);
-      const status = parsed.searchParams.get('status');
+      const code = parsed.searchParams.get('code');
+      const state = parsed.searchParams.get('state');
       const errorParam = parsed.searchParams.get('error');
+      // Edge Function callback: code+state = success (tokens stored server-side)
+      if (code && state) return { success: true };
+      if (errorParam) return { success: false, error: errorParam };
+      // Web fallback (if redirect to web ever works)
+      const status = parsed.searchParams.get('status');
       if (status === 'success') return { success: true };
-      if (status === 'error' || errorParam) {
-        return { success: false, error: errorParam ?? 'OAuth failed' };
-      }
+      if (status === 'error') return { success: false, error: parsed.searchParams.get('error') ?? 'OAuth failed' };
     } catch {
-      // Fallback for ringtap:// deep link (useActivation may have handled it)
-      if (result.url.includes('oauth/success')) return { success: true };
+      if (result.url.includes('oauth/success') || result.url.includes('code=')) return { success: true };
       if (result.url.includes('oauth/error')) return { success: false, error: 'OAuth failed' };
     }
   }
