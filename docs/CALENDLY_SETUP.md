@@ -57,6 +57,21 @@ npx supabase functions deploy calendly-register-webhook --project-ref wdffdlznft
 npx supabase functions deploy calendly-links --project-ref wdffdlznfthxwjhumacs
 ```
 
+## 404 / Function Not Found
+
+If you see `Failed to load resource: 404` when the OAuth callback loads:
+
+1. **Deploy the function** (required after code changes):
+   ```bash
+   npx supabase functions deploy calendly-oauth --project-ref wdffdlznfthxwjhumacs --no-verify-jwt
+   ```
+2. **Verify in Dashboard** → Edge Functions → `calendly-oauth` should be listed
+3. **Test URL** (no params): `https://wdffdlznfthxwjhumacs.supabase.co/functions/v1/calendly-oauth` — should redirect to `?error=missing_params`
+
+## WallClockTime Shutdown
+
+If logs show `"reason": "WallClockTime"` — the function hit the wall clock limit (150s free / 400s paid). The Calendly fetch now has a 15s timeout to avoid hanging. If it still happens, check Calendly API status or network latency.
+
 ## WORKER_LIMIT / Compute Resources
 
 If you see `{"code":"WORKER_LIMIT","message":"Function failed due to not having enough compute resources"}`:
