@@ -13,15 +13,16 @@
 
 ## 2. Vercel (Website) Environment Variables
 
-Add to Vercel → Project → Settings → Environment Variables:
+Add to **Vercel** → your project → **Settings** → **Environment Variables**:
 
-```
-CALENDLY_CLIENT_ID=your_client_id
-CALENDLY_CLIENT_SECRET=your_client_secret
-```
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `CALENDLY_CLIENT_ID` | Your Calendly client ID | From Calendly Developer dashboard |
+| `CALENDLY_CLIENT_SECRET` | Your Calendly client secret | From Calendly Developer dashboard |
 
-The OAuth callback runs on the website (Vercel) to avoid Supabase Edge Function limits.
-Ensure `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are already set.
+Also ensure `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set (for storing tokens).
+
+**Redeploy** after adding variables — Vercel only picks up env changes on the next deploy.
 
 ## 3. Expo / App Config
 

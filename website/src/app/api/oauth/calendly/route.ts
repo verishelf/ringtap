@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
   const clientSecret = process.env.CALENDLY_CLIENT_SECRET?.trim();
 
   if (!clientId || !clientSecret) {
-    console.error('[Calendly OAuth] Missing CALENDLY_CLIENT_ID or CALENDLY_CLIENT_SECRET');
-    return new NextResponse('Error: config', {
+    console.error('[Calendly OAuth] Missing CALENDLY_CLIENT_ID or CALENDLY_CLIENT_SECRET in Vercel env');
+    return new NextResponse('Error: Add CALENDLY_CLIENT_ID and CALENDLY_CLIENT_SECRET to Vercel → Settings → Environment Variables', {
       status: 200,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
