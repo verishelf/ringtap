@@ -308,7 +308,10 @@ export default function ProfileEditorScreen() {
   if (profileLoading || !profile) {
     return (
       <ThemedView style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <Image
+          source={require('@/assets/images/loading.gif')}
+          style={{ width: 64, height: 64 }}
+        />
       </ThemedView>
     );
   }

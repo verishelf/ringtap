@@ -276,7 +276,7 @@ export default function ContactsScreen() {
               },
             ]}
           >
-            Messages
+            Contacts
           </Text>
         </Pressable>
         <Pressable
