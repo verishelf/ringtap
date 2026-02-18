@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const { data: cu } = await supabase
+    let { data: cu } = await supabase
       .from('calendly_users')
       .select('access_token, calendly_organization, calendly_user_uri')
       .eq('user_id', user.id)
@@ -51,6 +51,25 @@ export async function POST(req: Request) {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Fetch profile if missing (OAuth stores tokens only; profile deferred to reduce WORKER_LIMIT)
+    if (!cu.calendly_organization && !cu.calendly_user_uri) {
+      const meRes = await fetch('https://api.calendly.com/users/me', {
+        headers: { Authorization: `Bearer ${cu.access_token}` },
+      });
+      if (meRes.ok) {
+        const me = await meRes.json();
+        const uri = me.resource?.uri;
+        const org = me.resource?.current_organization;
+        if (uri || org) {
+          await supabase
+            .from('calendly_users')
+            .update({ calendly_user_uri: uri ?? null, calendly_organization: org ?? null, updated_at: new Date().toISOString() })
+            .eq('user_id', user.id);
+          cu = { ...cu, calendly_user_uri: uri, calendly_organization: org };
+        }
+      }
     }
 
     const webhookUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/calendly-webhook?user_id=${user.id}`;

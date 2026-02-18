@@ -1,9 +1,9 @@
 /**
  * Calendly OAuth Callback Handler
  * - Receives ?code and ?state (user_id)
- * - Exchanges code for tokens, fetches profile, stores in calendly_users
- * - Returns HTML so auth session matches (no redirect to web)
- * - Kept minimal to avoid WORKER_LIMIT (Supabase CPU/memory constraints)
+ * - Exchanges code for tokens, stores in calendly_users (profile fetched later by register-webhook)
+ * - Returns HTML so auth session matches
+ * - Minimal: 1 API call + DB write to avoid WORKER_LIMIT
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -11,9 +11,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase) {
-    const url = Deno.env.get('SUPABASE_URL')!;
-    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    _supabase = createClient(url, key);
+    _supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   }
   return _supabase;
 }
@@ -24,16 +22,6 @@ interface TokenResponse {
   token_type: string;
   expires_in: number;
   scope: string;
-}
-
-interface UserResponse {
-  resource: {
-    uri: string;
-    name: string;
-    email: string;
-    scheduling_url: string;
-    current_organization: string;
-  };
 }
 
 async function fetchTokens(code: string): Promise<TokenResponse> {
@@ -67,19 +55,6 @@ async function fetchTokens(code: string): Promise<TokenResponse> {
   return (await response.json()) as TokenResponse;
 }
 
-async function fetchCalendlyUser(accessToken: string): Promise<UserResponse> {
-  const res = await fetch('https://api.calendly.com/users/me', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Calendly user fetch failed: ${res.status} - ${text}`);
-  }
-
-  return (await res.json()) as UserResponse;
-}
-
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -96,16 +71,9 @@ export async function GET(req: Request) {
 
     const userId = state;
 
-    // 1. Exchange the code for tokens
     const tokens = await fetchTokens(code);
-
-    // 2. Fetch user profile
-    const calendlyUser = await fetchCalendlyUser(tokens.access_token);
-
-    // 3. Calculate expiry timestamp
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
-    // 4. Store tokens in Supabase
     const { error } = await getSupabase().from('calendly_users').upsert(
       {
         user_id: userId,
@@ -113,8 +81,8 @@ export async function GET(req: Request) {
         refresh_token: tokens.refresh_token,
         token_type: tokens.token_type ?? 'Bearer',
         expires_at: expiresAt.toISOString(),
-        calendly_user_uri: calendlyUser.resource.uri,
-        calendly_organization: calendlyUser.resource.current_organization,
+        calendly_user_uri: null,
+        calendly_organization: null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' }
@@ -125,7 +93,7 @@ export async function GET(req: Request) {
       return Response.redirect(`${selfBase}?error=db_failed`, 302);
     }
 
-    return htmlResponse('Closing…');
+    return okResponse('Closing…');
   } catch (err) {
     console.error('[Calendly OAuth] Exception:', err);
     const msg = encodeURIComponent(err instanceof Error ? err.message : 'Unknown error');
@@ -133,9 +101,9 @@ export async function GET(req: Request) {
   }
 }
 
-function htmlResponse(msg: string): Response {
-  return new Response(`<!DOCTYPE html><html><body><p>${msg}</p></body></html>`, {
+function okResponse(msg: string): Response {
+  return new Response(msg, {
     status: 200,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
 }
