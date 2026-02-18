@@ -74,12 +74,19 @@ export async function GET(request: NextRequest) {
     };
 
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
-    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '').trim();
-    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
+    let supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '')
+      .replace(/^["'\s]+|["'\s]+$/g, '')
+      .trim();
+    if (supabaseUrl && !/^https?:\/\//i.test(supabaseUrl)) {
+      supabaseUrl = 'https://' + supabaseUrl;
+    }
+    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '')
+      .replace(/^["'\s]+|["'\s]+$/g, '')
+      .trim();
 
-    if (!supabaseUrl || !serviceKey) {
-      console.error('[Calendly OAuth] Missing Supabase config');
-      return new NextResponse('Error: db_config', {
+    if (!supabaseUrl || !/^https:\/\/[^\s/]+/.test(supabaseUrl) || !serviceKey) {
+      console.error('[Calendly OAuth] Missing or invalid Supabase config. NEXT_PUBLIC_SUPABASE_URL must be e.g. https://xxx.supabase.co');
+      return new NextResponse('Error: Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to Vercel env (Project URL from Supabase Dashboard)', {
         status: 200,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
