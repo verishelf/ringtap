@@ -63,6 +63,15 @@ supabase/
   migrations/         # 001_initial.sql
 ```
 
+## Calendly OAuth (TestFlight)
+
+**iOS Redirect URI for Calendly:**
+```
+ringtap://oauth/callback
+```
+
+Add this in Calendly Developer → App → Redirect URIs. See `docs/CALENDLY_SETUP.md` for full setup.
+
 ## Stripe (subscriptions)
 
 The app includes **Pricing**, **Upgrade**, and **Manage subscription** screens. To go live:

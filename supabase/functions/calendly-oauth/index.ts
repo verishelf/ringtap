@@ -29,12 +29,14 @@ interface TokenResponse {
   scope: string;
 }
 
+const CALENDLY_REDIRECT_URI = 'ringtap://oauth/callback';
+
 async function fetchTokens(code: string): Promise<TokenResponse> {
   const clientId = Deno.env.get('CALENDLY_CLIENT_ID');
   const clientSecret = Deno.env.get('CALENDLY_CLIENT_SECRET');
-  const redirectUri = Deno.env.get('CALENDLY_REDIRECT_URI');
+  const redirectUri = Deno.env.get('CALENDLY_REDIRECT_URI') ?? CALENDLY_REDIRECT_URI;
 
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret) {
     throw new Error('Missing Calendly OAuth environment variables');
   }
 
@@ -70,6 +72,89 @@ export async function OPTIONS() {
 
 const HANDLER_TIMEOUT_MS = 25000; // Fail before WallClockTime (150s free)
 
+async function exchangeAndStore(code: string, state: string): Promise<Response> {
+  const tokens = await fetchTokens(code);
+  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+  const { error } = await getSupabase().from('calendly_users').upsert(
+    {
+      user_id: state,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      token_type: tokens.token_type ?? 'Bearer',
+      expires_at: expiresAt.toISOString(),
+      calendly_user_uri: null,
+      calendly_organization: null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' }
+  );
+  if (error) {
+    console.error('[Calendly OAuth] Database error:', error);
+    return new Response(JSON.stringify({ error: 'db_failed' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+export async function POST(req: Request) {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ error: 'Missing Authorization' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  const supabase = getSupabase();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  let body: { code?: string; state?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  const code = body.code?.trim();
+  const state = body.state?.trim();
+  if (!code || !state) {
+    return new Response(JSON.stringify({ error: 'missing_params' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  if (state !== user.id) {
+    return new Response(JSON.stringify({ error: 'state_mismatch' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  try {
+    return await exchangeAndStore(code, state);
+  } catch (err) {
+    console.error('[Calendly OAuth] POST Exception:', err);
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const selfBase = `${url.origin}${url.pathname}`;
@@ -81,25 +166,8 @@ export async function GET(req: Request) {
   }
 
   const run = async (): Promise<Response> => {
-    const tokens = await fetchTokens(code);
-    const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
-    const { error } = await getSupabase().from('calendly_users').upsert(
-      {
-        user_id: state,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        token_type: tokens.token_type ?? 'Bearer',
-        expires_at: expiresAt.toISOString(),
-        calendly_user_uri: null,
-        calendly_organization: null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    );
-    if (error) {
-      console.error('[Calendly OAuth] Database error:', error);
-      return Response.redirect(`${selfBase}?error=db_failed`, 302);
-    }
+    const res = await exchangeAndStore(code, state);
+    if (res.status !== 200) return Response.redirect(`${selfBase}?error=db_failed`, 302);
     return okResponse('Closing…');
   };
 

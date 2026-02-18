@@ -1,25 +1,45 @@
 /**
- * Calendly OAuth flow for RingTap
- * - Uses Vercel API route (avoids Supabase Edge Function limits)
- * - Opens browser, waits for redirect to https://www.ringtap.me/api/oauth/calendly
+ * Calendly OAuth flow for RingTap (TestFlight)
+ * - Uses ringtap://oauth/callback as redirect URI
+ * - Opens browser, Calendly redirects to app with code
+ * - App exchanges code via Vercel API
  */
 
 import * as WebBrowser from 'expo-web-browser';
-import { supabase } from '@/lib/supabase/supabaseClient';
+import { supabase, supabaseUrl } from '@/lib/supabase/supabaseClient';
+import { CALENDLY_REDIRECT_URI } from '@/lib/calendly';
 
 const CALENDLY_CLIENT_ID = process.env.EXPO_PUBLIC_CALENDLY_CLIENT_ID ?? '';
-// Must match exactly what's in Calendly Developer → App → Redirect URIs (no trailing slash)
-const OAUTH_REDIRECT_URI =
-  process.env.EXPO_PUBLIC_CALENDLY_REDIRECT_URI ?? 'https://www.ringtap.me/api/oauth/calendly';
 
 export function getCalendlyOAuthUrl(userId: string): string {
   const params = new URLSearchParams({
     client_id: CALENDLY_CLIENT_ID,
     response_type: 'code',
-    redirect_uri: OAUTH_REDIRECT_URI,
+    redirect_uri: CALENDLY_REDIRECT_URI,
     state: userId,
   });
   return `https://auth.calendly.com/oauth/authorize?${params.toString()}`;
+}
+
+/** Called from useActivation when app opens via ringtap://oauth/callback (cold start) */
+export async function exchangeCalendlyCodeFromUrl(code: string, state: string): Promise<void> {
+  await exchangeCalendlyCode(code, state);
+}
+
+async function exchangeCalendlyCode(code: string, state: string): Promise<{ success: boolean; error?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { success: false, error: 'Not signed in' };
+  const res = await fetch(`${supabaseUrl.replace(/\/$/, '')}/functions/v1/calendly-oauth`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ code, state }),
+  });
+  const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+  if (!res.ok) return { success: false, error: data.error ?? 'Exchange failed' };
+  return { success: true };
 }
 
 export async function openCalendlyOAuth(userId: string): Promise<{ success: boolean; error?: string }> {
@@ -28,7 +48,7 @@ export async function openCalendlyOAuth(userId: string): Promise<{ success: bool
   }
 
   const url = getCalendlyOAuthUrl(userId);
-  const result = await WebBrowser.openAuthSessionAsync(url, OAUTH_REDIRECT_URI);
+  const result = await WebBrowser.openAuthSessionAsync(url, CALENDLY_REDIRECT_URI);
 
   if (result.type === 'success' && result.url) {
     try {
@@ -36,11 +56,13 @@ export async function openCalendlyOAuth(userId: string): Promise<{ success: bool
       const code = parsed.searchParams.get('code');
       const state = parsed.searchParams.get('state');
       const errorParam = parsed.searchParams.get('error');
-      if (code && state) return { success: true };
       if (errorParam) return { success: false, error: errorParam };
-    } catch {
-      if (result.url.includes('oauth/success') || result.url.includes('code=')) return { success: true };
-      if (result.url.includes('oauth/error')) return { success: false, error: 'OAuth failed' };
+      if (code && state) {
+        const exchange = await exchangeCalendlyCode(code, state);
+        return exchange;
+      }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : 'OAuth failed' };
     }
   }
 

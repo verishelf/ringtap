@@ -2,12 +2,25 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
+import { exchangeCalendlyCodeFromUrl } from '@/lib/calendly/calendlyAuth';
+
 export function useActivation() {
   const router = useRouter();
 
   useEffect(() => {
-    const handleUrl = (url: string) => {
+    const handleUrl = async (url: string) => {
       const parsed = Linking.parse(url);
+      // ringtap://oauth/callback?code=...&state=... -> Calendly OAuth (TestFlight)
+      if (url.startsWith('ringtap://oauth/callback')) {
+        const code = parsed.queryParams?.code as string | undefined;
+        const state = parsed.queryParams?.state as string | undefined;
+        if (code && state) {
+          await exchangeCalendlyCodeFromUrl(code, state);
+        }
+        router.replace('/calendly/connect');
+        return;
+      }
+
       // ringtap://profile/{userId} -> open profile screen (hostname can be "profile", path the id)
       const path = (parsed.path ?? '').trim() || (parsed.hostname ?? '').trim();
       const profileId =
@@ -27,7 +40,7 @@ export function useActivation() {
         return;
       }
 
-      // ringtap://oauth/success or ringtap://oauth/error -> Calendly OAuth callback
+      // ringtap://oauth/success or ringtap://oauth/error -> Calendly OAuth callback (legacy)
       if (url.includes('oauth/success') || path === 'oauth/success' || (parsed.hostname === 'oauth' && path === 'success')) {
         router.replace('/calendly/connect');
         return;
@@ -45,11 +58,11 @@ export function useActivation() {
     };
 
     Linking.getInitialURL().then((url) => {
-      if (url) handleUrl(url);
+      if (url) void handleUrl(url);
     });
 
     const sub = Linking.addEventListener('url', (event) => {
-      handleUrl(event.url);
+      void handleUrl(event.url);
     });
 
     return () => sub.remove();
