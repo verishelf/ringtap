@@ -50,15 +50,18 @@ For live appointment updates, add `appointments` to the Realtime publication:
 - Supabase Dashboard → Database → Replication
 - Add `appointments` table to `supabase_realtime`
 
-## 6. Deploy Edge Functions (Webhook only)
+## 6. Deploy Edge Functions
 
-OAuth callback is now on Vercel. Deploy only the webhook and other functions:
+OAuth callback is on Vercel. Deploy webhook, sync, and other functions:
 
 ```bash
 npx supabase functions deploy calendly-webhook --project-ref wdffdlznfthxwjhumacs --no-verify-jwt
 npx supabase functions deploy calendly-register-webhook --project-ref wdffdlznfthxwjhumacs
 npx supabase functions deploy calendly-links --project-ref wdffdlznfthxwjhumacs
+npx supabase functions deploy calendly-sync --project-ref wdffdlznfthxwjhumacs
 ```
+
+`calendly-sync` fetches scheduled events from the Calendly API and upserts into `appointments` — catches events missed by the webhook (e.g. if webhook wasn't registered yet).
 
 ## Token Refresh
 

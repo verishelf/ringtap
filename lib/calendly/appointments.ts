@@ -1,11 +1,12 @@
 /**
  * Calendly appointments service
  * - Fetch appointments from Supabase
+ * - Sync from Calendly API (catches events missed by webhook)
  * - Realtime subscription
  * - Format for display
  */
 
-import { supabase } from '@/lib/supabase/supabaseClient';
+import { supabase, supabaseUrl } from '@/lib/supabase/supabaseClient';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type Appointment = {
@@ -37,7 +38,22 @@ function mapRow(row: Record<string, unknown>): Appointment {
   };
 }
 
-export async function fetchAppointments(userId: string): Promise<Appointment[]> {
+export async function syncAppointmentsFromCalendly(): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return;
+  await fetch(`${supabaseUrl.replace(/\/$/, '')}/functions/v1/calendly-sync`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  }).catch(() => {});
+}
+
+export async function fetchAppointments(userId: string, syncFirst = false): Promise<Appointment[]> {
+  if (syncFirst) {
+    await syncAppointmentsFromCalendly();
+  }
   const { data, error } = await supabase
     .from('appointments')
     .select('*')
@@ -50,12 +66,16 @@ export async function fetchAppointments(userId: string): Promise<Appointment[]> 
 
 export function subscribeToRealtimeAppointments(
   userId: string,
-  onUpdate: (appointments: Appointment[]) => void
+  onUpdate: (appointments: Appointment[]) => void,
+  options?: { syncOnFirstLoad?: boolean }
 ): () => void {
   let channel: RealtimeChannel;
+  let firstLoad = true;
 
   const refresh = async () => {
-    const appointments = await fetchAppointments(userId);
+    const syncFirst = options?.syncOnFirstLoad && firstLoad;
+    if (firstLoad) firstLoad = false;
+    const appointments = await fetchAppointments(userId, syncFirst);
     onUpdate(appointments);
   };
 

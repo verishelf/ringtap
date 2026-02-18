@@ -127,7 +127,9 @@ export default function ContactsScreen() {
 
   useEffect(() => {
     if (!user?.id) return;
-    const unsub = subscribeToRealtimeAppointments(user.id, setAppointments);
+    const unsub = subscribeToRealtimeAppointments(user.id, setAppointments, {
+      syncOnFirstLoad: true,
+    });
     return unsub;
   }, [user?.id]);
 
