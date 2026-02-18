@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +13,7 @@ import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { deleteAccount } from '@/lib/api';
+import { getConnectedCalendlyUrl, isCalendlyConnected } from '@/lib/calendly/calendlyAuth';
 
 const MENU_ICON_SIZE = 22;
 const CHEVRON_SIZE = 20;
@@ -26,6 +28,23 @@ export default function SettingsScreen() {
   const colors = useThemeColors();
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [calendlyUrl, setCalendlyUrl] = useState<string | null>(null);
+
+  const loadCalendlyStatus = useCallback(async () => {
+    if (!user?.id) return;
+    const connected = await isCalendlyConnected(user.id);
+    setCalendlyUrl(connected ? await getConnectedCalendlyUrl(user.id) : null);
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadCalendlyStatus();
+  }, [loadCalendlyStatus]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user) loadCalendlyStatus();
+    }, [user, loadCalendlyStatus])
+  );
 
   const handleNewMessagesToggle = async (on: boolean) => {
     setNotifPrefs({ newMessages: on });
@@ -132,7 +151,16 @@ export default function SettingsScreen() {
                 <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
                   <Ionicons name="calendar-outline" size={MENU_ICON_SIZE} color={colors.accent} />
                 </View>
-                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Connect Calendly</Text>
+                <View>
+                  <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>
+                    {calendlyUrl ? 'Calendly' : 'Connect Calendly'}
+                  </Text>
+                  {calendlyUrl ? (
+                    <Text style={[styles.menuSubtext, { color: colors.textSecondary }]} numberOfLines={1}>
+                      {calendlyUrl}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
               <View style={styles.menuItemRight} pointerEvents="none">
                 <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
@@ -301,5 +329,6 @@ const styles = StyleSheet.create({
     minWidth: 24,
   },
   menuText: { fontSize: Layout.body, flexShrink: 1 },
+  menuSubtext: { fontSize: Layout.caption, marginTop: 2, fontFamily: 'monospace' },
   signOutText: {},
 });

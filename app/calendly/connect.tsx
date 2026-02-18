@@ -10,6 +10,7 @@ import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import {
   disconnectCalendly,
+  getConnectedCalendlyUrl,
   isCalendlyConnected,
   openCalendlyOAuth,
 } from '@/lib/calendly/calendlyAuth';
@@ -21,17 +22,20 @@ export default function ConnectCalendlyScreen() {
   const router = useRouter();
   const { user } = useSession();
   const [connected, setConnected] = useState(false);
+  const [connectedUrl, setConnectedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
 
   const checkConnection = useCallback(async () => {
     if (!user?.id) {
       setConnected(false);
+      setConnectedUrl(null);
       setLoading(false);
       return;
     }
     const isConnected = await isCalendlyConnected(user.id);
     setConnected(isConnected);
+    setConnectedUrl(isConnected ? await getConnectedCalendlyUrl(user.id) : null);
     setLoading(false);
   }, [user?.id]);
 
@@ -127,6 +131,11 @@ export default function ConnectCalendlyScreen() {
         <Text style={[styles.title, { color: colors.text }]}>
           {connected ? 'Calendly connected' : 'Connect Calendly'}
         </Text>
+        {connected && connectedUrl ? (
+          <Text style={[styles.connectedAccount, { color: colors.textSecondary }]}>
+            {connectedUrl}
+          </Text>
+        ) : null}
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           {connected
             ? 'Your appointments sync to RingTap. View them in My Appointments.'
@@ -188,6 +197,7 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   title: { fontSize: 22, fontWeight: '700', marginBottom: Layout.tightGap, textAlign: 'center' },
+  connectedAccount: { fontSize: Layout.bodySmall, textAlign: 'center', marginBottom: 4, fontFamily: 'monospace' },
   subtitle: { fontSize: Layout.bodySmall, textAlign: 'center', marginBottom: Layout.sectionGap, paddingHorizontal: 16 },
   buttons: { width: '100%', gap: Layout.rowGap, marginTop: Layout.sectionGap },
   primaryBtn: {

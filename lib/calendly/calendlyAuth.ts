@@ -60,6 +60,24 @@ export async function isCalendlyConnected(userId: string): Promise<boolean> {
   return !!data;
 }
 
+/** Returns the connected Calendly scheduling URL (e.g. calendly.com/username) or null */
+export async function getConnectedCalendlyUrl(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('calendly_users')
+    .select('scheduling_url')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const url = data?.scheduling_url?.trim();
+  if (!url) return null;
+  // Show friendly format: calendly.com/username
+  try {
+    const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+    return u.hostname === 'calendly.com' ? u.hostname + u.pathname : url;
+  } catch {
+    return url;
+  }
+}
+
 export async function disconnectCalendly(userId: string): Promise<boolean> {
   const { error } = await supabase.from('calendly_users').delete().eq('user_id', userId);
   return !error;

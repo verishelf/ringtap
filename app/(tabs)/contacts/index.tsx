@@ -32,7 +32,7 @@ import {
   formatAppointment,
   subscribeToRealtimeAppointments,
 } from '@/lib/calendly/appointments';
-import { isCalendlyConnected } from '@/lib/calendly/calendlyAuth';
+import { getConnectedCalendlyUrl, isCalendlyConnected } from '@/lib/calendly/calendlyAuth';
 
 type TabId = 'messages' | 'calendly';
 
@@ -67,6 +67,7 @@ export default function ContactsScreen() {
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [calendlyConnected, setCalendlyConnected] = useState(false);
+  const [calendlyUrl, setCalendlyUrl] = useState<string | null>(null);
 
   const loadContacts = useCallback(async () => {
     if (!user) {
@@ -117,6 +118,7 @@ export default function ContactsScreen() {
     if (!user?.id) return;
     const connected = await isCalendlyConnected(user.id);
     setCalendlyConnected(connected);
+    setCalendlyUrl(connected ? await getConnectedCalendlyUrl(user.id) : null);
     if (connected) {
       const list = await fetchAppointments(user.id);
       setAppointments(list);
@@ -404,6 +406,17 @@ export default function ContactsScreen() {
             </View>
           ) : (
             <>
+              {calendlyUrl ? (
+                <Text
+                  style={[
+                    styles.calendlyConnectedAs,
+                    { color: colors.textSecondary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Connected as {calendlyUrl}
+                </Text>
+              ) : null}
               <Pressable
                 style={[
                   styles.calendlyActionRow,
@@ -626,6 +639,11 @@ const styles = StyleSheet.create({
   calendlyEmpty: {
     alignItems: 'center',
     paddingVertical: Layout.sectionGap * 2,
+  },
+  calendlyConnectedAs: {
+    fontSize: Layout.caption,
+    marginBottom: Layout.rowGap,
+    fontFamily: 'monospace',
   },
   calendlyActionRow: {
     flexDirection: 'row',
