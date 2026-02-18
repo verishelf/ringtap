@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  AppState,
   FlatList,
   ListRenderItem,
   Pressable,
@@ -146,6 +147,13 @@ export default function ContactsScreen() {
   useEffect(() => {
     if (activeTab === 'calendly' && user) loadCalendly();
   }, [activeTab, user, loadCalendly]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && user) loadCalendly();
+    });
+    return () => sub.remove();
+  }, [user, loadCalendly]);
 
   const handleDelete = useCallback((contact: SavedContact) => {
     Alert.alert(
