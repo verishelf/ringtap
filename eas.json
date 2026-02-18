@@ -14,7 +14,7 @@
       "android": { "buildType": "apk" }
     },
     "production": {
-      "distribution": "app-store",
+      "distribution": "store",
       "autoIncrement": true,
       "ios": {
         "simulator": false,
