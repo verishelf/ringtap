@@ -2,7 +2,7 @@
  * In-App Purchase (IAP) integration for Pro subscription.
  *
  * Uses expo-in-app-purchases. Product IDs must match App Store Connect.
- * IAP requires a development build (npx expo run:ios) — it does NOT work in Expo Go.
+ * IAP works in store builds (TestFlight, App Store). Use isStoreBuild() to gate the UI.
  * When the native module is unavailable, all IAP functions no-op gracefully.
  */
 
@@ -177,14 +177,8 @@ export async function iapGetProducts(): Promise<IAPProduct[]> {
     if (responseCode === (iap.IAPResponseCode?.OK ?? 0) && results?.length) {
       return results as IAPProduct[];
     }
-    if (__DEV__ && (!results?.length || responseCode !== 0)) {
-      console.warn('[IAP] getProductsAsync: no products or non-OK', { responseCode, count: results?.length });
-    }
     return [];
-  } catch (e) {
-    if (__DEV__ && e instanceof Error) {
-      console.warn('[IAP] getProductsAsync failed:', e.message);
-    }
+  } catch {
     return [];
   }
 }

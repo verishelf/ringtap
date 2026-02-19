@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode as decodeBase64 } from 'base64-arraybuffer';
-import { supabase, supabaseUrl } from '@/lib/supabase/supabaseClient';
+import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase/supabaseClient';
 import type {
   AnalyticsSummary,
   ProfileTheme,
@@ -604,22 +604,26 @@ export async function triggerPushForMessage(
 
 /** Delete the current user's account via Edge Function. Caller should sign out and redirect after. */
 export async function deleteAccount(): Promise<{ ok: boolean; error?: string }> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) return { ok: false, error: 'Not signed in' };
+  const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+  if (refreshError || !session?.access_token || !session.user) {
+    return { ok: false, error: refreshError?.message ?? 'Not signed in' };
+  }
+
   const res = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
+      apikey: supabaseAnonKey,
     },
+    body: JSON.stringify({ userId: session.user.id }),
   });
+
+  const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    return { ok: false, error: (body as { error?: string }).error ?? `Request failed (${res.status})` };
+    return { ok: false, error: body.error ?? `Request failed (${res.status})` };
   }
-  return { ok: true };
+  return body.ok === true ? { ok: true } : { ok: false, error: body.error ?? 'Delete failed' };
 }
 
 /** Delete a conversation (participant only; RLS enforces). Messages are deleted by cascade. */

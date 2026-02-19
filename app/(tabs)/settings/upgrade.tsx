@@ -2,8 +2,9 @@
  * Upgrade to Pro screen
  *
  * Per Apple Guideline 3.1.1: In-app purchase only for App Store builds.
- * No external payment links (Stripe) in the native app.
- * Web: Stripe only (no IAP).
+ * Uses isStoreBuild() to enable IAP. Buttons stay ACTIVE in store builds
+ * even when StoreKit returns zero products (e.g. subscriptions not yet
+ * attached to version in App Store Connect).
  */
 
 import { Ionicons } from '@expo/vector-icons';
@@ -29,13 +30,13 @@ import {
   IAP_FALLBACK_PRICES,
   iapConnect,
   iapDisconnect,
-  iapGetProducts,
   iapPurchase,
   iapRestore,
   iapSetPurchaseListener,
-  type IAPProduct,
 } from '@/lib/iap';
 import { supabase } from '@/lib/supabase/supabaseClient';
+import { fetchProducts, type IAPProduct } from '@/utils/fetchProducts';
+import { isStoreBuild } from '@/utils/isStoreBuild';
 
 const UPGRADE_BASE_URL = 'https://www.ringtap.me/upgrade';
 
@@ -45,7 +46,8 @@ export default function UpgradeScreen() {
   const { isPro, refresh } = useSubscription();
 
   const [products, setProducts] = useState<IAPProduct[]>([]);
-  const [iapState, setIapState] = useState<'idle' | 'connecting' | 'loading' | 'purchasing' | 'restoring' | 'error'>('idle');
+  const [iapState, setIapState] = useState<'idle' | 'connecting' | 'loading' | 'purchasing' | 'restoring'>('idle');
+  const storeBuild = isStoreBuild();
 
   const getAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -53,9 +55,8 @@ export default function UpgradeScreen() {
     return { accessToken: session.access_token, userId: session.user.id };
   }, []);
 
-  // IAP for all native storefronts (US + non-US); web has no IAP
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' || !storeBuild) {
       setIapState('idle');
       return;
     }
@@ -66,7 +67,7 @@ export default function UpgradeScreen() {
       const connected = await iapConnect();
       if (!mounted) return;
       if (!connected) {
-        setIapState('error');
+        setIapState('idle');
         return;
       }
 
@@ -77,9 +78,9 @@ export default function UpgradeScreen() {
       });
 
       setIapState('loading');
-      const prods = await iapGetProducts();
+      const result = await fetchProducts();
       if (!mounted) return;
-      setProducts(prods);
+      setProducts(result.products);
       setIapState('idle');
     };
     run();
@@ -87,7 +88,7 @@ export default function UpgradeScreen() {
       mounted = false;
       iapDisconnect();
     };
-  }, [getAuth, refresh]);
+  }, [getAuth, refresh, storeBuild]);
 
   const handlePurchase = async (productId: string) => {
     const email = user?.email?.trim();
@@ -137,12 +138,11 @@ export default function UpgradeScreen() {
 
   const monthlyProduct = products.find((p) => p.productId === '006');
   const yearlyProduct = products.find((p) => p.productId === '007');
-  const primaryProduct = monthlyProduct ?? products[0];
-  const showIAP = Platform.OS !== 'web';
-  const hasProducts = !!primaryProduct;
+  const primaryProduct = monthlyProduct ?? yearlyProduct ?? null;
   const monthlyPrice = monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly;
   const yearlyPrice = yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly;
   const isWebOnly = Platform.OS === 'web';
+  const canPurchase = storeBuild;
 
   return (
     <ThemedView style={styles.container}>
@@ -156,7 +156,6 @@ export default function UpgradeScreen() {
         </View>
 
         {isWebOnly ? (
-          /* Web: Stripe only (no IAP) */
           <>
             <Text style={[styles.price, { color: colors.text }]}>$9.99/mo or $99.99/yr</Text>
             <Pressable
@@ -170,8 +169,21 @@ export default function UpgradeScreen() {
               Opens the browser to subscribe via Stripe. Cancel anytime from Settings → Manage subscription.
             </Text>
           </>
+        ) : !storeBuild ? (
+          <>
+            <Text style={[styles.price, { color: colors.text }]}>
+              {IAP_FALLBACK_PRICES.monthly}/mo or {IAP_FALLBACK_PRICES.yearly}/yr
+            </Text>
+            <View style={[styles.disabledMessage, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.disabledText, { color: colors.textSecondary }]}>
+                IAP disabled in development mode
+              </Text>
+            </View>
+            <Text style={[styles.note, { color: colors.textSecondary }]}>
+              Install from TestFlight or the App Store to subscribe.
+            </Text>
+          </>
         ) : (
-          /* Native: IAP only. Prices from store or fallback (Expo Go). */
           <>
             <Text style={[styles.price, { color: colors.text }]}>
               {monthlyPrice}/mo or {yearlyPrice}/yr
@@ -185,29 +197,27 @@ export default function UpgradeScreen() {
               </View>
             )}
 
-            {iapState === 'idle' && showIAP && hasProducts && primaryProduct && (
+            {iapState === 'idle' && canPurchase && (
               <>
                 <Pressable
                   style={[styles.button, { backgroundColor: colors.accent }]}
-                  onPress={() => handlePurchase(primaryProduct.productId)}
+                  onPress={() => handlePurchase(primaryProduct?.productId ?? '006')}
                   disabled={iapState !== 'idle'}
                 >
                   <Ionicons name="cart-outline" size={22} color={colors.text} />
                   <Text style={[styles.buttonText, { color: colors.text }]}>
-                    Subscribe via App Store – {primaryProduct.price}/mo
+                    Subscribe via App Store – {primaryProduct?.price ?? monthlyPrice}/mo
                   </Text>
                 </Pressable>
 
-                {yearlyProduct && yearlyProduct.productId !== primaryProduct.productId && (
-                  <Pressable
-                    style={[styles.buttonSecondary, { borderColor: colors.border, borderWidth: 1 }]}
-                    onPress={() => handlePurchase(yearlyProduct.productId)}
-                  >
-                    <Text style={[styles.buttonTextSecondary, { color: colors.text }]}>
-                      {yearlyProduct.price}/year
-                    </Text>
-                  </Pressable>
-                )}
+                <Pressable
+                  style={[styles.buttonSecondary, { borderColor: colors.border, borderWidth: 1 }]}
+                  onPress={() => handlePurchase('007')}
+                >
+                  <Text style={[styles.buttonTextSecondary, { color: colors.text }]}>
+                    {yearlyPrice}/year
+                  </Text>
+                </Pressable>
 
                 <Pressable
                   style={styles.restoreButton}
@@ -232,27 +242,6 @@ export default function UpgradeScreen() {
                   {iapState === 'purchasing' ? 'Processing…' : 'Restoring…'}
                 </Text>
               </View>
-            )}
-
-            {(iapState === 'error' || (iapState === 'idle' && showIAP && !hasProducts)) && (
-              <>
-                <View style={styles.iapFallback}>
-                  <Pressable style={[styles.button, { backgroundColor: colors.surface, opacity: 0.7 }]} disabled>
-                    <Ionicons name="cart-outline" size={22} color={colors.textSecondary} />
-                    <Text style={[styles.buttonTextSecondary, { color: colors.textSecondary }]}>
-                      Subscribe via App Store – {monthlyPrice}/mo
-                    </Text>
-                  </Pressable>
-                  <Pressable style={[styles.buttonSecondary, { borderColor: colors.border, borderWidth: 1, opacity: 0.7 }]} disabled>
-                    <Text style={[styles.buttonTextSecondary, { color: colors.textSecondary }]}>
-                      {yearlyPrice}/yr
-                    </Text>
-                  </Pressable>
-                </View>
-                <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                  In‑app purchase requires a development build. Install from the App Store to subscribe.
-                </Text>
-              </>
             )}
           </>
         )}
@@ -295,7 +284,6 @@ const styles = StyleSheet.create({
     borderRadius: Layout.radiusMd,
     marginBottom: Layout.rowGap,
   },
-  buttonDisabled: { opacity: 0.7 },
   buttonText: { fontSize: Layout.body, fontWeight: '600' },
   buttonTextSecondary: { fontSize: Layout.body, fontWeight: '500' },
   restoreButton: { paddingVertical: Layout.tightGap, marginBottom: Layout.sectionGap },
@@ -307,11 +295,13 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   loadingText: { fontSize: Layout.bodySmall },
-  iapFallback: { marginBottom: Layout.sectionGap },
-  errorText: { fontSize: Layout.bodySmall, marginBottom: Layout.sectionGap, textAlign: 'center' },
-  externalSection: { marginTop: Layout.sectionGap },
-  externalLabel: { fontSize: Layout.bodySmall, marginBottom: Layout.tightGap, textAlign: 'center' },
-  divider: { height: 1, marginVertical: Layout.sectionGap },
+  disabledMessage: {
+    padding: Layout.cardPadding,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+    marginBottom: Layout.sectionGap,
+  },
+  disabledText: { fontSize: Layout.body, textAlign: 'center' },
   note: {
     fontSize: Layout.caption,
     marginTop: Layout.tightGap,
