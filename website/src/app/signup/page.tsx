@@ -3,11 +3,11 @@
 import { Header } from '@/components/Header';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.ringtap.me';
 
-export default function SignupPage() {
+function SignupContent() {
   const searchParams = useSearchParams();
   const planParam = (searchParams.get('plan') ?? 'free').toLowerCase();
   const plan = planParam === 'pro' ? 'pro' : 'free';
@@ -195,5 +195,20 @@ export default function SignupPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <p className="mt-6 text-muted-light">Loading…</p>
+        </div>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   );
 }
