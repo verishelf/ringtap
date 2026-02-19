@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 
 const DEEP_LINK = 'ringtap://';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get('plan') === 'pro' ? 'pro' : 'free';
 
@@ -116,5 +116,20 @@ export default function AuthCallbackPage() {
         </a>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <p className="mt-6 text-muted-light">Loading…</p>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
