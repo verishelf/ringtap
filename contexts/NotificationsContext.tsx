@@ -3,11 +3,15 @@ import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
+import { setupAndroidNotificationChannel } from '@/utils/registerPushNotifications';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -61,6 +65,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS === 'web') return false;
+    await setupAndroidNotificationChannel();
     const { status: existing } = await Notifications.getPermissionsAsync();
     if (existing === 'granted') {
       setPermissionStatus('granted');

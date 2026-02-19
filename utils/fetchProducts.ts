@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 /** Product IDs - must match App Store Connect exactly */
 const PRODUCT_IDS = ['006', '007'] as const;
+const CONNECT_TIMEOUT_MS = 15000;
 
 export type IAPProduct = {
   productId: string;
@@ -45,7 +46,12 @@ export async function fetchProducts(): Promise<FetchProductsResult> {
   }
 
   try {
-    await iap.connectAsync();
+    await Promise.race([
+      iap.connectAsync(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('IAP connect timeout')), CONNECT_TIMEOUT_MS)
+      ),
+    ]);
     const { responseCode, results } = await iap.getProductsAsync([...PRODUCT_IDS]);
     const IAPResponseCode = iap.IAPResponseCode ?? { OK: 0 };
     const products = (responseCode === IAPResponseCode.OK && results?.length

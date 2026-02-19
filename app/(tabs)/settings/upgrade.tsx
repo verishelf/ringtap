@@ -46,6 +46,7 @@ export default function UpgradeScreen() {
   const { isPro, refresh } = useSubscription();
 
   const [products, setProducts] = useState<IAPProduct[]>([]);
+  const [fetchStatus, setFetchStatus] = useState<'ok' | 'missing_products' | 'unavailable'>('unavailable');
   const [iapState, setIapState] = useState<'idle' | 'connecting' | 'loading' | 'purchasing' | 'restoring'>('idle');
   const storeBuild = isStoreBuild();
 
@@ -81,6 +82,7 @@ export default function UpgradeScreen() {
       const result = await fetchProducts();
       if (!mounted) return;
       setProducts(result.products);
+      setFetchStatus(result.status);
       setIapState('idle');
     };
     run();
@@ -197,6 +199,13 @@ export default function UpgradeScreen() {
               </View>
             )}
 
+            {fetchStatus === 'missing_products' && iapState === 'idle' && (
+              <View style={[styles.missingProductsHint, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.missingProductsText, { color: colors.textSecondary }]}>
+                  Subscriptions not loaded. In App Store Connect, add products 006 & 007 to this app version.
+                </Text>
+              </View>
+            )}
             {iapState === 'idle' && canPurchase && (
               <>
                 <Pressable
@@ -302,6 +311,13 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   disabledText: { fontSize: Layout.body, textAlign: 'center' },
+  missingProductsHint: {
+    padding: Layout.cardPadding,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+    marginBottom: Layout.sectionGap,
+  },
+  missingProductsText: { fontSize: Layout.bodySmall, textAlign: 'center', lineHeight: 20 },
   note: {
     fontSize: Layout.caption,
     marginTop: Layout.tightGap,

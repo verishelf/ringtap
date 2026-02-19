@@ -52,8 +52,11 @@ export type IAPState = 'idle' | 'connecting' | 'loading' | 'purchasing' | 'resto
 let isConnected = false;
 let purchaseResolver: ((success: boolean) => void) | null = null;
 
+const CONNECT_TIMEOUT_MS = 15000;
+
 /**
  * Connect to the store. Call once when the purchase screen mounts.
+ * Uses a timeout to avoid hanging (known issue in some TestFlight/review environments).
  */
 export async function iapConnect(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
@@ -64,7 +67,12 @@ export async function iapConnect(): Promise<boolean> {
   if (!iap) return false;
 
   try {
-    await iap.connectAsync();
+    await Promise.race([
+      iap.connectAsync(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('IAP connect timeout')), CONNECT_TIMEOUT_MS)
+      ),
+    ]);
     isConnected = true;
     return true;
   } catch {

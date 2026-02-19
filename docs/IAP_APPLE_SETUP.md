@@ -55,7 +55,19 @@ Current IDs: `006` (monthly $14.99), `007` (yearly $119.99). To change, update:
 |----------|-------|---------|
 | `APPLE_SHARED_SECRET` | Website (Vercel/etc) | Receipt validation with Apple |
 
-## 6. App Store Review Notes
+## 6. Link Subscriptions to App Version (Critical for TestFlight)
+
+When you create a new app version, **you must add the In-App Purchases to that version**:
+
+1. App Store Connect → Your App → Select the version (e.g. 1.0.0)
+2. Scroll to **In-App Purchases**
+3. Click **+** and add products `006` and `007`
+
+Without this, `getProductsAsync` returns empty and the upgrade screen shows "Subscriptions not loaded."
+
+See `docs/IAP_TESTFLIGHT_TROUBLESHOOTING.md` for full TestFlight checklist.
+
+## 7. App Store Review Notes
 
 When submitting for review, you can note:
 
