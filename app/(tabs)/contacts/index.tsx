@@ -1,29 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  Alert,
-  FlatList,
-  ListRenderItem,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    FlatList,
+    ListRenderItem,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ProAvatar, NameWithVerified } from '@/components/ProBadge';
+import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
-import {
-  getSavedContacts,
-  getProfile,
-  getSubscription,
-  deleteSavedContact,
-} from '@/lib/api';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { SavedContact } from '@/lib/api';
+import {
+    deleteSavedContact,
+    getProfile,
+    getSavedContacts,
+    getSubscription,
+} from '@/lib/api';
 
 export default function ContactsScreen() {
   const insets = useSafeAreaInsets();

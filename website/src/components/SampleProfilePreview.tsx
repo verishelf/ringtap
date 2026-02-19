@@ -4,7 +4,7 @@ const SAMPLE_PROFILE = {
   name: "Alex Chen",
   title: "Product Designer",
   bio: "Creating digital experiences that connect people. Love NFC, QR, and making networking effortless.",
-  username: "demo",
+  username: "sample",
   links: [
     { type: "linkedin", label: "LinkedIn", url: "#" },
     { type: "instagram", label: "Instagram", url: "#" },
@@ -60,7 +60,7 @@ export function SampleProfilePreview() {
         </div>
       </div>
       <Link
-        href="/demo"
+        href="/sample"
         className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-background hover:bg-muted-light transition-colors"
       >
         View sample profile

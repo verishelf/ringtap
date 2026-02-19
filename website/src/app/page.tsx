@@ -642,6 +642,9 @@ export default function Home() {
             <Link href="/terms" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Terms of Use
             </Link>
+            <Link href="/demo" className="text-sm text-muted-light hover:text-foreground transition-colors">
+              NFC demo
+            </Link>
             <a href="#download" className="text-sm text-muted-light hover:text-foreground transition-colors">
               Download
             </a>
