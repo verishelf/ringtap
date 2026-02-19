@@ -1,6 +1,8 @@
+import { FadeInOnScroll } from "@/components/FadeInOnScroll";
 import { Header } from "@/components/Header";
 import { MarketingMarquee } from "@/components/MarketingMarquee";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
+import { ParallaxHero } from "@/components/ParallaxHero";
 import { SampleProfilePreview } from "@/components/SampleProfilePreview";
 import { ShareSection } from "@/components/ShareSection";
 import { TrustBanner } from "@/components/TrustBanner";
@@ -41,7 +43,7 @@ export default function Home() {
       <TrustBanner />
 
       {/* Hero — clear H1 and intro for SEO */}
-      <section className="relative pt-32 pb-24 px-6 md:pt-40 md:pb-32" aria-label="Introduction">
+      <ParallaxHero>
         <div className="mx-auto max-w-4xl text-center">
           <TypewriterHero />
           <p className="mt-6 text-lg text-muted-light max-w-2xl mx-auto leading-relaxed">
@@ -95,11 +97,11 @@ export default function Home() {
             </a>
           </div>
         </div>
-      </section>
+      </ParallaxHero>
 
       {/* How it works */}
       <section id="how-it-works" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-4xl">
+        <FadeInOnScroll className="mx-auto max-w-4xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             How it works
           </h2>
@@ -132,26 +134,28 @@ export default function Home() {
                 description:
                   "Keep a list of people you've met and see recent messages in the app. On Pro, your dashboard shows taps and views this week, and the Analytics tab breaks down profile views, link clicks, NFC taps, and QR scans.",
               },
-            ].map((item) => (
-              <div key={item.step} className="relative">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-accent text-sm font-bold text-accent">
-                  {item.step}
+            ].map((item, i) => (
+              <FadeInOnScroll key={item.step} delay={i * 80}>
+                <div className="relative">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-accent text-sm font-bold text-accent">
+                    {item.step}
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-foreground">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-light leading-relaxed">
+                    {item.description}
+                  </p>
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-muted-light leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
+              </FadeInOnScroll>
             ))}
           </div>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Sample profile preview */}
       <section id="sample-profile" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-4xl">
+        <FadeInOnScroll className="mx-auto max-w-4xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             Your profile, one tap
           </h2>
@@ -161,12 +165,12 @@ export default function Home() {
           <div className="mt-16">
             <SampleProfilePreview />
           </div>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Store products */}
       <section id="store" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-6xl">
+        <FadeInOnScroll className="mx-auto max-w-6xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             NFC rings & cards
           </h2>
@@ -174,31 +178,32 @@ export default function Home() {
             Tap to share your profile. Rings and cards work with the RingTap app—one tap opens your ringtap.me link. From $19.
           </p>
           <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {PRODUCTS.map((product) => (
-              <Link
-                key={product.id}
-                href="/store"
-                className="group relative rounded-2xl border border-border-light bg-surface p-6 flex flex-col hover:border-accent transition-colors"
-              >
-                {(product.id === "classic" || product.id === "metal-card") && (
-                  <span className="absolute top-4 right-4 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-background">
-                    {product.id === "classic" ? "Bestseller" : "Popular"}
+            {PRODUCTS.map((product, i) => (
+              <FadeInOnScroll key={product.id} delay={i * 100}>
+                <Link
+                  href="/store"
+                  className="group relative rounded-2xl border border-border-light bg-surface p-6 flex flex-col hover:border-accent transition-colors block"
+                >
+                  {(product.id === "classic" || product.id === "metal-card") && (
+                    <span className="absolute top-4 right-4 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-background">
+                      {product.id === "classic" ? "Bestseller" : "Popular"}
+                    </span>
+                  )}
+                  <div className="flex h-24 w-full items-center justify-center rounded-xl bg-surface-elevated text-4xl text-accent mb-4">
+                    {product.image}
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground group-hover:text-accent transition-colors">
+                    {product.name}
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-light leading-relaxed flex-1">
+                    {product.description}
+                  </p>
+                  <p className="mt-4 text-xl font-bold text-accent">${product.price}</p>
+                  <span className="mt-4 text-sm font-semibold text-accent group-hover:underline">
+                    Shop in store →
                   </span>
-                )}
-                <div className="flex h-24 w-full items-center justify-center rounded-xl bg-surface-elevated text-4xl text-accent mb-4">
-                  {product.image}
-                </div>
-                <h3 className="text-lg font-bold text-foreground group-hover:text-accent transition-colors">
-                  {product.name}
-                </h3>
-                <p className="mt-2 text-sm text-muted-light leading-relaxed flex-1">
-                  {product.description}
-                </p>
-                <p className="mt-4 text-xl font-bold text-accent">${product.price}</p>
-                <span className="mt-4 text-sm font-semibold text-accent group-hover:underline">
-                  Shop in store →
-                </span>
-              </Link>
+                </Link>
+              </FadeInOnScroll>
             ))}
           </div>
           <div className="mt-10 text-center">
@@ -209,12 +214,12 @@ export default function Home() {
               View all products
             </Link>
           </div>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Features */}
       <section id="features" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-6xl">
+        <FadeInOnScroll className="mx-auto max-w-6xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             Built for how you network
           </h2>
@@ -378,12 +383,12 @@ export default function Home() {
               </ul>
             </div>
           </div>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Pricing */}
       <section id="pricing" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-4xl">
+        <FadeInOnScroll className="mx-auto max-w-4xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             Simple pricing
           </h2>
@@ -391,6 +396,7 @@ export default function Home() {
             Free forever for your profile and 2 links. Pro adds unlimited links, your theme on the web, and analytics. Choose monthly or yearly billing.
           </p>
           <div className="mt-16 grid gap-8 sm:grid-cols-2">
+            <FadeInOnScroll delay={0}>
             <div className="rounded-2xl border border-border-light bg-surface p-8">
               <h3 className="text-xl font-bold text-foreground">Free</h3>
               <p className="mt-2 text-3xl font-bold text-foreground">$0</p>
@@ -420,6 +426,8 @@ export default function Home() {
                 Start free — create account on web
               </Link>
             </div>
+            </FadeInOnScroll>
+            <FadeInOnScroll delay={100}>
             <div className="rounded-2xl border-2 border-accent bg-surface-elevated p-8 relative">
               <span className="absolute -top-3 left-6 rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-background">
                 Pro
@@ -456,16 +464,17 @@ export default function Home() {
                 Create account & pay with Stripe
               </Link>
             </div>
+            </FadeInOnScroll>
           </div>
           <p className="mt-8 text-center text-xs text-muted">
             Monthly or yearly billing via Stripe. Cancel anytime. Free plan never expires.
           </p>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Testimonials */}
       <section id="testimonials" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-5xl">
+        <FadeInOnScroll className="mx-auto max-w-5xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             What people say about RingTap
           </h2>
@@ -490,24 +499,23 @@ export default function Home() {
                 role: "Startup founder",
               },
             ].map((t, i) => (
-              <div
-                key={i}
-                className="rounded-2xl border border-border-light bg-surface p-6 flex flex-col"
-              >
-                <p className="text-foreground text-sm leading-relaxed flex-1">&ldquo;{t.quote}&rdquo;</p>
-                <div className="mt-4 pt-4 border-t border-border-light">
-                  <p className="font-semibold text-foreground text-sm">{t.name}</p>
-                  <p className="text-muted-light text-xs mt-0.5">{t.role}</p>
+              <FadeInOnScroll key={i} delay={i * 80}>
+                <div className="rounded-2xl border border-border-light bg-surface p-6 flex flex-col">
+                  <p className="text-foreground text-sm leading-relaxed flex-1">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="mt-4 pt-4 border-t border-border-light">
+                    <p className="font-semibold text-foreground text-sm">{t.name}</p>
+                    <p className="text-muted-light text-xs mt-0.5">{t.role}</p>
+                  </div>
                 </div>
-              </div>
+              </FadeInOnScroll>
             ))}
           </div>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* FAQ */}
       <section id="faq" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-2xl">
+        <FadeInOnScroll className="mx-auto max-w-2xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             Frequently asked questions
           </h2>
@@ -544,12 +552,12 @@ export default function Home() {
               </div>
             ))}
           </dl>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* CTA / Download */}
       <section id="download" className="border-t border-border-light/50 py-24 px-6">
-        <div className="mx-auto max-w-3xl text-center">
+        <FadeInOnScroll className="mx-auto max-w-3xl text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl">
             Get RingTap
           </h2>
@@ -587,7 +595,7 @@ export default function Home() {
           <div className="mt-10 pt-10 border-t border-border-light/50">
             <ShareSection />
           </div>
-        </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Stay updated */}
