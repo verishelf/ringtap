@@ -46,7 +46,7 @@ export default function LoginScreen() {
       if (mode === 'magic') {
         const { data, error } = await supabase.auth.signInWithOtp({
           email: email.trim(),
-          options: { emailRedirectTo: 'ringtap://auth/callback' },
+          options: { emailRedirectTo: 'ringtap://auth/callback/' },
         });
         console.log('LOGIN OTP:', data, error);
         if (error) throw error;

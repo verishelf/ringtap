@@ -23,6 +23,8 @@ Users can create accounts on the web (free or Pro) and then sign in to the RingT
 1. **Redirect URLs**: In Supabase Dashboard → Authentication → URL Configuration, add:
    - `https://www.ringtap.me/auth/callback`
    - `https://www.ringtap.me/auth/callback?plan=pro`
+   - `ringtap://auth/callback/` (for app email confirmation — must match exactly)
+   - `ringtap://**` (optional wildcard for app deep links)
    - (and `http://localhost:3000/auth/callback` for local dev)
 
 2. **Site URL**: Set to `https://www.ringtap.me` (or your production URL).

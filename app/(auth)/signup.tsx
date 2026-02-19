@@ -39,7 +39,7 @@ export default function SignupScreen() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: 'ringtap://auth/callback',
+          emailRedirectTo: 'ringtap://auth/callback/',
         },
       });
       console.log('SIGNUP:', data, error);
