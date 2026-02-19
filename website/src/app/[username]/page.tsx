@@ -88,46 +88,46 @@ function SocialIcon({ platform, className = 'w-6 h-6' }: { platform: string; cla
         </svg>
       );
     case 'cashapp':
-      // Simplified Cash App badge
+      // Match app CashAppIcon (white badge with black $)
       return (
-        <svg className={c} viewBox="0 0 24 24" aria-hidden>
-          <rect x="2" y="2" width="20" height="20" rx="4" fill="white" />
+        <svg className={c} viewBox="0 0 34 24" preserveAspectRatio="xMidYMid meet" aria-hidden>
+          <rect width="34" height="24" rx="4" fill="#FFFFFF" />
           <path
-            d="M12 6.75c-1.933 0-3.5 1.233-3.5 3 0 1.59 1.137 2.437 2.863 2.82l.89.2c.86.192 1.247.47 1.247.98 0 .63-.62 1.1-1.5 1.1-1.028 0-1.797-.43-2.24-1.217a.5.5 0 0 0-.7-.18l-.97.6a.5.5 0 0 0-.17.68C9.55 16.52 10.7 17.25 12 17.25c2.047 0 3.5-1.22 3.5-3.05 0-1.64-1.102-2.46-2.887-2.86l-.83-.19c-.87-.2-1.283-.47-1.283-.98 0-.58.57-1.02 1.5-1.02.86 0 1.52.35 1.96 1.01a.5.5 0 0 0 .71.13l.93-.68a.5.5 0 0 0 .12-.68C15.06 7.36 13.7 6.75 12 6.75Z"
-            fill="black"
+            d="M17.8071 10.5742C20.3356 11.1161 21.4915 12.1636 21.4915 13.9336C21.4915 16.1525 19.6847 17.7904 16.8642 17.9637L16.589 19.2762C16.5621 19.4045 16.4489 19.4964 16.3179 19.4964H14.1479C13.9691 19.4964 13.8371 19.3294 13.8784 19.1554L14.2267 17.6877C12.8286 17.2899 11.7036 16.5161 11.0477 15.5609C10.9652 15.4407 10.9926 15.2764 11.1077 15.1868L12.6244 14.0072C12.7494 13.91 12.9286 13.9385 13.021 14.0671C13.8246 15.1856 15.0575 15.8481 16.5428 15.8481C17.8793 15.8481 18.8907 15.1979 18.8907 14.2587C18.8907 13.5362 18.385 13.2111 16.6873 12.8499C13.7614 12.2358 12.6055 11.1522 12.6055 9.38219C12.6055 7.32855 14.3314 5.77721 16.9349 5.57572L17.2191 4.22015C17.246 4.09187 17.3591 4 17.4902 4H19.631C19.8076 4 19.9391 4.16305 19.9017 4.33565L19.5726 5.85451C20.6929 6.19935 21.6051 6.81594 22.1729 7.5768C22.2609 7.69474 22.2383 7.86174 22.1245 7.95505L20.7408 9.08972C20.6205 9.18832 20.445 9.16679 20.3472 9.04587C19.6439 8.17604 18.5368 7.68446 17.3375 7.68446C16.001 7.68446 15.1702 8.26241 15.1702 9.09322C15.1702 9.77954 15.8204 10.1408 17.8071 10.5742Z"
+            fill="#000000"
           />
         </svg>
       );
     case 'venmo':
-      // Venmo blue circle with white V, so it stays visible on all backgrounds
+      // Match app VenmoIcon (blue circle #3D95CE with white V)
       return (
         <svg className={c} viewBox="0 0 24 24" aria-hidden>
           <circle cx="12" cy="12" r="10" fill="#3D95CE" />
           <path
             d="M9 8.5h2.1l1.1 4.2 1.7-4.2H17l-3.1 7H11L9 8.5Z"
-            fill="white"
+            fill="#FFFFFF"
           />
         </svg>
       );
     case 'paypal':
-      // Simple rounded P badge
+      // Match app PayPalIcon (white circle with black P)
       return (
         <svg className={c} viewBox="0 0 24 24" aria-hidden>
-          <circle cx="12" cy="12" r="10" fill="white" />
+          <circle cx="12" cy="12" r="10" fill="#FFFFFF" />
           <path
             d="M10 7.5h3c1.66 0 2.75 1.02 2.75 2.5 0 1.6-1.2 2.75-2.97 2.75H11.3L11 16.5H9L10 7.5Zm2.7 3.7c.68 0 1.13-.4 1.13-.95 0-.54-.37-.9-.98-.9h-1.1l-.27 1.85h1.22Z"
-            fill="currentColor"
+            fill="#000000"
           />
         </svg>
       );
     case 'zelle':
-      // Simple rounded Z badge
+      // Match app ZelleIcon (white circle with black Z)
       return (
         <svg className={c} viewBox="0 0 24 24" aria-hidden>
-          <circle cx="12" cy="12" r="10" fill="white" />
+          <circle cx="12" cy="12" r="10" fill="#FFFFFF" />
           <path
             d="M9 8.5h6v1.5l-3.5 4.1H15V16H9v-1.5l3.5-4.1H9V8.5Z"
-            fill="currentColor"
+            fill="#000000"
           />
         </svg>
       );

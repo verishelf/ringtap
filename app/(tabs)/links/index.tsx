@@ -189,9 +189,6 @@ export default function LinksScreen() {
           <Ionicons name="link-outline" size={64} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.text }]}>No links yet</Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add social links, websites, or custom buttons.</Text>
-          <Pressable style={[styles.addButton, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={openAdd}>
-            <Text style={[styles.addButtonText, { color: colors.text }]}>Add your first link</Text>
-          </Pressable>
         </View>
       ) : (
         <FlashList

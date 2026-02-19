@@ -106,24 +106,24 @@ function SocialIcon({ platform, className = 'w-5 h-5' }: { platform: string; cla
         </svg>
       );
     case 'paypal':
-      // Rounded P badge
+      // Match app PayPalIcon (white circle with black P)
       return (
         <svg className={c} viewBox="0 0 24 24" aria-hidden>
-          <circle cx="12" cy="12" r="10" fill="white" />
+          <circle cx="12" cy="12" r="10" fill="#FFFFFF" />
           <path
             d="M10 7.5h3c1.66 0 2.75 1.02 2.75 2.5 0 1.6-1.2 2.75-2.97 2.75H11.3L11 16.5H9L10 7.5Zm2.7 3.7c.68 0 1.13-.4 1.13-.95 0-.54-.37-.9-.98-.9h-1.1l-.27 1.85h1.22Z"
-            fill="currentColor"
+            fill="#000000"
           />
         </svg>
       );
     case 'zelle':
-      // Rounded Z badge
+      // Match app ZelleIcon (white circle with black Z)
       return (
         <svg className={c} viewBox="0 0 24 24" aria-hidden>
-          <circle cx="12" cy="12" r="10" fill="white" />
+          <circle cx="12" cy="12" r="10" fill="#FFFFFF" />
           <path
             d="M9 8.5h6v1.5l-3.5 4.1H15V16H9v-1.5l3.5-4.1H9V8.5Z"
-            fill="currentColor"
+            fill="#000000"
           />
         </svg>
       );

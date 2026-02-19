@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import dayjs from 'dayjs';
 import { Image } from 'expo-image';
@@ -104,6 +105,11 @@ export default function AnalyticsScreen() {
           <Text style={[styles.lockedSubtitle, { color: colors.textSecondary }]}>
             Upgrade to Pro to see profile views, link clicks, NFC taps, and QR scans.
           </Text>
+          <Link href="/(tabs)/settings/upgrade" asChild>
+            <Pressable style={[styles.upgradeButton, { backgroundColor: colors.accent }]}>
+              <Text style={[styles.upgradeButtonText, { color: colors.text }]}>Upgrade to Pro</Text>
+            </Pressable>
+          </Link>
         </View>
       </ThemedView>
     );
@@ -405,10 +411,28 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Layout.screenPaddingBottom,
+    padding: Layout.screenPadding,
+    paddingBottom: Layout.screenPaddingBottom,
   },
-  lockedTitle: { fontSize: 20, fontWeight: '600', marginTop: 16 },
-  lockedSubtitle: { fontSize: Layout.bodySmall, marginTop: Layout.tightGap, textAlign: 'center' },
+  lockedTitle: { fontSize: 20, fontWeight: '600', marginTop: 20 },
+  lockedSubtitle: {
+    fontSize: Layout.bodySmall,
+    marginTop: Layout.rowGap,
+    marginBottom: Layout.sectionGap,
+    paddingHorizontal: Layout.screenPadding,
+    textAlign: 'center',
+  },
+  upgradeButton: {
+    marginTop: Layout.sectionGap,
+    marginHorizontal: Layout.screenPadding,
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    borderRadius: Layout.radiusMd,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upgradeButtonText: { fontSize: Layout.body, fontWeight: '600' },
   errorBlock: { padding: Layout.screenPadding },
   errorTitle: { fontSize: 18, fontWeight: '600', marginTop: 16, textAlign: 'center' },
   errorSubtitle: { fontSize: Layout.bodySmall, marginTop: Layout.tightGap, textAlign: 'center' },
