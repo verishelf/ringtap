@@ -22,6 +22,7 @@ import {
   getSavedContacts,
   getOrCreateConversation,
   saveContact,
+  exchangeContact,
   getSubscription,
   getProfilePlanFromApi,
   type UserProfile,
@@ -29,7 +30,7 @@ import {
 } from '@/lib/api';
 
 export default function ProfileByIdScreen() {
-  const { id, save } = useLocalSearchParams<{ id: string; save?: string }>();
+  const { id, save, exchange } = useLocalSearchParams<{ id: string; save?: string; exchange?: string }>();
   const router = useRouter();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -81,15 +82,18 @@ export default function ProfileByIdScreen() {
     fetchProfile();
   }, [fetchProfile]);
 
-  // Auto-save when opened from web "Exchange contact" (save=1)
+  // Auto-save when opened from web "Exchange contact" (save=1) or mutual exchange (exchange=1)
   const autoSaveAttempted = useRef(false);
   useEffect(() => {
     if (save !== '1' || !user?.id || !profile || profile.userId === user.id || isAlreadySaved || autoSaveAttempted.current) return;
     autoSaveAttempted.current = true;
-    saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined).then((result) => {
+    const doSave = exchange === '1'
+      ? exchangeContact(profile.userId, profile.name, profile.avatarUrl ?? undefined)
+      : saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined);
+    doSave.then((result) => {
       if (result.success) setIsAlreadySaved(true);
     }).catch(() => {});
-  }, [save, user?.id, profile, isAlreadySaved]);
+  }, [save, exchange, user?.id, profile, isAlreadySaved]);
 
   const handleSaveContact = useCallback(async () => {
     if (!user || !profile) return;

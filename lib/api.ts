@@ -208,6 +208,35 @@ export async function saveContact(
   return { success: true };
 }
 
+/** Mutual exchange: both users get each other as contacts. Used when opening from web "Exchange contact". */
+export async function exchangeContact(
+  contactUserId: string,
+  displayName?: string,
+  avatarUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { success: false, error: 'Sign in to exchange contacts' };
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/exchange-contact`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        contact_user_id: contactUserId,
+        display_name: displayName ?? '',
+        avatar_url: avatarUrl ?? null,
+      }),
+    });
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok) return { success: false, error: data.error ?? 'Exchange failed' };
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Exchange failed' };
+  }
+}
+
 // --- Links ---
 export async function getLinks(userId: string): Promise<UserLink[]> {
   const { data, error } = await supabase

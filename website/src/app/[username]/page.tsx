@@ -602,7 +602,7 @@ export default function UsernameProfilePage() {
             </button>
             {userId && (
               <a
-                href={`${DEEP_LINK_SCHEME}profile/${userId}?save=1`}
+                href={`${DEEP_LINK_SCHEME}profile/${userId}?save=1&exchange=1`}
                 className={`block w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors flex items-center justify-center gap-2`}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -616,7 +616,7 @@ export default function UsernameProfilePage() {
             )}
             <p className="text-xs text-muted-light mt-1.5 text-center">
               Downloads a .vcf file to add to your phone contacts
-              {userId ? ' · Exchange contact opens the app and adds them to your contacts' : ''}
+              {userId ? ' · Exchange contact opens the app and adds you both to each other\'s contacts' : ''}
             </p>
           </div>
         </div>
