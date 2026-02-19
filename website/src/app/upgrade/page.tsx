@@ -57,10 +57,15 @@ function UpgradeContent() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
         <div className="max-w-md w-full text-center">
-          <p className="text-muted-light">Open this page from the RingTap app (Settings → Upgrade) or add your email to the URL.</p>
-          <Link href="/" className="mt-6 inline-block text-accent font-semibold hover:underline">
-            Back to RingTap
-          </Link>
+          <p className="text-muted-light">Open this page from the RingTap app (Settings → Upgrade) or create an account to upgrade.</p>
+          <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/signup?plan=pro" className="inline-block rounded-xl bg-accent px-6 py-3 text-background font-semibold hover:opacity-90">
+              Create account & go Pro
+            </Link>
+            <Link href="/" className="inline-block text-accent font-semibold hover:underline">
+              Back to home
+            </Link>
+          </div>
         </div>
       </div>
     );

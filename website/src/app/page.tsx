@@ -413,12 +413,12 @@ export default function Home() {
                   Scanned contacts
                 </li>
               </ul>
-              <a
-                href="#download"
+              <Link
+                href="/signup?plan=free"
                 className="mt-8 block w-full rounded-xl border border-border-light py-3 text-center text-sm font-semibold text-foreground hover:border-accent hover:bg-surface-elevated transition-colors"
               >
-                Start free — no credit card
-              </a>
+                Start free — create account on web
+              </Link>
             </div>
             <div className="rounded-2xl border-2 border-accent bg-surface-elevated p-8 relative">
               <span className="absolute -top-3 left-6 rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-background">
@@ -450,10 +450,10 @@ export default function Home() {
                 </li>
               </ul>
               <Link
-                href="/upgrade"
+                href="/signup?plan=pro"
                 className="mt-8 block w-full rounded-xl bg-accent py-3 text-center text-sm font-semibold text-background hover:bg-muted-light transition-colors"
               >
-                Upgrade to Pro
+                Create account & pay with Stripe
               </Link>
             </div>
           </div>
