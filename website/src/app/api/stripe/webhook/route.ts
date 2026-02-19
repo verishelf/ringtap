@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
         if (subscriptionId) {
           try {
-            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            const sub = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription;
             subStatus = sub.status ?? 'active';
             currentPeriodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
           } catch {
