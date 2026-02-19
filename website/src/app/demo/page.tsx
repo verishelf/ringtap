@@ -60,11 +60,6 @@ export default function DemoPage() {
               Your browser does not support the video tag.
             </video>
           </div>
-
-          <p className="mt-6 text-sm text-muted-light">
-            Add <code className="px-1.5 py-0.5 rounded bg-surface-elevated text-foreground">demo.mp4</code> to{" "}
-            <code className="px-1.5 py-0.5 rounded bg-surface-elevated text-foreground">website/public/</code> to display the video.
-          </p>
         </div>
       </main>
     </div>
