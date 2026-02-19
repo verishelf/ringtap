@@ -602,15 +602,21 @@ export default function UsernameProfilePage() {
             </button>
             {userId && (
               <a
-                href={`${DEEP_LINK_SCHEME}profile/${userId}`}
-                className={`block w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors`}
+                href={`${DEEP_LINK_SCHEME}profile/${userId}?save=1`}
+                className={`block w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors flex items-center justify-center gap-2`}
               >
-                Save Contact in App
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Exchange contact
               </a>
             )}
             <p className="text-xs text-muted-light mt-1.5 text-center">
               Downloads a .vcf file to add to your phone contacts
-              {userId ? ' · Open in RingTap app to save there' : ''}
+              {userId ? ' · Exchange contact opens the app and adds them to your contacts' : ''}
             </p>
           </div>
         </div>

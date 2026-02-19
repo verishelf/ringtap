@@ -1,96 +1,158 @@
 /**
  * Handles email confirmation / magic link deep link.
- * Supabase redirects to me.ringtap.app://auth/callback#access_token=...&refresh_token=...
+ * Supabase redirects to ringtap://auth/callback/#access_token=...&refresh_token=...
+ * (or ?token_hash=...&type=email for PKCE)
  * This screen extracts tokens, sets the session, and redirects to the app.
  */
 
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { supabase } from '@/lib/supabase/supabaseClient';
 
-function parseHashParams(url: string): Record<string, string> {
-  const hashIndex = url.indexOf('#');
-  if (hashIndex === -1) return {};
-  const hash = url.slice(hashIndex + 1);
+/** Parse params from URL hash (#) or query (?). Supabase may use either. */
+function parseUrlParams(url: string): Record<string, string> {
   const params: Record<string, string> = {};
-  for (const pair of hash.split('&')) {
-    const [key, value] = pair.split('=');
-    if (key && value) {
-      params[decodeURIComponent(key)] = decodeURIComponent(value.replace(/\+/g, ' '));
+  const hashIndex = url.indexOf('#');
+  const queryIndex = url.indexOf('?');
+  const parts: string[] = [];
+  if (hashIndex !== -1) parts.push(url.slice(hashIndex + 1));
+  if (queryIndex !== -1 && (hashIndex === -1 || queryIndex < hashIndex)) {
+    const q = url.slice(queryIndex + 1, hashIndex !== -1 ? hashIndex : undefined);
+    parts.push(q);
+  }
+  for (const part of parts) {
+    for (const pair of part.split('&')) {
+      const [key, value] = pair.split('=');
+      if (key && value) {
+        params[decodeURIComponent(key)] = decodeURIComponent(value.replace(/\+/g, ' '));
+      }
     }
   }
   return params;
 }
 
+function processAuthUrl(
+  url: string,
+  onSuccess: () => void,
+  onError: (msg: string) => void
+): void {
+  const params = parseUrlParams(url);
+  const accessToken = params.access_token ?? params['access_token'];
+  const refreshToken = params.refresh_token ?? params['refresh_token'];
+  const tokenHash = params.token_hash ?? params['token_hash'];
+  const type = params.type ?? params['type'];
+
+  if (tokenHash && type) {
+    supabase.auth
+      .verifyOtp({ token_hash: tokenHash, type: type as 'email' })
+      .then(({ error }) => {
+        if (error) onError(error.message);
+        else onSuccess();
+      })
+      .catch((e) => onError(e instanceof Error ? e.message : 'Could not sign in'));
+    return;
+  }
+
+  if (!accessToken) {
+    onError('No token in link. Try signing in again.');
+    return;
+  }
+
+  supabase.auth
+    .setSession({ access_token: accessToken, refresh_token: refreshToken ?? '' })
+    .then(({ error }) => {
+      if (error) throw error;
+      onSuccess();
+    })
+    .catch((e) => onError(e instanceof Error ? e.message : 'Could not sign in'));
+}
+
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'no-url'>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const handled = useRef(false);
+
+  const onSuccess = useCallback(() => {
+    setStatus('success');
+    router.replace('/(tabs)');
+  }, [router]);
+
+  const onError = useCallback((msg: string) => {
+    setStatus('error');
+    setErrorMsg(msg);
+  }, []);
+
+  const tryUrl = useCallback(
+    (u: string | null) => {
+      if (!u || handled.current) return;
+      handled.current = true;
+      processAuthUrl(u, onSuccess, onError);
+    },
+    [onSuccess, onError]
+  );
 
   useEffect(() => {
-    let mounted = true;
+    // 1. Synchronous: getLinkingURL (Expo native module, may have URL immediately)
+    try {
+      const syncUrl = Linking.getLinkingURL?.();
+      if (syncUrl) tryUrl(syncUrl);
+    } catch {
+      // getLinkingURL may not exist on web
+    }
 
-    const handleUrl = async (url: string | null) => {
-      if (!url || !mounted) return;
-      const params = parseHashParams(url);
-      const accessToken = params.access_token ?? params['access_token'];
-      const refreshToken = params.refresh_token ?? params['refresh_token'];
+    // 2. Async: getInitialURL (React Native Linking)
+    Linking.getInitialURL().then(tryUrl);
 
-      if (!accessToken) {
-        if (mounted) {
-          setStatus('error');
-          setErrorMsg('No token in link. Try signing in again.');
-        }
-        return;
-      }
+    // 3. Listen for url event (when app opened from background via link)
+    const sub = Linking.addEventListener('url', ({ url: u }) => tryUrl(u));
 
-      try {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken ?? '',
-        });
-        if (error) throw error;
-        if (mounted) {
-          setStatus('success');
-          router.replace('/(tabs)');
-        }
-      } catch (e) {
-        if (mounted) {
-          setStatus('error');
-          setErrorMsg(e instanceof Error ? e.message : 'Could not sign in');
-        }
-      }
-    };
+    // 4. Retries: URL can be delayed on cold start
+    const delays = [300, 800, 1500, 3000];
+    const timers = delays.map((ms) =>
+      setTimeout(() => {
+        if (!handled.current) Linking.getInitialURL().then(tryUrl);
+      }, ms)
+    );
 
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleUrl(url);
-      } else {
-        const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
-        return () => sub.remove();
-      }
-    });
+    // 5. Timeout: show "no URL" after 6s so user can retry
+    const noUrlTimer = setTimeout(() => {
+      if (!handled.current) setStatus('no-url');
+    }, 6000);
 
     return () => {
-      mounted = false;
+      sub.remove();
+      timers.forEach(clearTimeout);
+      clearTimeout(noUrlTimer);
     };
-  }, [router]);
+  }, [tryUrl]);
 
   if (status === 'error') {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.text }]}>{errorMsg}</Text>
-        <Text
-          style={[styles.link, { color: colors.accent }]}
-          onPress={() => router.replace('/(auth)/login')}
-        >
-          Back to sign in
+        <Pressable onPress={() => router.replace('/(auth)/login')}>
+          <Text style={[styles.link, { color: colors.accent }]}>Back to sign in</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (status === 'no-url') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.text }]}>
+          Could not read the confirmation link. Make sure you opened the link from your email, then
+          try again.
         </Text>
+        <Pressable onPress={() => router.replace('/(auth)/login')}>
+          <Text style={[styles.link, { color: colors.accent }]}>Back to sign in</Text>
+        </Pressable>
       </View>
     );
   }

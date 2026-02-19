@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -29,7 +29,7 @@ import {
 } from '@/lib/api';
 
 export default function ProfileByIdScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, save } = useLocalSearchParams<{ id: string; save?: string }>();
   const router = useRouter();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -80,6 +80,16 @@ export default function ProfileByIdScreen() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  // Auto-save when opened from web "Exchange contact" (save=1)
+  const autoSaveAttempted = useRef(false);
+  useEffect(() => {
+    if (save !== '1' || !user?.id || !profile || profile.userId === user.id || isAlreadySaved || autoSaveAttempted.current) return;
+    autoSaveAttempted.current = true;
+    saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined).then((result) => {
+      if (result.success) setIsAlreadySaved(true);
+    }).catch(() => {});
+  }, [save, user?.id, profile, isAlreadySaved]);
 
   const handleSaveContact = useCallback(async () => {
     if (!user || !profile) return;
