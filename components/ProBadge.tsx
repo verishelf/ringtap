@@ -6,12 +6,13 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 
 export const PRO_RING_COLOR = '#D4AF37';
 
-export type ProAvatarSize = 'small' | 'medium' | 'large';
+export type ProAvatarSize = 'small' | 'medium' | 'large' | 'xlarge';
 
 const AVATAR_SIZES: Record<ProAvatarSize, { wrap: number; inner: number }> = {
   small: { wrap: 36, inner: 32 },
   medium: { wrap: 52, inner: 48 },
   large: { wrap: 94, inner: 88 },
+  xlarge: { wrap: 96, inner: 90 },
 };
 
 export interface ProAvatarProps {
@@ -54,7 +55,13 @@ export function ProAvatar({ avatarUrl, isPro, size = 'medium', placeholderLetter
             { width: inner, height: inner, borderRadius: radius, backgroundColor: colors.borderLight },
           ]}
         >
-          <Text style={[styles.placeholderText, { color: colors.textSecondary }]} numberOfLines={1}>
+          <Text
+            style={[
+              size === 'xlarge' ? styles.placeholderTextXlarge : styles.placeholderText,
+              { color: colors.textSecondary },
+            ]}
+            numberOfLines={1}
+          >
             {(placeholderLetter || '?').charAt(0).toUpperCase()}
           </Text>
         </View>
@@ -91,6 +98,7 @@ export function NameWithVerified({ name, isPro, numberOfLines = 1, nameStyle, co
 const styles = StyleSheet.create({
   placeholder: { justifyContent: 'center', alignItems: 'center' },
   placeholderText: { fontSize: 18, fontWeight: '600' },
+  placeholderTextXlarge: { fontSize: 32, fontWeight: '600' },
   nameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 },
   nameText: { fontSize: 16, fontWeight: '600', flexShrink: 1 },
   verifiedBadge: { width: 22, height: 22, marginLeft: 4, flexShrink: 0 },

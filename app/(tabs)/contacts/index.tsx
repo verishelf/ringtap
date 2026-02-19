@@ -3,27 +3,30 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    ListRenderItem,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  FlatList,
+  ListRenderItem,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
+import { ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
 import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { SavedContact } from '@/lib/api';
 import {
-    deleteSavedContact,
-    getProfile,
-    getSavedContacts,
-    getSubscription,
+  deleteSavedContact,
+  getProfile,
+  getSavedContacts,
+  getSubscription,
 } from '@/lib/api';
+
+const ROW_GAP = 12;
 
 export default function ContactsScreen() {
   const insets = useSafeAreaInsets();
@@ -108,39 +111,39 @@ export default function ContactsScreen() {
     ({ item }) => {
       const avatarUrl = avatarByUserId[item.contactUserId] ?? item.avatarUrl?.trim();
       const isPro = isProByUserId[item.contactUserId] ?? false;
+      const displayName = item.displayName || 'Unknown';
       return (
         <Pressable
-          style={[
-            styles.row,
+          style={({ pressed }) => [
+            styles.contactRow,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderLight,
+              backgroundColor: colors.surfaceElevated ?? colors.surface,
+              borderColor: colors.border,
+              opacity: pressed ? 0.9 : 1,
             },
           ]}
           onPress={() => router.push(`/profile/${item.contactUserId}` as const)}
+          onLongPress={() => handleDelete(item)}
         >
-          <View style={styles.avatarWrap}>
-            <ProAvatar
-              avatarUrl={avatarUrl}
-              size="small"
-              isPro={isPro}
-              placeholderLetter={item.displayName?.charAt(0)}
+          <ProAvatar
+            avatarUrl={avatarUrl}
+            size="medium"
+            isPro={isPro}
+            placeholderLetter={displayName.charAt(0)}
+          />
+          <View style={styles.contactBox}>
+            <Text
+              style={[styles.contactName, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {displayName}
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textSecondary}
             />
           </View>
-          <View style={styles.nameWrap}>
-            <NameWithVerified
-              name={item.displayName || 'Unknown'}
-              isPro={isPro}
-              nameStyle={[styles.contactName, { color: colors.text }]}
-            />
-          </View>
-          <Pressable
-            style={styles.deleteBtn}
-            onPress={() => handleDelete(item)}
-            hitSlop={12}
-          >
-            <Ionicons name="trash-outline" size={22} color={colors.destructive} />
-          </Pressable>
         </Pressable>
       );
     },
@@ -161,11 +164,12 @@ export default function ContactsScreen() {
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom + Layout.sectionGap }]}>
       <Pressable
-        style={[
-          styles.messagesRow,
+        style={({ pressed }) => [
+          styles.messagesCard,
           {
-            backgroundColor: colors.surface,
-            borderColor: colors.borderLight,
+            backgroundColor: colors.surfaceElevated ?? colors.surface,
+            borderColor: colors.border,
+            opacity: pressed ? 0.9 : 1,
           },
         ]}
         onPress={() => router.push('/messages')}
@@ -173,24 +177,30 @@ export default function ContactsScreen() {
         <View
           style={[
             styles.messagesIconWrap,
-            { backgroundColor: colors.accent + '33' },
+            { backgroundColor: colors.accent + '22' },
           ]}
         >
           <Ionicons
             name="chatbubbles-outline"
-            size={ROW_ICON_SIZE + 4}
+            size={26}
             color={colors.accent}
           />
         </View>
-        <Text style={[styles.messagesLabel, { color: colors.text }]}>
-          Messages
-        </Text>
+        <View style={styles.messagesTextWrap}>
+          <Text style={[styles.messagesLabel, { color: colors.text }]}>
+            Messages
+          </Text>
+          <Text style={[styles.messagesSubtext, { color: colors.textSecondary }]}>
+            View conversations
+          </Text>
+        </View>
         <Ionicons
           name="chevron-forward"
-          size={ROW_CHEVRON_SIZE}
+          size={20}
           color={colors.textSecondary}
         />
       </Pressable>
+
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
@@ -199,6 +209,7 @@ export default function ContactsScreen() {
           styles.listContent,
           contacts.length === 0 && styles.listEmpty,
         ]}
+        ItemSeparatorComponent={() => <View style={{ height: ROW_GAP }} />}
         ListEmptyComponent={
           <Text
             style={[styles.emptyText, { color: colors.textSecondary }]}
@@ -211,9 +222,6 @@ export default function ContactsScreen() {
     </View>
   );
 }
-
-const ROW_ICON_SIZE = 22;
-const ROW_CHEVRON_SIZE = 20;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -230,40 +238,70 @@ const styles = StyleSheet.create({
   listEmpty: {
     flex: 1,
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 60,
   },
-  messagesRow: {
+  messagesCard: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: Layout.screenPadding,
+    paddingHorizontal: 18,
     marginHorizontal: Layout.screenPadding,
-    marginBottom: 8,
-    borderRadius: Layout.radiusMd,
-    borderWidth: 1,
+    marginTop: 12,
+    marginBottom: 24,
+    borderRadius: Layout.radiusXl,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+      },
+      android: { elevation: 3 },
+    }),
   },
   messagesIconWrap: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
-  messagesLabel: { flex: 1, fontSize: 17, fontWeight: '600' },
-  row: {
+  messagesTextWrap: { flex: 1 },
+  messagesLabel: { fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
+  messagesSubtext: { fontSize: 13, marginTop: 2, opacity: 0.85 },
+  contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: Layout.screenPadding,
     marginHorizontal: Layout.screenPadding,
-    marginBottom: 8,
-    borderRadius: Layout.radiusMd,
-    borderWidth: 1,
+    paddingVertical: 10,
+    paddingLeft: 16,
+    paddingRight: 12,
+    borderRadius: Layout.radiusLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: { elevation: 2 },
+    }),
   },
-  avatarWrap: { marginRight: 12 },
-  nameWrap: { flex: 1 },
-  contactName: { fontSize: 17, fontWeight: '600' },
-  deleteBtn: { padding: 8 },
-  emptyText: { textAlign: 'center', fontSize: 15 },
+  contactBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  contactName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyText: { textAlign: 'center', fontSize: 16, lineHeight: 24 },
 });
