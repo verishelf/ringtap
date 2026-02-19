@@ -55,9 +55,10 @@ export async function POST(request: NextRequest) {
 
         if (subscriptionId) {
           try {
-            const sub = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription;
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
             subStatus = sub.status ?? 'active';
-            currentPeriodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
+            const firstItem = sub.items?.data?.[0];
+            currentPeriodEnd = firstItem?.current_period_end ? new Date(firstItem.current_period_end * 1000).toISOString() : null;
           } catch {
             // use defaults
           }
@@ -86,9 +87,8 @@ export async function POST(request: NextRequest) {
         const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id ?? null;
         const userId = (subscription.metadata?.user_id ?? '').trim();
         const status = event.type === 'customer.subscription.deleted' ? 'canceled' : (subscription.status ?? 'active');
-        const currentPeriodEnd = subscription.current_period_end
-          ? new Date(subscription.current_period_end * 1000).toISOString()
-          : null;
+        const firstItem = subscription.items?.data?.[0];
+        const currentPeriodEnd = firstItem?.current_period_end ? new Date(firstItem.current_period_end * 1000).toISOString() : null;
         const plan = status === 'active' ? 'pro' : 'free';
 
         const updatePayload = {
