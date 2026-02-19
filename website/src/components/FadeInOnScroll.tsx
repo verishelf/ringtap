@@ -11,7 +11,7 @@ type Props = {
   /** Root margin - trigger when element is this far from viewport */
   rootMargin?: string;
   threshold?: number;
-  as?: keyof JSX.IntrinsicElements;
+  as?: 'div' | 'section' | 'span' | 'article';
 };
 
 export function FadeInOnScroll({
