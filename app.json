@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "deeplinks": [
       "ringtap://",
+      "ringtap://auth/callback",
       "ringtap://activate",
       "ringtap://profile"
     ],
