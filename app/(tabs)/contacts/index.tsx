@@ -224,7 +224,7 @@ export default function ContactsScreen() {
         >
           <Ionicons
             name="chatbubbles-outline"
-            size={26}
+            size={22}
             color={colors.accent}
           />
         </View>
@@ -238,7 +238,7 @@ export default function ContactsScreen() {
         </View>
         <Ionicons
           name="chevron-forward"
-          size={20}
+          size={18}
           color={colors.textSecondary}
         />
       </Pressable>
@@ -259,7 +259,7 @@ export default function ContactsScreen() {
           {syncing ? (
             <ActivityIndicator size="small" color={colors.accent} />
           ) : (
-            <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
+            <Ionicons name="phone-portrait-outline" size={18} color={colors.accent} />
           )}
           <Text style={[styles.syncButtonText, { color: colors.text }]}>
             {syncing ? 'Syncing…' : 'Sync to Phone'}
@@ -314,56 +314,56 @@ const styles = StyleSheet.create({
   messagesCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     marginHorizontal: Layout.screenPadding,
-    marginTop: 12,
-    marginBottom: 24,
-    borderRadius: Layout.radiusXl,
+    marginTop: 10,
+    marginBottom: 12,
+    borderRadius: Layout.radiusLg,
     borderWidth: StyleSheet.hairlineWidth,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
       },
-      android: { elevation: 3 },
+      android: { elevation: 2 },
     }),
   },
   messagesIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 10,
   },
   messagesTextWrap: { flex: 1 },
-  messagesLabel: { fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
-  messagesSubtext: { fontSize: 13, marginTop: 2, opacity: 0.85 },
+  messagesLabel: { fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
+  messagesSubtext: { fontSize: 12, marginTop: 1, opacity: 0.85 },
   syncButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     marginHorizontal: Layout.screenPadding,
-    marginBottom: 24,
-    borderRadius: Layout.radiusXl,
+    marginBottom: 12,
+    borderRadius: Layout.radiusLg,
     borderWidth: StyleSheet.hairlineWidth,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
       },
-      android: { elevation: 3 },
+      android: { elevation: 2 },
     }),
   },
-  syncButtonText: { fontSize: 16, fontWeight: '600' },
+  syncButtonText: { fontSize: 15, fontWeight: '600' },
   proBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
