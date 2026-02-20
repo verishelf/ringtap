@@ -66,7 +66,11 @@ export default function Home() {
             </li>
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
-              Pro: your theme & analytics on the web
+              Pro: custom QR with logo, 12 fonts, sync to phone
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
+              Your theme & analytics on the web (Pro)
             </li>
           </ul>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -241,7 +245,7 @@ export default function Home() {
               {
                 title: "Free & Pro",
                 description:
-                  "Free: profile, 2 links, link ring (NFC writer), QR, contacts, messages. Pro: unlimited links, theme (accent, button shape, Pro border), video intro, analytics. Your ringtap.me page uses your theme. Monthly or yearly billing via Stripe; cancel anytime.",
+                  "Free: profile, 2 links, link ring (NFC writer), QR, contacts, messages. Pro: unlimited links, theme (accent, button shape, Pro border), 12 typography fonts, custom QR with your logo and colors, sync contacts to phone, video intro, analytics. Your ringtap.me page uses your theme. Monthly or yearly billing via Stripe; cancel anytime.",
               },
             ].map((f) => (
               <div key={f.title} className="rounded-2xl border border-border-light bg-surface p-6">
@@ -271,6 +275,7 @@ export default function Home() {
                 <li>Social links (Instagram, TikTok, LinkedIn, X, etc.)</li>
                 <li>Payment links (Cash App, Venmo, PayPal, Zelle)</li>
                 <li>Theme: accent color, button shape (Pro: border color)</li>
+                <li>12 typography fonts (Akronim, Fugaz One, Rubik Glitch, etc.)</li>
                 <li>Video intro (Pro), copy profile link</li>
               </ul>
             </div>
@@ -298,6 +303,7 @@ export default function Home() {
               </div>
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>QR code — generate, save image, share</li>
+                <li>Pro: custom QR with your logo in center and theme colors</li>
                 <li>Share with NFC — how-to, Link ring, test your link</li>
                 <li>Tap to share from home (opens share flow)</li>
               </ul>
@@ -312,6 +318,7 @@ export default function Home() {
               <ul className="mt-2 space-y-1 text-sm text-muted-light">
                 <li>Saved contacts (people you’ve saved from profiles)</li>
                 <li>Scanned contacts (from NFC/QR scans)</li>
+                <li>Pro: sync contacts to your phone</li>
                 <li>View any profile by ID, save contact, open in messages</li>
               </ul>
             </div>
@@ -446,6 +453,18 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-accent mt-0.5">✓</span>
+                  12 typography fonts (Akronim, Fugaz One, Rubik Glitch, etc.)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-accent mt-0.5">✓</span>
+                  Custom QR with your logo and theme colors
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-accent mt-0.5">✓</span>
+                  Sync contacts to your phone
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-accent mt-0.5">✓</span>
                   Your theme on ringtap.me (web matches app)
                 </li>
                 <li className="flex items-start gap-2">
@@ -539,7 +558,7 @@ export default function Home() {
               },
               {
                 q: "What's included in Pro?",
-                a: "Pro is $9/month or $99/year (save when you pay yearly). It includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Billing is handled securely by Stripe; you can cancel anytime.",
+                a: "Pro is $9/month or $99/year (save when you pay yearly). It includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), 12 typography fonts (Akronim, Fugaz One, Rubik Glitch, Rubik Puddles, Trade Winds, and more), custom QR code with your logo in the center and theme colors, sync contacts to your phone, your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Billing is handled securely by Stripe; you can cancel anytime.",
               },
             ].map((faq) => (
               <div key={faq.q}>
