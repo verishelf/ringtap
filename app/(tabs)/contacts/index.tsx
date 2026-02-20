@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
 import { useSession } from '@/hooks/useSession';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { SavedContact } from '@/lib/api';
 import {
@@ -35,6 +36,7 @@ export default function ContactsScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { user } = useSession();
+  const { isPro } = useSubscription();
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -93,6 +95,17 @@ export default function ContactsScreen() {
   );
 
   const handleSyncToPhone = useCallback(async () => {
+    if (!isPro) {
+      Alert.alert(
+        'Pro feature',
+        'Sync to Phone is a Pro feature. Upgrade to sync your contacts to your phone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/settings/upgrade') },
+        ]
+      );
+      return;
+    }
     if (contacts.length === 0) {
       Alert.alert('No contacts', 'Add contacts first, then sync to your phone.');
       return;
@@ -116,7 +129,7 @@ export default function ContactsScreen() {
     } finally {
       setSyncing(false);
     }
-  }, [contacts]);
+  }, [contacts, isPro, router]);
 
   const handleDelete = useCallback((contact: SavedContact) => {
     Alert.alert(
@@ -251,6 +264,11 @@ export default function ContactsScreen() {
           <Text style={[styles.syncButtonText, { color: colors.text }]}>
             {syncing ? 'Syncing…' : 'Sync to Phone'}
           </Text>
+          {!isPro && (
+            <View style={[styles.proBadge, { backgroundColor: colors.accent + '33' }]}>
+              <Text style={[styles.proBadgeText, { color: colors.accent }]}>Pro</Text>
+            </View>
+          )}
         </Pressable>
       )}
 
@@ -346,6 +364,12 @@ const styles = StyleSheet.create({
     }),
   },
   syncButtonText: { fontSize: 16, fontWeight: '600' },
+  proBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  proBadgeText: { fontSize: 11, fontWeight: '700' },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
