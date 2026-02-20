@@ -58,6 +58,11 @@ function RootLayoutNav() {
     const orbitron = require('@expo-google-fonts/orbitron');
     const ralewayDots = require('@expo-google-fonts/raleway-dots');
     const zenDots = require('@expo-google-fonts/zen-dots');
+    const akronim = require('@expo-google-fonts/akronim');
+    const fugazOne = require('@expo-google-fonts/fugaz-one');
+    const rubikGlitch = require('@expo-google-fonts/rubik-glitch');
+    const rubikPuddles = require('@expo-google-fonts/rubik-puddles');
+    const tradeWinds = require('@expo-google-fonts/trade-winds');
     fontMap = {
       SpaceGrotesk_400Regular: sg.SpaceGrotesk_400Regular,
       SpaceGrotesk_500Medium: sg.SpaceGrotesk_500Medium,
@@ -66,6 +71,11 @@ function RootLayoutNav() {
       Orbitron_400Regular: orbitron.Orbitron_400Regular,
       RalewayDots_400Regular: ralewayDots.RalewayDots_400Regular,
       ZenDots_400Regular: zenDots.ZenDots_400Regular,
+      Akronim_400Regular: akronim.Akronim_400Regular,
+      FugazOne_400Regular: fugazOne.FugazOne_400Regular,
+      RubikGlitch_400Regular: rubikGlitch.RubikGlitch_400Regular,
+      RubikPuddles_400Regular: rubikPuddles.RubikPuddles_400Regular,
+      TradeWinds_400Regular: tradeWinds.TradeWinds_400Regular,
     };
   } catch {
     // Fallback if packages not installed

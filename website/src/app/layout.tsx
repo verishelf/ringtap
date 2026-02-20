@@ -127,7 +127,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Doto:wght@100..900&family=Orbitron:wght@400..900&family=Raleway+Dots&family=Zen+Dots&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Akronim&family=Doto:wght@100..900&family=Fugaz+One&family=Orbitron:wght@400..900&family=Raleway+Dots&family=Rubik+Glitch&family=Rubik+Puddles&family=Trade+Winds&family=Zen+Dots&display=swap"
           rel="stylesheet"
         />
         <script

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getProfileFontFamilyWeb } from '@/lib/profileFonts';
+import { getProfileFontFamilyWeb, getDotsFontEnhancementWeb } from '@/lib/profileFonts';
 
 declare global {
   interface Window {
@@ -379,6 +379,7 @@ export default function UsernameProfilePage() {
   const hasContact = !!(profile.email?.trim() || profile.phone?.trim() || profile.website?.trim());
   const accentColor = profile.theme?.accentColor;
   const profileFont = getProfileFontFamilyWeb(profile.theme?.typography);
+  const dotsEnhance = getDotsFontEnhancementWeb(profile.theme?.typography);
 
   return (
     <div className="min-h-screen bg-background py-10 px-4 sm:px-6">
@@ -422,7 +423,7 @@ export default function UsernameProfilePage() {
                   </div>
                 )}
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap" style={{ fontFamily: profileFont }}>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>
                 {profile.name?.trim() || 'No name'}
                 {profile.plan === 'pro' ? (
                   <span className="inline-flex shrink-0" title="Verified Pro">
@@ -435,10 +436,10 @@ export default function UsernameProfilePage() {
                 ) : null}
               </h1>
               {profile.title?.trim() ? (
-                <p className="text-muted-light mt-1" style={{ fontFamily: profileFont }}>{profile.title}</p>
+                <p className="text-muted-light mt-1" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>{profile.title}</p>
               ) : null}
               {profile.bio?.trim() ? (
-                <p className="text-muted-light text-sm mt-2 max-w-md mx-auto line-clamp-2" style={{ fontFamily: profileFont }}>
+                <p className="text-muted-light text-sm mt-2 max-w-md mx-auto line-clamp-2" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>
                   {profile.bio}
                 </p>
               ) : null}
@@ -466,15 +467,15 @@ export default function UsernameProfilePage() {
             <div className="border-t border-border-light px-6 py-4 space-y-4">
               {profile.bio?.trim() ? (
                 <>
-                  <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont }}>About Me</h2>
-                  <p className="text-muted-light text-sm leading-relaxed" style={{ fontFamily: profileFont }}>{profile.bio}</p>
+                  <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>About Me</h2>
+                  <p className="text-muted-light text-sm leading-relaxed" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>{profile.bio}</p>
                   <div className="border-t border-border-light my-3" />
                 </>
               ) : null}
 
               {hasContact ? (
                 <>
-                  <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont }}>Contact</h2>
+                  <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>Contact</h2>
                   <div className="space-y-2 text-sm">
                     {profile.email?.trim() ? (
                       <a
@@ -563,7 +564,7 @@ export default function UsernameProfilePage() {
                         });
                       }}
                       className={`${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity block`}
-                      style={{ fontFamily: profileFont, ...(accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : {})}}
+                      style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}), ...(accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : {})}}
                     >
                       {link.title || link.url}
                     </a>
@@ -580,7 +581,7 @@ export default function UsernameProfilePage() {
                 type="button"
                 onClick={() => setCalendlyModalOpen(true)}
                 className={`w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors flex items-center justify-center gap-2`}
-                style={{ fontFamily: profileFont }}
+                style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -595,7 +596,7 @@ export default function UsernameProfilePage() {
               type="button"
               onClick={() => downloadVCard(profile)}
               className={`w-full ${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2`}
-              style={{ fontFamily: profileFont, ...(accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : {})}}
+              style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}), ...(accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : {})}}
             >
               <span aria-hidden>↓</span>
               Save contact
@@ -642,7 +643,7 @@ export default function UsernameProfilePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
-              <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont }}>Schedule a call</h2>
+              <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>Schedule a call</h2>
               <button
                 type="button"
                 onClick={() => setCalendlyModalOpen(false)}

@@ -21,7 +21,7 @@ export type SocialPlatform =
   | 'other';
 
 export type ButtonShape = 'rounded' | 'pill' | 'square';
-export type TypographyStyle = 'sans' | 'serif' | 'rounded' | 'mono' | 'orbitron' | 'raleway_dots' | 'zen_dots';
+export type TypographyStyle = 'sans' | 'serif' | 'rounded' | 'mono' | 'orbitron' | 'raleway_dots' | 'zen_dots' | 'akronim' | 'fugaz_one' | 'rubik_glitch' | 'rubik_puddles' | 'trade_winds';
 
 export interface ProfileTheme {
   accentColor: string;

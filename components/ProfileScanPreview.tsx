@@ -5,7 +5,7 @@ import * as Linking from 'expo-linking';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { getProfileFontFamily } from '@/lib/profileFonts';
+import { getProfileFontFamily, getDotsFontEnhancement } from '@/lib/profileFonts';
 import { Layout } from '@/constants/theme';
 import { CashAppIcon } from '@/components/CashAppIcon';
 import { VenmoIcon, PayPalIcon, ZelleIcon } from '@/components/PaymentIcons';
@@ -121,6 +121,7 @@ export function ProfileScanPreview({
   const shape = profile.theme?.buttonShape ?? 'rounded';
   const radius = buttonRadius(shape);
   const fontFamily = getProfileFontFamily(profile.theme?.typography);
+  const dotsEnhance = getDotsFontEnhancement(profile.theme?.typography);
 
   const socialWithUrls = useMemo(() => {
     const out: { key: string; label: string; url: string }[] = [];
@@ -166,7 +167,7 @@ export function ProfileScanPreview({
               )}
             </View>
             <View style={styles.nameRow}>
-              <Text style={[styles.nameCentered, { color: colors.text, fontFamily }]} numberOfLines={1}>
+              <Text style={[styles.nameCentered, { color: colors.text, fontFamily, ...(dotsEnhance ?? {}) }]} numberOfLines={1}>
                 {profile.name?.trim() || 'Your name'}
               </Text>
               {showVerified ? (
@@ -177,12 +178,12 @@ export function ProfileScanPreview({
               ) : null}
             </View>
             {profile.title?.trim() ? (
-              <Text style={[styles.titleCentered, { color: colors.textSecondary, fontFamily }]} numberOfLines={1}>
+              <Text style={[styles.titleCentered, { color: colors.textSecondary, fontFamily, ...(dotsEnhance ?? {}) }]} numberOfLines={1}>
                 {profile.title}
               </Text>
             ) : null}
             {profile.bio?.trim() ? (
-              <Text style={[styles.tagline, { color: colors.textSecondary, fontFamily }]} numberOfLines={2}>
+              <Text style={[styles.tagline, { color: colors.textSecondary, fontFamily, ...(dotsEnhance ?? {}) }]} numberOfLines={2}>
                 {profile.bio}
               </Text>
             ) : null}
@@ -208,8 +209,8 @@ export function ProfileScanPreview({
 
             {showAboutSection && profile.bio?.trim() ? (
               <>
-                <Text style={[styles.sectionHeading, { color: colors.text, fontFamily }]}>About Me</Text>
-                <Text style={[styles.bio, { color: colors.textSecondary, fontFamily }]}>
+                <Text style={[styles.sectionHeading, { color: colors.text, fontFamily, ...(dotsEnhance ?? {}) }]}>About Me</Text>
+                <Text style={[styles.bio, { color: colors.textSecondary, fontFamily, ...(dotsEnhance ?? {}) }]}>
                   {profile.bio}
                 </Text>
                 <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
@@ -218,7 +219,7 @@ export function ProfileScanPreview({
 
             {hasContact && (
               <>
-                <Text style={[styles.sectionHeading, { color: colors.text, fontFamily }]}>Contact</Text>
+                <Text style={[styles.sectionHeading, { color: colors.text, fontFamily, ...(dotsEnhance ?? {}) }]}>Contact</Text>
                 <View style={styles.contact}>
                   {profile.email?.trim() ? (
                     <Pressable

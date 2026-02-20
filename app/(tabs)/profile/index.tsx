@@ -27,7 +27,7 @@ import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { getLinks, getProfileUrl, uploadAvatar, uploadBackgroundImage, uploadVideoIntro } from '@/lib/api';
-import { getProfileFontFamily, TYPOGRAPHY_OPTIONS } from '@/lib/profileFonts';
+import { getProfileFontFamily, getDotsFontEnhancement, TYPOGRAPHY_OPTIONS } from '@/lib/profileFonts';
 import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
@@ -581,7 +581,7 @@ export default function ProfileEditorScreen() {
                       ]}
                       onPress={() => updateTheme({ typography: opt.value })}
                     >
-                      <Text style={[styles.typographyButtonText, { color: colors.text }, { fontFamily: getProfileFontFamily(opt.value) }]}>
+                      <Text style={[styles.typographyButtonText, { color: colors.text, fontFamily: getProfileFontFamily(opt.value), ...(getDotsFontEnhancement(opt.value) ?? {}) }]}>
                         {opt.label}
                       </Text>
                     </Pressable>
@@ -622,7 +622,7 @@ export default function ProfileEditorScreen() {
                   )}
                 </View>
                 <View style={styles.viewCardNameRow}>
-                  <Text style={[styles.viewCardName, { color: colors.text, fontFamily: getProfileFontFamily(profile.theme?.typography) }]} numberOfLines={1}>
+                  <Text style={[styles.viewCardName, { color: colors.text, fontFamily: getProfileFontFamily(profile.theme?.typography), ...(getDotsFontEnhancement(profile.theme?.typography) ?? {}) }]} numberOfLines={1}>
                     {profile.name?.trim() || 'Your name'}
                   </Text>
                   {isPro ? (
@@ -633,10 +633,10 @@ export default function ProfileEditorScreen() {
                   ) : null}
                 </View>
                 {profile.title?.trim() ? (
-                  <Text style={[styles.viewCardTitle, { color: colors.textSecondary, fontFamily: getProfileFontFamily(profile.theme?.typography) }]} numberOfLines={1}>{profile.title}</Text>
+                  <Text style={[styles.viewCardTitle, { color: colors.textSecondary, fontFamily: getProfileFontFamily(profile.theme?.typography), ...(getDotsFontEnhancement(profile.theme?.typography) ?? {}) }]} numberOfLines={1}>{profile.title}</Text>
                 ) : null}
                 {profile.bio?.trim() ? (
-                  <Text style={[styles.viewCardTagline, { color: colors.textSecondary, fontFamily: getProfileFontFamily(profile.theme?.typography) }]} numberOfLines={2}>{profile.bio}</Text>
+                  <Text style={[styles.viewCardTagline, { color: colors.textSecondary, fontFamily: getProfileFontFamily(profile.theme?.typography), ...(getDotsFontEnhancement(profile.theme?.typography) ?? {}) }]} numberOfLines={2}>{profile.bio}</Text>
                 ) : null}
               </View>
 

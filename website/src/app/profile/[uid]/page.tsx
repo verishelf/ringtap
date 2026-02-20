@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { getProfileFontFamilyWeb } from '@/lib/profileFonts';
+import { getProfileFontFamilyWeb, getDotsFontEnhancementWeb } from '@/lib/profileFonts';
 
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ringtap.me';
 
@@ -221,8 +221,8 @@ export default function ProfilePage() {
                 </div>
               )}
               <div>
-                <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>{profile.name || 'No name'}</h1>
-                {profile.title ? <p className="text-muted-light" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>{profile.title}</p> : null}
+                <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography), ...(getDotsFontEnhancementWeb(profile.theme?.typography) ?? {}) }}>{profile.name || 'No name'}</h1>
+                {profile.title ? <p className="text-muted-light" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography), ...(getDotsFontEnhancementWeb(profile.theme?.typography) ?? {}) }}>{profile.title}</p> : null}
                 {profile.username ? (
                   <p className="text-sm text-muted">ringtap.me/{profile.username}</p>
                 ) : null}
@@ -231,7 +231,7 @@ export default function ProfilePage() {
           </div>
           <div className="px-6 pb-6 space-y-4">
           {profile.bio ? (
-            <p className="text-foreground" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography) }}>{profile.bio}</p>
+            <p className="text-foreground" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography), ...(getDotsFontEnhancementWeb(profile.theme?.typography) ?? {}) }}>{profile.bio}</p>
           ) : null}
           {(profile.email || profile.phone || profile.website) ? (
             <div className="space-y-2 border-t border-border-light pt-4">
