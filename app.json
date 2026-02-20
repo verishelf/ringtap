@@ -92,7 +92,9 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
       ]
     },
     "web": {
@@ -135,6 +137,12 @@
           "ios": {
             "deploymentTarget": "17.0"
           }
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "RingTap syncs your saved contacts to your phone so you can call or message them."
         }
       ],
       "expo-localization"

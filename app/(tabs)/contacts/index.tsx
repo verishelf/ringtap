@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   ListRenderItem,
@@ -25,6 +26,7 @@ import {
   getSavedContacts,
   getSubscription,
 } from '@/lib/api';
+import { syncContactsToPhone } from '@/utils/syncContactsToPhone';
 
 const ROW_GAP = 12;
 
@@ -35,6 +37,7 @@ export default function ContactsScreen() {
   const { user } = useSession();
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [avatarByUserId, setAvatarByUserId] = useState<Record<string, string | null>>({});
   const [isProByUserId, setIsProByUserId] = useState<Record<string, boolean>>({});
 
@@ -88,6 +91,32 @@ export default function ContactsScreen() {
       if (user) loadContacts();
     }, [user, loadContacts])
   );
+
+  const handleSyncToPhone = useCallback(async () => {
+    if (contacts.length === 0) {
+      Alert.alert('No contacts', 'Add contacts first, then sync to your phone.');
+      return;
+    }
+    setSyncing(true);
+    try {
+      const result = await syncContactsToPhone(contacts, { fetchProfileForEmailPhone: true });
+      if (result.error) {
+        Alert.alert('Permission needed', result.error);
+      } else if (result.added > 0 || result.skipped > 0) {
+        const msg =
+          result.failed > 0
+            ? `Added ${result.added} to your phone. ${result.failed} failed.`
+            : `Added ${result.added} contact${result.added !== 1 ? 's' : ''} to your phone.`;
+        Alert.alert('Synced', msg);
+      } else if (result.failed > 0) {
+        Alert.alert('Sync failed', 'Could not add contacts. Check permissions.');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not sync contacts.');
+    } finally {
+      setSyncing(false);
+    }
+  }, [contacts]);
 
   const handleDelete = useCallback((contact: SavedContact) => {
     Alert.alert(
@@ -201,6 +230,30 @@ export default function ContactsScreen() {
         />
       </Pressable>
 
+      {contacts.length > 0 && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.syncButton,
+            {
+              backgroundColor: colors.surfaceElevated ?? colors.surface,
+              borderColor: colors.border,
+              opacity: pressed || syncing ? 0.9 : 1,
+            },
+          ]}
+          onPress={handleSyncToPhone}
+          disabled={syncing}
+        >
+          {syncing ? (
+            <ActivityIndicator size="small" color={colors.accent} />
+          ) : (
+            <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
+          )}
+          <Text style={[styles.syncButtonText, { color: colors.text }]}>
+            {syncing ? 'Syncing…' : 'Sync to Phone'}
+          </Text>
+        </Pressable>
+      )}
+
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
@@ -271,6 +324,28 @@ const styles = StyleSheet.create({
   messagesTextWrap: { flex: 1 },
   messagesLabel: { fontSize: 16, fontWeight: '600', letterSpacing: 0.2 },
   messagesSubtext: { fontSize: 13, marginTop: 2, opacity: 0.85 },
+  syncButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginHorizontal: Layout.screenPadding,
+    marginBottom: 24,
+    borderRadius: Layout.radiusXl,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+      },
+      android: { elevation: 3 },
+    }),
+  },
+  syncButtonText: { fontSize: 16, fontWeight: '600' },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
