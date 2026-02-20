@@ -10,13 +10,27 @@ import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
+import { useSubscription } from '@/hooks/useSubscription';
 import { getProfileUrlQr } from '@/lib/api';
 
 const QR_SIZE = 280;
+const LOGO_SIZE = 56; // ~20% of QR for good scan reliability
+
+/** Use dark color for QR foreground so it scans reliably; fallback to black if too light. */
+function qrForegroundColor(hex: string | undefined): string {
+  if (!hex || !hex.startsWith('#')) return '#000000';
+  const h = hex.slice(1);
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance < 0.6 ? hex : '#000000';
+}
 
 export default function QRShareScreen() {
   const colors = useThemeColors();
   const { profile } = useProfile();
+  const { isPro } = useSubscription();
   const [saving, setSaving] = useState(false);
   const qrRef = useRef<View>(null);
   const profileUrl = profile?.username ? getProfileUrlQr(profile.username) : null;
@@ -69,7 +83,17 @@ export default function QRShareScreen() {
       >
         <View style={styles.centered}>
           <View ref={qrRef} collapsable={false} style={[styles.qrWrap, { backgroundColor: colors.surface }]}>
-            <QRCode value={profileUrl} size={QR_SIZE} backgroundColor="#FFFFFF" color="#000000" />
+            <QRCode
+              value={profileUrl}
+              size={QR_SIZE}
+              backgroundColor="#FFFFFF"
+              color={isPro ? qrForegroundColor(profile?.theme?.accentColor ?? profile?.theme?.profileBorderColor) : '#000000'}
+              logo={isPro && profile?.avatarUrl?.trim() ? { uri: profile.avatarUrl.trim() } : undefined}
+              logoSize={isPro && profile?.avatarUrl ? LOGO_SIZE : undefined}
+              logoBackgroundColor="#FFFFFF"
+              logoMargin={2}
+              logoBorderRadius={LOGO_SIZE / 2}
+            />
           </View>
           <Text style={[styles.url, { color: colors.textSecondary }]} numberOfLines={2}>
             {profileUrl}

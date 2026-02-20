@@ -48,19 +48,24 @@ export async function syncContactsToPhone(
 
   for (const c of contacts) {
     try {
-      const { firstName, lastName } = parseDisplayName(c.displayName);
+      let displayName = (c.displayName || '').trim();
       let email: string | undefined;
       let phone: string | undefined;
 
-      if (options?.fetchProfileForEmailPhone) {
+      if (options?.fetchProfileForEmailPhone || !displayName) {
         try {
           const profile = await getProfile(c.contactUserId);
-          if (profile?.email?.trim()) email = profile.email.trim();
-          if (profile?.phone?.trim()) phone = profile.phone.trim();
+          if (!displayName && profile?.name?.trim()) displayName = profile.name.trim();
+          if (options?.fetchProfileForEmailPhone) {
+            if (profile?.email?.trim()) email = profile.email.trim();
+            if (profile?.phone?.trim()) phone = profile.phone.trim();
+          }
         } catch {
           // Use whatever we have
         }
       }
+
+      const { firstName, lastName } = parseDisplayName(displayName || 'Contact');
 
       const profileUrl = `${PROFILE_URL_BASE}/profile/${c.contactUserId}`;
 

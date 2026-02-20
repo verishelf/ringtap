@@ -43,6 +43,7 @@ export default function HomeScreen() {
   const [recentContacts, setRecentContacts] = useState<RecentContact[]>([]);
   const [recentMessages, setRecentMessages] = useState<ConversationWithPeer[]>([]);
   const [recentAvatarByUserId, setRecentAvatarByUserId] = useState<Record<string, string | null>>({});
+  const [recentNameByUserId, setRecentNameByUserId] = useState<Record<string, string>>({});
   const [recentIsProByUserId, setRecentIsProByUserId] = useState<Record<string, boolean>>({});
   const [tapsThisWeek, setTapsThisWeek] = useState(0);
   const [viewsThisWeek, setViewsThisWeek] = useState(0);
@@ -96,12 +97,14 @@ export default function HomeScreen() {
       setRecentContacts(list);
       const userIds = [...new Set(list.map((item) => (item.type === 'saved' ? (item.data as SavedContact).contactUserId : (item.data as ScannedContact).userId)))];
       const avatarMap: Record<string, string | null> = {};
+      const nameMap: Record<string, string> = {};
       const proMap: Record<string, boolean> = {};
       await Promise.all(
         userIds.map(async (uid) => {
           try {
             const [p, sub] = await Promise.all([getProfile(uid), getSubscription(uid)]);
             avatarMap[uid] = p?.avatarUrl?.trim() ?? null;
+            if (p?.name?.trim()) nameMap[uid] = p.name.trim();
             proMap[uid] = (sub?.plan as string) === 'pro';
           } catch {
             avatarMap[uid] = null;
@@ -110,6 +113,7 @@ export default function HomeScreen() {
         })
       );
       setRecentAvatarByUserId(avatarMap);
+      setRecentNameByUserId(nameMap);
       setRecentIsProByUserId(proMap);
       if (analytics && 'nfcTaps' in analytics) {
         setTapsThisWeek(analytics.nfcTaps + analytics.qrScans);
@@ -119,6 +123,7 @@ export default function HomeScreen() {
       setRecentContacts([]);
       setRecentMessages([]);
       setRecentAvatarByUserId({});
+      setRecentNameByUserId({});
       setRecentIsProByUserId({});
       setTapsThisWeek(0);
       setViewsThisWeek(0);
@@ -350,7 +355,7 @@ export default function HomeScreen() {
                 const id = item.data.id;
                 const contactUserId = isSaved ? (item.data as SavedContact).contactUserId : (item.data as ScannedContact).userId;
                 const name = isSaved
-                  ? (item.data.displayName || 'Saved contact').trim()
+                  ? (recentNameByUserId[contactUserId] || (item.data as SavedContact).displayName || 'Saved contact').trim()
                   : (item.data.name?.trim() || item.data.email?.trim() || 'Unknown');
                 const createdAt = item.data.createdAt;
                 const storedAvatar = (isSaved ? (item.data as SavedContact).avatarUrl : (item.data as ScannedContact).avatarUrl)?.trim() || null;

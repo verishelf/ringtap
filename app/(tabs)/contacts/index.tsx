@@ -41,6 +41,7 @@ export default function ContactsScreen() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [avatarByUserId, setAvatarByUserId] = useState<Record<string, string | null>>({});
+  const [nameByUserId, setNameByUserId] = useState<Record<string, string>>({});
   const [isProByUserId, setIsProByUserId] = useState<Record<string, boolean>>({});
 
   const loadContacts = useCallback(async () => {
@@ -54,21 +55,26 @@ export default function ContactsScreen() {
       const list = await getSavedContacts();
       setContacts(list ?? []);
       setAvatarByUserId({});
+      setNameByUserId({});
       setIsProByUserId({});
       if (list?.length) {
         const avatarMap: Record<string, string | null> = {};
+        const nameMap: Record<string, string> = {};
         const proMap: Record<string, boolean> = {};
         await Promise.all(
           list.map(async (c) => {
-            const url = c.avatarUrl?.trim();
-            if (url) avatarMap[c.contactUserId] = url;
-            else {
+            const needsAvatar = !c.avatarUrl?.trim();
+            const needsName = !c.displayName?.trim();
+            if (needsAvatar || needsName) {
               try {
                 const profile = await getProfile(c.contactUserId);
-                avatarMap[c.contactUserId] = profile?.avatarUrl?.trim() ?? null;
+                if (needsAvatar) avatarMap[c.contactUserId] = profile?.avatarUrl?.trim() ?? null;
+                if (needsName && profile?.name?.trim()) nameMap[c.contactUserId] = profile.name.trim();
               } catch {
-                avatarMap[c.contactUserId] = null;
+                if (needsAvatar) avatarMap[c.contactUserId] = null;
               }
+            } else if (c.avatarUrl?.trim()) {
+              avatarMap[c.contactUserId] = c.avatarUrl.trim();
             }
             try {
               const sub = await getSubscription(c.contactUserId);
@@ -79,6 +85,7 @@ export default function ContactsScreen() {
           })
         );
         setAvatarByUserId((prev) => ({ ...prev, ...avatarMap }));
+        setNameByUserId((prev) => ({ ...prev, ...nameMap }));
         setIsProByUserId((prev) => ({ ...prev, ...proMap }));
       }
     } catch {
@@ -131,10 +138,10 @@ export default function ContactsScreen() {
     }
   }, [contacts, isPro, router]);
 
-  const handleDelete = useCallback((contact: SavedContact) => {
+  const handleDelete = useCallback((contact: SavedContact, resolvedName?: string) => {
     Alert.alert(
       'Remove contact',
-      `Remove ${contact.displayName || 'this contact'} from your list?`,
+      `Remove ${resolvedName || contact.displayName || 'this contact'} from your list?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -153,7 +160,7 @@ export default function ContactsScreen() {
     ({ item }) => {
       const avatarUrl = avatarByUserId[item.contactUserId] ?? item.avatarUrl?.trim();
       const isPro = isProByUserId[item.contactUserId] ?? false;
-      const displayName = item.displayName || 'Unknown';
+      const displayName = nameByUserId[item.contactUserId] || item.displayName?.trim() || 'Unknown';
       return (
         <Pressable
           style={({ pressed }) => [
@@ -165,7 +172,7 @@ export default function ContactsScreen() {
             },
           ]}
           onPress={() => router.push(`/profile/${item.contactUserId}` as const)}
-          onLongPress={() => handleDelete(item)}
+          onLongPress={() => handleDelete(item, displayName)}
         >
           <ProAvatar
             avatarUrl={avatarUrl}
@@ -189,7 +196,7 @@ export default function ContactsScreen() {
         </Pressable>
       );
     },
-    [avatarByUserId, isProByUserId, colors, router, handleDelete]
+    [avatarByUserId, nameByUserId, isProByUserId, colors, router, handleDelete]
   );
 
   if (loading) {

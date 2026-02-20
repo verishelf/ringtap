@@ -105,12 +105,14 @@ export default function MessagesScreen() {
               style={styles.avatarWrap}
             />
             <View style={styles.content}>
-              <NameWithVerified name={item.peerName || 'Unknown'} isPro={item.peerIsPro} />
-              <Text style={[styles.preview, { color: colors.textSecondary }]} numberOfLines={1}>
-                {item.lastMessageBody || 'No messages yet'}
-              </Text>
+              <View style={styles.contentText}>
+                <NameWithVerified name={item.peerName || 'Unknown'} isPro={item.peerIsPro} />
+                <Text style={[styles.preview, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {item.lastMessageBody || 'No messages yet'}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
             </View>
-            <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
           </Pressable>
         </Swipeable>
     ),
@@ -170,7 +172,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   avatarWrap: { marginRight: 12 },
-  content: { flex: 1, minWidth: 0 },
+  content: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+  contentText: { flex: 1, minWidth: 0 },
   preview: { fontSize: 14, marginTop: 2 },
   emptyText: { textAlign: 'center', fontSize: 15 },
   swipeActionWrap: {
