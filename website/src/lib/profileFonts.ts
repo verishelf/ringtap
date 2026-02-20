@@ -2,14 +2,9 @@
 
 type TypographyStyle = 'sans' | 'serif' | 'rounded' | 'mono' | 'orbitron' | 'raleway_dots' | 'zen_dots' | 'akronim' | 'fugaz_one' | 'rubik_glitch' | 'rubik_puddles' | 'trade_winds';
 
-/** Extra styles for dots fonts — bolder and whiter for visibility */
-export function getDotsFontEnhancementWeb(typography?: TypographyStyle | string | null): Record<string, string | number> | null {
-  if (typography !== 'raleway_dots' && typography !== 'zen_dots') return null;
-  return {
-    color: '#FFFFFF',
-    textShadow: '0 0 1px rgba(255,255,255,0.95), 0 0 2px rgba(255,255,255,0.8), 0 0 3px rgba(255,255,255,0.6)',
-    fontWeight: 600,
-  };
+/** Extra styles for dots fonts — disabled; dots fonts use normal theme colors */
+export function getDotsFontEnhancementWeb(_typography?: TypographyStyle | string | null): Record<string, string | number> | null {
+  return null;
 }
 
 export function getProfileFontFamilyWeb(typography?: TypographyStyle | string | null): string {

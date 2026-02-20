@@ -8,7 +8,16 @@ export const metadata: Metadata = {
   title: "NFC Rings & Store — RingTap",
   description:
     "Shop NFC rings and cards for RingTap. Tap to share your digital business card instantly. Stainless steel, waterproof, US sizes 5–13. Free shipping on orders $50+. Secure checkout.",
-  keywords: ["NFC ring", "RingTap ring", "digital business card ring", "NFC jewelry", "contact sharing ring"],
+  keywords: [
+    "NFC ring",
+    "NFC ring for business card",
+    "RingTap ring",
+    "digital business card ring",
+    "NFC jewelry",
+    "contact sharing ring",
+    "NFC metal card",
+    "smart business card",
+  ],
   openGraph: {
     title: "NFC Rings for RingTap — Shop Now",
     description: "Tap your ring to share your profile. NFC rings in multiple styles and sizes.",

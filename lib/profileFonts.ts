@@ -68,25 +68,14 @@ export function getProfileFontFamilyWeb(typography?: TypographyStyle | null): st
   }
 }
 
-/** Extra styles for dots fonts (raleway_dots, zen_dots) — bolder and whiter for visibility */
-export function getDotsFontEnhancement(typography?: TypographyStyle | null): { color: string; textShadowColor?: string; textShadowOffset?: { width: number; height: number }; textShadowRadius?: number } | null {
-  if (typography !== 'raleway_dots' && typography !== 'zen_dots') return null;
-  return {
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(255,255,255,0.9)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 2,
-  };
+/** Extra styles for dots fonts (raleway_dots, zen_dots) — disabled; dots fonts use normal theme colors */
+export function getDotsFontEnhancement(_typography?: TypographyStyle | null): { color: string; textShadowColor?: string; textShadowOffset?: { width: number; height: number }; textShadowRadius?: number } | null {
+  return null;
 }
 
-/** Extra styles for dots fonts on web — bolder and whiter */
-export function getDotsFontEnhancementWeb(typography?: TypographyStyle | null): Record<string, string | number> | null {
-  if (typography !== 'raleway_dots' && typography !== 'zen_dots') return null;
-  return {
-    color: '#FFFFFF',
-    textShadow: '0 0 1px rgba(255,255,255,0.95), 0 0 2px rgba(255,255,255,0.8), 0 0 3px rgba(255,255,255,0.6)',
-    fontWeight: 600,
-  };
+/** Extra styles for dots fonts on web — disabled; dots fonts use normal theme colors */
+export function getDotsFontEnhancementWeb(_typography?: TypographyStyle | null): Record<string, string | number> | null {
+  return null;
 }
 
 export const TYPOGRAPHY_OPTIONS: { value: TypographyStyle; label: string }[] = [

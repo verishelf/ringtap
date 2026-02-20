@@ -29,15 +29,26 @@ export const metadata: Metadata = {
   description: DEFAULT_DESCRIPTION,
   keywords: [
     "digital business card",
+    "digital business card app",
+    "best digital business card app",
     "NFC business card",
+    "NFC business card app",
     "NFC ring",
+    "NFC ring business card",
     "QR code business card",
+    "QR code digital business card",
+    "contact sharing app",
     "contact sharing",
     "ringtap",
     "ringtap.me",
-    "networking",
+    "networking app",
     "digital profile",
     "share contact",
+    "free digital business card",
+    "digital business card free",
+    "Popl alternative",
+    "Blinq alternative",
+    "HiHello alternative",
   ],
   authors: [{ name: "RingTap", url: SITE_URL }],
   creator: "RingTap",
@@ -85,7 +96,7 @@ const jsonLdWebsite = {
   description: DEFAULT_DESCRIPTION,
   potentialAction: {
     "@type": "SearchAction",
-    target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/profile/{username}` },
+    target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/{username}` },
     "query-input": "required name=username",
   },
 };
@@ -114,6 +125,14 @@ const jsonLdProduct = {
   },
   description: DEFAULT_DESCRIPTION,
   url: SITE_URL,
+  featureList: [
+    "NFC tap to share profile",
+    "QR code business card",
+    "Digital business card with custom link",
+    "Profile analytics",
+    "Custom themes and fonts",
+    "Contact sync",
+  ],
 };
 
 export default function RootLayout({
