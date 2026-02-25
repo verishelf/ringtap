@@ -3,7 +3,7 @@
 import { Header } from "@/components/Header";
 import { TrustBanner } from "@/components/TrustBanner";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Stats = {
@@ -21,7 +21,7 @@ type Stats = {
   recentReferrals: { type: string; amount_cents: number; created_at: string }[];
 };
 
-export default function AffiliateDashboardPage() {
+function AffiliateDashboardContent() {
   const searchParams = useSearchParams();
   const codeParam = searchParams.get("code") ?? "";
 
@@ -264,5 +264,19 @@ export default function AffiliateDashboardPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AffiliateDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <AffiliateDashboardContent />
+    </Suspense>
   );
 }
