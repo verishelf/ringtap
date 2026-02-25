@@ -66,14 +66,15 @@ export async function POST(request: NextRequest) {
         }
 
         if (affiliateRef && /^[A-Za-z0-9]{4,16}$/.test(affiliateRef)) {
-          await supabase.from('affiliate_referrals').insert({
+          const { error: refErr } = await supabase.from('affiliate_referrals').insert({
             affiliate_code: affiliateRef,
             user_id: userId,
             email: session.customer_email ?? null,
             type: 'pro',
             amount_cents: 500,
             metadata: { stripe_session_id: session.id },
-          }).then(() => {}).catch((e) => console.warn('[stripe-webhook] affiliate_referrals insert', e));
+          });
+          if (refErr) console.warn('[stripe-webhook] affiliate_referrals insert', refErr);
         }
 
         await supabase.from('subscriptions').upsert(
