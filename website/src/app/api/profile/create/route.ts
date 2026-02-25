@@ -28,6 +28,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
   }
 
+  let affiliateRef: string | undefined;
+  try {
+    const body = await request.json().catch(() => ({}));
+    const ref = typeof body?.affiliate_ref === 'string' ? body.affiliate_ref.trim() : '';
+    if (ref && /^[A-Za-z0-9]{4,16}$/.test(ref)) {
+      affiliateRef = ref.toUpperCase();
+    }
+  } catch {
+    // no body or invalid JSON
+  }
+
   const supabase = createClient(supabaseUrl, serviceKey);
 
   // Check if profile already exists
@@ -83,6 +94,21 @@ export async function POST(request: NextRequest) {
   if (insertError) {
     console.error('[profile/create]', insertError);
     return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 });
+  }
+
+  // Record affiliate signup referral (only for new profiles)
+  if (affiliateRef) {
+    const { data: aff } = await supabase.from('affiliates').select('code').eq('code', affiliateRef).maybeSingle();
+    if (aff) {
+      await supabase.from('affiliate_referrals').insert({
+        affiliate_code: affiliateRef,
+        user_id: user.id,
+        email: user.email ?? null,
+        type: 'signup',
+        amount_cents: 0,
+        metadata: { source: 'profile_create' },
+      }).then(() => {}).catch((e) => console.warn('[profile/create] affiliate_referrals', e));
+    }
   }
 
   return NextResponse.json({ ok: true, profile_id: inserted.id, username: inserted.username });

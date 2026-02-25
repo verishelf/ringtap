@@ -1,5 +1,6 @@
 'use client';
 
+import { getAffiliateRef } from '@/components/AffiliateRefProvider';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useState } from 'react';
@@ -24,6 +25,7 @@ function UpgradeContent() {
       setStatus('redirecting');
       setError(null);
       try {
+        const affiliateRef = getAffiliateRef();
         const res = await fetch('/api/stripe/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -31,6 +33,7 @@ function UpgradeContent() {
             email: emailToUse,
             user_id: userId || undefined,
             interval,
+            affiliate_ref: affiliateRef || undefined,
           }),
         });
         const data = (await res.json()) as { url?: string; error?: string };

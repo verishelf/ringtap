@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { email?: string; user_id?: string; interval?: 'month' | 'year' };
+  let body: { email?: string; user_id?: string; interval?: 'month' | 'year'; affiliate_ref?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -30,6 +30,12 @@ export async function POST(request: NextRequest) {
 
   const interval = body.interval === 'year' ? 'year' : 'month';
   const priceId = interval === 'year' && PRO_PRICE_ID_YEARLY ? PRO_PRICE_ID_YEARLY : PRO_PRICE_ID_MONTHLY;
+
+  const metadata: Record<string, string> = {};
+  if (body.user_id) metadata.user_id = body.user_id;
+  if (typeof body.affiliate_ref === 'string' && /^[A-Za-z0-9]{4,16}$/.test(body.affiliate_ref)) {
+    metadata.affiliate_ref = body.affiliate_ref;
+  }
 
   const stripe = new Stripe(STRIPE_SECRET);
 
@@ -45,9 +51,9 @@ export async function POST(request: NextRequest) {
       ],
       success_url: `${BASE_URL}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/upgrade?email=${encodeURIComponent(email)}${body.user_id ? `&user_id=${encodeURIComponent(body.user_id)}` : ''}`,
-      metadata: body.user_id ? { user_id: body.user_id } : undefined,
+      metadata: Object.keys(metadata).length ? metadata : undefined,
       subscription_data: {
-        metadata: body.user_id ? { user_id: body.user_id } : undefined,
+        metadata: Object.keys(metadata).length ? metadata : undefined,
       },
     });
 

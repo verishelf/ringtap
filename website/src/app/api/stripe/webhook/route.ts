@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = (session.metadata?.user_id ?? '').trim();
+        const affiliateRef = (session.metadata?.affiliate_ref ?? '').trim();
         const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null;
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id ?? null;
 
@@ -62,6 +63,17 @@ export async function POST(request: NextRequest) {
           } catch {
             // use defaults
           }
+        }
+
+        if (affiliateRef && /^[A-Za-z0-9]{4,16}$/.test(affiliateRef)) {
+          await supabase.from('affiliate_referrals').insert({
+            affiliate_code: affiliateRef,
+            user_id: userId,
+            email: session.customer_email ?? null,
+            type: 'pro',
+            amount_cents: 500,
+            metadata: { stripe_session_id: session.id },
+          }).then(() => {}).catch((e) => console.warn('[stripe-webhook] affiliate_referrals insert', e));
         }
 
         await supabase.from('subscriptions').upsert(

@@ -1,5 +1,6 @@
 "use client";
 
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TrustBanner } from "@/components/TrustBanner";
 import { useStoreCart } from "@/contexts/StoreCartContext";
@@ -148,44 +149,7 @@ export default function StorePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border-light/50 py-8 px-6">
-        <div className="mx-auto max-w-6xl flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-          <Link href="/" className="text-sm font-bold text-foreground">
-            RingTap
-          </Link>
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            <Link href="/#features" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Features
-            </Link>
-            <Link href="/store" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Store
-            </Link>
-            <Link href="/#faq" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              FAQ
-            </Link>
-            <Link href="/privacy" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Terms of Use
-            </Link>
-            <Link href="/#download" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Download
-            </Link>
-          </div>
-        </div>
-        <p className="mx-auto mt-6 max-w-6xl text-center text-xs text-muted">
-          Your digital business card. One tap. ringtap.me
-        </p>
-        <div className="mx-auto mt-4 max-w-6xl flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted">
-          <Link href="/#faq" className="hover:text-foreground transition-colors">FAQ</Link>
-          <span className="text-border-light">·</span>
-          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-          <span className="text-border-light">·</span>
-          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { AffiliateRefProvider } from "@/components/AffiliateRefProvider";
 import "./globals.css";
 
 const GA_MEASUREMENT_ID = "G-K8VP2WCYEC";
@@ -183,7 +184,7 @@ export default function RootLayout({
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
-        {children}
+        <AffiliateRefProvider>{children}</AffiliateRefProvider>
       </body>
     </html>
   );

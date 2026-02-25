@@ -1,4 +1,5 @@
 import { FadeInOnScroll } from "@/components/FadeInOnScroll";
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MarketingMarquee } from "@/components/MarketingMarquee";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
@@ -491,59 +492,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border-light/50 py-12 px-6">
-        <div className="mx-auto max-w-6xl flex flex-col items-center justify-between gap-6 sm:flex-row">
-          <a href="#" className="text-sm font-bold text-foreground">
-            RingTap
-          </a>
-          <nav className="flex flex-wrap items-center justify-center gap-6" aria-label="Footer navigation">
-            <a href="#features" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Features
-            </a>
-            <a href="#demo" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Demo
-            </a>
-            <a href="#store" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Products
-            </a>
-            <Link href="/store" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Store
-            </Link>
-            <a href="#pricing" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Pricing
-            </a>
-            <a href="#testimonials" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Testimonials
-            </a>
-            <a href="#faq" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              FAQ
-            </a>
-            <Link href="/privacy" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Terms of Use
-            </Link>
-            <Link href="/demo" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              NFC demo
-            </Link>
-            <a href="#cta" className="text-sm text-muted-light hover:text-foreground transition-colors">
-              Get started
-            </a>
-          </nav>
-        </div>
-        <p className="mx-auto mt-8 max-w-6xl text-center text-xs text-muted">
-          Your digital business card. One tap. ringtap.me
-        </p>
-        <div className="mx-auto mt-4 max-w-6xl flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted">
-          <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
-          <span className="text-border-light">·</span>
-          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-          <span className="text-border-light">·</span>
-          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
-        </div>
-      </footer>
+      <Footer />
       </main>
     </div>
   );

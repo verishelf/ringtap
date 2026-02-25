@@ -1,5 +1,6 @@
 'use client';
 
+import { getAffiliateRef } from '@/components/AffiliateRefProvider';
 import { Header } from '@/components/Header';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -60,12 +61,16 @@ function SignupContent() {
       // If session exists immediately (email confirmation disabled), create profile and redirect
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        const affiliateRef = getAffiliateRef();
         const profileRes = await fetch('/api/profile/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
+          body: JSON.stringify({
+            affiliate_ref: affiliateRef && /^[A-Za-z0-9]{4,16}$/.test(affiliateRef) ? affiliateRef : undefined,
+          }),
         });
         if (profileRes.ok && plan === 'pro') {
           window.location.href = `/upgrade?email=${encodeURIComponent(trimmedEmail)}&user_id=${encodeURIComponent(session.user.id)}`;

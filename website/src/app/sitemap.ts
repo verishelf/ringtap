@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { MetadataRoute } from "next";
 
 const BASE = "https://www.ringtap.me";
-const RESERVED = new Set(["activate", "privacy", "store", "profile", "api", "setup", "upgrade", "nfc", "qr", "signup", "demo", "terms", "auth"]);
+const RESERVED = new Set(["activate", "privacy", "store", "profile", "api", "setup", "upgrade", "nfc", "qr", "signup", "demo", "terms", "auth", "affiliates"]);
 
 async function getProfileUsernames(): Promise<string[]> {
   const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "").replace(/^["'\s]+|["'\s]+$/g, "").trim();
@@ -69,6 +69,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE}/demo`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/affiliates`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${BASE}/affiliates/dashboard`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.6,

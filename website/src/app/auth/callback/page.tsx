@@ -1,5 +1,6 @@
 'use client';
 
+import { getAffiliateRef } from '@/components/AffiliateRefProvider';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -27,13 +28,16 @@ function AuthCallbackContent() {
         return;
       }
 
-      // Ensure profile exists (creates with default username if new)
+      const affiliateRef = getAffiliateRef();
       const res = await fetch('/api/profile/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
+        body: JSON.stringify({
+          affiliate_ref: affiliateRef && /^[A-Za-z0-9]{4,16}$/.test(affiliateRef) ? affiliateRef : undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -46,7 +50,7 @@ function AuthCallbackContent() {
       setStatus('ready');
 
       if (plan === 'pro') {
-        // Redirect to upgrade/checkout
+        // Redirect to upgrade/checkout (affiliate_ref is in cookie, upgrade page will pick it up)
         window.location.href = `/upgrade?email=${encodeURIComponent(session.user.email ?? '')}&user_id=${encodeURIComponent(session.user.id)}`;
         return;
       }
