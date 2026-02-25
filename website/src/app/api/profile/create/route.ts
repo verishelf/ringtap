@@ -100,14 +100,15 @@ export async function POST(request: NextRequest) {
   if (affiliateRef) {
     const { data: aff } = await supabase.from('affiliates').select('code').eq('code', affiliateRef).maybeSingle();
     if (aff) {
-      await supabase.from('affiliate_referrals').insert({
+      const { error: refErr } = await supabase.from('affiliate_referrals').insert({
         affiliate_code: affiliateRef,
         user_id: user.id,
         email: user.email ?? null,
         type: 'signup',
         amount_cents: 0,
         metadata: { source: 'profile_create' },
-      }).then(() => {}).catch((e) => console.warn('[profile/create] affiliate_referrals', e));
+      });
+      if (refErr) console.warn('[profile/create] affiliate_referrals', refErr);
     }
   }
 

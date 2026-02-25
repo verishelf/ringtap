@@ -396,13 +396,50 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-muted-light">
-            Or download the app:{" "}
-            <a href="https://apps.apple.com/app/ringtap" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">App Store</a>
-            {" · "}
-            <a href="https://play.google.com/store/apps/details?id=me.ringtap.app" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google Play</a>
+            Or <a href="#download" className="text-accent hover:underline">download the app</a> for iOS and Android.
           </p>
           <div className="mt-10 pt-10 border-t border-border-light/50">
             <ShareSection />
+          </div>
+        </FadeInOnScroll>
+      </section>
+
+      {/* Download — App Store badges (linked from header) */}
+      <section id="download" className="border-t border-border-light/50 py-24 px-6">
+        <FadeInOnScroll className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold text-foreground md:text-4xl">
+            Download the app
+          </h2>
+          <p className="mt-4 text-muted-light">
+            Free on the App Store and Google Play. Create your profile and share your ringtap.me link.
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
+            <a
+              href="https://apps.apple.com/app/ringtap"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block transition-opacity hover:opacity-90"
+              aria-label="Download on the App Store"
+            >
+              <img
+                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&releaseDate=1277769600"
+                alt="Download on the App Store"
+                className="h-12 w-auto"
+              />
+            </a>
+            <a
+              href="https://play.google.com/store/apps/details?id=me.ringtap.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block transition-opacity hover:opacity-90"
+              aria-label="Get it on Google Play"
+            >
+              <img
+                src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                alt="Get it on Google Play"
+                className="h-12 w-auto"
+              />
+            </a>
           </div>
         </FadeInOnScroll>
       </section>
