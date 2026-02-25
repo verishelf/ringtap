@@ -13,9 +13,14 @@ const APPLE_SHARED_SECRET = (process.env.APPLE_SHARED_SECRET ?? '').replace(/^["
 const APPLE_VERIFY_URL = 'https://buy.itunes.apple.com/verifyReceipt';
 const APPLE_SANDBOX_URL = 'https://sandbox.itunes.apple.com/verifyReceipt';
 
+// Apple status: 21007 = sandbox receipt sent to prod; 21008 = prod receipt sent to sandbox; 21005 = server unavailable
+const STATUS_SANDBOX_RECEIPT = 21007;
+const STATUS_PROD_RECEIPT = 21008;
+const STATUS_SERVER_UNAVAILABLE = 21005;
+
 async function verifyAppleReceipt(receiptBase64: string): Promise<{ valid: boolean; expiresMs?: number }> {
   if (!APPLE_SHARED_SECRET) {
-    console.error('[iap] APPLE_SHARED_SECRET not set');
+    console.error('[iap] APPLE_SHARED_SECRET not set - receipt validation will fail');
     return { valid: false };
   }
 
@@ -25,29 +30,58 @@ async function verifyAppleReceipt(receiptBase64: string): Promise<{ valid: boole
     'exclude-old-transactions': true,
   };
 
-  // Try production first, then sandbox
-  for (const url of [APPLE_VERIFY_URL, APPLE_SANDBOX_URL]) {
+  // Try sandbox first (App Store review uses sandbox), then production
+  const urls = [
+    { url: APPLE_SANDBOX_URL, env: 'sandbox' },
+    { url: APPLE_VERIFY_URL, env: 'production' },
+  ];
+
+  for (const { url, env } of urls) {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = (await res.json()) as {
+    let data = (await res.json()) as {
       status: number;
       latest_receipt_info?: Array<{ expires_date_ms?: string; product_id?: string }>;
       receipt?: { in_app?: Array<{ expires_date_ms?: string; product_id?: string }> };
     };
 
-    // 21007 = receipt is sandbox, try sandbox URL (we already do in loop)
-    if (data.status === 21007) continue;
+    // Wrong environment: sandbox receipt sent to prod (21007) or prod to sandbox (21008)
+    if (data.status === STATUS_SANDBOX_RECEIPT || data.status === STATUS_PROD_RECEIPT) {
+      continue;
+    }
+    // Retry once on server unavailable (21005)
+    if (data.status === STATUS_SERVER_UNAVAILABLE) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const retryRes = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const retryData = (await retryRes.json()) as typeof data;
+      if (retryData.status === STATUS_SANDBOX_RECEIPT || retryData.status === STATUS_PROD_RECEIPT) {
+        continue;
+      }
+      if (retryData.status !== 0) {
+        console.warn(`[iap] Apple ${env} verifyReceipt status ${data.status} (retried), now ${retryData.status}`);
+        return { valid: false };
+      }
+      data = retryData;
+    }
     if (data.status !== 0) {
+      console.warn(`[iap] Apple ${env} verifyReceipt status ${data.status} (21002=malformed, 21003=auth failed, 21005=unavailable)`);
       return { valid: false };
     }
 
     const inApp = data.latest_receipt_info ?? data.receipt?.in_app ?? [];
     const proProductIds = ['006', '007'];
     const proItems = inApp.filter((i) => proProductIds.includes(i.product_id ?? ''));
-    if (proItems.length === 0) return { valid: false };
+    if (proItems.length === 0) {
+      console.warn('[iap] No Pro products (006/007) in receipt');
+      return { valid: false };
+    }
 
     const sorted = proItems.sort((a, b) => {
       const aMs = parseInt(a.expires_date_ms ?? '0', 10);
@@ -58,7 +92,6 @@ async function verifyAppleReceipt(receiptBase64: string): Promise<{ valid: boole
     const expiresMs = latest?.expires_date_ms ? parseInt(latest.expires_date_ms, 10) : undefined;
     const now = Date.now();
     if (expiresMs && expiresMs < now) {
-      // Subscription expired
       return { valid: false };
     }
     return { valid: true, expiresMs };

@@ -1,4 +1,19 @@
-# Vercel deployment fix
+# Vercel deployment
+
+## Environment variables (IAP)
+
+For In-App Purchase receipt validation to work, set `APPLE_SHARED_SECRET` in Vercel:
+
+1. Vercel Dashboard → **ringtap** project → **Settings** → **Environment Variables**
+2. Add: `APPLE_SHARED_SECRET` = (your App-Specific Shared Secret from App Store Connect)
+3. Apply to **Production** (and Preview if needed)
+4. **Redeploy** so the new env is picked up
+
+Get the secret: App Store Connect → Your App → App Information → App-Specific Shared Secret
+
+---
+
+## Root directory fix
 
 If you see:
 
