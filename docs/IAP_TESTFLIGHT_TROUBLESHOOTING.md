@@ -2,6 +2,8 @@
 
 If in-app purchases don't work in your TestFlight build, work through this checklist.
 
+**TestFlight uses sandbox IAP.** Receipt validation tries sandbox first. Ensure `APPLE_SHARED_SECRET` is set in your backend (Vercel).
+
 ## 1. Link Subscriptions to Your App Version (Most Common Fix)
 
 **In-App Purchases must be explicitly added to each app version.**
@@ -56,10 +58,11 @@ Product IDs must match **exactly** (case-sensitive):
 
 The app uses `isStoreBuild()` to enable IAP. It returns `true` when:
 
-- Not in `__DEV__` (production build)
-- `executionEnvironment` is `standalone` or `bare` (EAS Build)
+- Not in `__DEV__` (use a **release** build: EAS `preview` or `production` profile)
+- `executionEnvironment` is `standalone`, `bare`, or `undefined` (EAS Build)
+- IAP is **disabled only** for Expo Go (`StoreClient`)
 
-If you see "IAP disabled in development mode" in TestFlight, the build may be misdetected. Check `Constants.executionEnvironment` in your build.
+TestFlight builds from EAS (`preview`/`production`) satisfy these. If you see "IAP disabled in development mode" in TestFlight, use a release profile (not `development`).
 
 ## 8. connectAsync Hanging
 
