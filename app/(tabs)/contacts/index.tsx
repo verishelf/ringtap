@@ -211,7 +211,7 @@ export default function ContactsScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom + Layout.sectionGap }]}>
+    <View style={[styles.container, { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]}>
       <Pressable
         style={({ pressed }) => [
           styles.messagesCard,
@@ -288,6 +288,7 @@ export default function ContactsScreen() {
         contentContainerStyle={[
           styles.listContent,
           contacts.length === 0 && styles.listEmpty,
+          { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap },
         ]}
         ItemSeparatorComponent={() => <View style={{ height: ROW_GAP }} />}
         ListEmptyComponent={

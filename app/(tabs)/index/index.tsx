@@ -15,6 +15,7 @@ import {
     Text,
     View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -41,6 +42,7 @@ const GRADIENT_DARK = ['#0A0A0B', '#0d0f18', '#0f0a14', '#0a0c14', '#0A0A0B'] as
 const GRADIENT_LIGHT = ['#FAFAFA', '#f5f7ff', '#faf5ff', '#f5f8fa', '#FAFAFA'] as const;
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { profile } = useProfile();
   const { isPro } = useSubscription();
@@ -187,7 +189,7 @@ export default function HomeScreen() {
         locations={[0, 0.25, 0.5, 0.75, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.greeting, { color: colors.text }]}>
@@ -426,7 +428,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: Layout.screenPadding, paddingBottom: Layout.screenPaddingBottom },
+  scroll: { padding: Layout.screenPadding },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

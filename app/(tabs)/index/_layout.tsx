@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-export default function LinksLayout() {
+export default function HomeLayout() {
   return (
     <Stack
       screenOptions={{
@@ -10,7 +10,7 @@ export default function LinksLayout() {
         headerTitleStyle: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 17 },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Links' }} />
+      <Stack.Screen name="index" options={{ title: 'Home' }} />
     </Stack>
   );
 }

@@ -1,6 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
+import {
+    Icon,
+    Label,
+    NativeTabs,
+} from 'expo-router/unstable-native-tabs';
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,30 +20,13 @@ import { getExpoPushTokenAsync } from '@/utils/registerPushNotifications';
 
 const TAB_BAR_HEIGHT = 49;
 
-export default function TabLayout() {
+function AndroidTabs() {
   const colorScheme = useColorScheme();
   const c = Colors[colorScheme ?? 'dark'];
   const insets = useSafeAreaInsets();
-  const { user } = useSession();
-  const { prefs, permissionStatus } = useNotifications();
-
-  useEffect(() => {
-    if (Platform.OS === 'web' || !user?.id || permissionStatus !== 'granted' || !prefs.newMessages) return;
-    let cancelled = false;
-    getExpoPushTokenAsync()
-      .then((token) => {
-        if (!cancelled && token) savePushToken(user.id, token, Platform.OS).catch(() => {});
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, permissionStatus, prefs.newMessages]);
 
   return (
-    <>
-      <NotificationListener />
-      <Tabs
+    <Tabs
       screenOptions={{
         tabBarActiveTintColor: c.tabIconSelected,
         tabBarInactiveTintColor: c.tabIconDefault,
@@ -52,26 +39,28 @@ export default function TabLayout() {
           shadowOpacity: 0,
           overflow: 'hidden',
         },
-        tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
-            <BlurView
-              tint={colorScheme === 'dark' ? 'dark' : 'light'}
-              intensity={60}
-              style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}
-            />
-          ) : (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: colorScheme === 'dark' ? 'rgba(20,20,22,0.4)' : 'rgba(250,250,250,0.4)',
-                  overflow: 'hidden',
-                },
-              ]}
-            />
-          ),
+        tabBarBackground: () => (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: colorScheme === 'dark' ? '#0A0A0B' : 'rgba(250,250,250,0.92)',
+                overflow: 'hidden',
+              },
+            ]}
+          />
+        ),
         sceneStyle: { paddingBottom: insets.bottom + TAB_BAR_HEIGHT },
-        headerStyle: { backgroundColor: c.background },
+        headerStyle: { backgroundColor: 'transparent' },
+        headerStatusBarHeight: insets.top,
+        headerBackground: () => (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: c.background },
+            ]}
+          />
+        ),
         headerTintColor: c.text,
         headerTitleStyle: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 17 },
         headerShown: true,
@@ -121,6 +110,75 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+export default function TabLayout() {
+  const colorScheme = useColorScheme();
+  const c = Colors[colorScheme ?? 'dark'];
+  const { user } = useSession();
+  const { prefs, permissionStatus } = useNotifications();
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !user?.id || permissionStatus !== 'granted' || !prefs.newMessages) return;
+    let cancelled = false;
+    getExpoPushTokenAsync()
+      .then((token) => {
+        if (!cancelled && token) savePushToken(user.id, token, Platform.OS).catch(() => {});
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, permissionStatus, prefs.newMessages]);
+
+  // iOS: native liquid glass tab bar with sliding minimize on scroll, dark theme
+  if (Platform.OS === 'ios') {
+    return (
+      <>
+        <NotificationListener />
+        <NativeTabs
+          minimizeBehavior="onScrollDown"
+          iconColor="#FAFAFA"
+          tintColor="#FAFAFA"
+          backgroundColor="#0A0A0B"
+          blurEffect="systemChromeMaterialDark"
+          labelStyle={{ color: '#A1A1AA' }}
+        >
+          <NativeTabs.Trigger name="index">
+            <Label>Home</Label>
+            <Icon sf={{ default: 'house', selected: 'house.fill' }} />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="profile">
+            <Label>Profile</Label>
+            <Icon sf={{ default: 'person', selected: 'person.fill' }} />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="contacts">
+            <Label>Contacts</Label>
+            <Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="links">
+            <Label>Links</Label>
+            <Icon sf={{ default: 'link', selected: 'link' }} />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="analytics">
+            <Label>Analytics</Label>
+            <Icon sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }} />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="settings" disableScrollToTop>
+            <Label>Settings</Label>
+            <Icon sf={{ default: 'gearshape', selected: 'gearshape.fill' }} />
+          </NativeTabs.Trigger>
+        </NativeTabs>
+      </>
+    );
+  }
+
+  // Android & web: standard tabs with glass-style overlay
+  return (
+    <>
+      <NotificationListener />
+      <AndroidTabs />
     </>
   );
 }

@@ -42,6 +42,7 @@ export const Layout = {
   // Spacing
   screenPadding: 20,
   screenPaddingBottom: 40,
+  tabBarHeight: 49,
   sectionGap: 24,
   cardPadding: 20,
   inputGap: 12,

@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 
@@ -93,20 +94,22 @@ function RootLayoutNav() {
   }, [onLayoutRootView]);
 
   return (
-    <ThemeProvider value={theme}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="auth/callback" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="activate" />
-        <Stack.Screen name="profile" />
-        <Stack.Screen name="messages" />
-        <Stack.Screen name="setup" />
-        <Stack.Screen name="share" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <SafeAreaProvider edges={['left', 'right', 'bottom']}>
+      <ThemeProvider value={theme}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="auth/callback" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="activate" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="messages" />
+          <Stack.Screen name="setup" />
+          <Stack.Screen name="share" options={{ presentation: 'modal' }} />
+        </Stack>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

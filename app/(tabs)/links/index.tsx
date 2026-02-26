@@ -11,6 +11,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 
 import { ThemedView } from '@/components/themed-view';
@@ -37,6 +38,7 @@ const LINK_TYPES: { value: LinkType; label: string }[] = [
 ];
 
 export default function LinksScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { plan, isPro } = useSubscription();
   const colors = useThemeColors();
@@ -195,7 +197,7 @@ export default function LinksScreen() {
           data={links}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]}
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
         />

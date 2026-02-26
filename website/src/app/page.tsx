@@ -210,7 +210,7 @@ export default function Home() {
                 <div className="rounded-2xl border border-border-light bg-surface p-5">
                   <h3 className="text-base font-semibold text-foreground">{item.role}</h3>
                   <p className="mt-2 text-sm text-muted-light leading-relaxed">{item.desc}</p>
-                </div>
+              </div>
               </FadeInOnScroll>
             ))}
           </div>
@@ -444,7 +444,7 @@ export default function Home() {
                 className="h-12 w-auto"
               />
             </a>
-          </div>
+        </div>
         </FadeInOnScroll>
       </section>
 

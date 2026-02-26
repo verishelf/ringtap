@@ -27,7 +27,7 @@ import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { getLinks, getProfileUrl, uploadAvatar, uploadBackgroundImage, uploadVideoIntro } from '@/lib/api';
-import { getProfileFontFamily, getDotsFontEnhancement, TYPOGRAPHY_OPTIONS } from '@/lib/profileFonts';
+import { getDotsFontEnhancement, getProfileFontFamily, TYPOGRAPHY_OPTIONS } from '@/lib/profileFonts';
 import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
@@ -355,7 +355,7 @@ export default function ProfileEditorScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.sectionGap }]}
+        contentContainerStyle={[styles.scroll, styles.scrollNoTopPadding, { paddingTop: Layout.rowGap, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]}
         keyboardShouldPersistTaps="handled"
       >
         {isEditing && editForm ? (
@@ -776,12 +776,13 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { padding: Layout.screenPadding },
+  scrollNoTopPadding: { paddingTop: 0 },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Layout.screenPadding,
-    paddingVertical: 14,
+    paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: { fontSize: 18, fontWeight: '700' },

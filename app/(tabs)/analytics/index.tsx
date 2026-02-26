@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
@@ -26,6 +27,7 @@ const EMPTY_ANALYTICS: AnalyticsSummary = {
 type Period = 7 | 30 | 90;
 
 export default function AnalyticsScreen() {
+  const insets = useSafeAreaInsets();
   const { profile, loading: profileLoading } = useProfile();
   const { isPro } = useSubscription();
   const { user, signOut } = useSession();
@@ -159,7 +161,7 @@ export default function AnalyticsScreen() {
   if (error && data) {
     return (
       <ThemedView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
           <View style={[styles.errorCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="warning-outline" size={40} color={colors.accent} />
             <Text style={[styles.errorTitle, { color: colors.text }]}>{error}</Text>
@@ -240,7 +242,7 @@ export default function AnalyticsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={styles.periodRow}>
           {periods.map(({ value, label }) => (
             <Pressable
@@ -367,7 +369,7 @@ export default function AnalyticsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: Layout.screenPadding, paddingBottom: Layout.screenPaddingBottom },
+  scroll: { padding: Layout.screenPadding },
   periodRow: { flexDirection: 'row', gap: Layout.inputGap, marginBottom: Layout.sectionGap },
   periodChip: {
     paddingHorizontal: 16,
