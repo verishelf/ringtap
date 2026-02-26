@@ -46,10 +46,10 @@ export default function ActivateScreen() {
       setRing(data);
       if (data?.status === 'claimed' && data.owner_user_id) {
         if (user?.id === data.owner_user_id) {
-          router.replace('/(tabs)');
+          router.replace('/(tabs)/home');
           return;
         }
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/home');
         return;
       }
     } catch (_) {
@@ -78,7 +78,7 @@ export default function ActivateScreen() {
       const result = await claimRing(uid, user.id);
       if (result.success) {
         Alert.alert('Ring claimed', 'This ring is now linked to your account.', [
-          { text: 'OK', onPress: () => router.replace('/(tabs)') },
+          { text: 'OK', onPress: () => router.replace('/(tabs)/home') },
         ]);
       } else {
         Alert.alert('Error', result.error ?? 'Could not claim ring');
@@ -195,7 +195,7 @@ export default function ActivateScreen() {
     return (
       <ThemedView style={styles.container}>
         <Text style={[styles.title, { color: colors.text }]}>This ring is already linked</Text>
-        <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={() => router.replace('/(tabs)')}>
+        <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={() => router.replace('/(tabs)/home')}>
           <Text style={[styles.buttonText, { color: colors.primary }]}>Go to Home</Text>
         </Pressable>
       </ThemedView>

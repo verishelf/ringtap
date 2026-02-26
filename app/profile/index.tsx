@@ -19,10 +19,10 @@ export default function ProfileDeepLinkScreen() {
 
   useEffect(() => {
     if (user?.id && uid && user.id === uid) {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/home');
       return;
     }
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/home');
   }, [user?.id, uid, router]);
 
   return (

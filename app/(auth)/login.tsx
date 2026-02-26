@@ -55,7 +55,7 @@ export default function LoginScreen() {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         console.log('LOGIN PASSWORD:', data, error);
         if (error) throw error;
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/home');
       }
     } catch (e: unknown) {
       console.log('LOGIN CRASH:', e);

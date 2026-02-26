@@ -33,7 +33,7 @@ export default function SetupRingByIdScreen() {
           result.already_linked
             ? 'This ring is already linked to your account.'
             : 'Your ring is now linked. Your username determines whose profile opens when someone taps it.',
-          [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
+          [{ text: 'OK', onPress: () => router.replace('/(tabs)/home') }]
         );
       } else {
         Alert.alert('Could not link ring', result.error ?? 'Try again.');

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, useSegments } from 'expo-router';
 import {
     Icon,
     Label,
@@ -9,7 +9,7 @@ import React, { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HapticTab } from '@/components/haptic-tab';
+import * as Haptics from 'expo-haptics';
 import { NotificationListener } from '@/components/NotificationListener';
 import { Colors } from '@/constants/theme';
 import { useNotifications } from '@/contexts/NotificationsContext';
@@ -27,6 +27,13 @@ function AndroidTabs() {
 
   return (
     <Tabs
+      screenListeners={{
+        tabPress: () => {
+          if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        },
+      }}
       screenOptions={{
         tabBarActiveTintColor: c.tabIconSelected,
         tabBarInactiveTintColor: c.tabIconDefault,
@@ -52,9 +59,12 @@ function AndroidTabs() {
         ),
         sceneStyle: { paddingBottom: insets.bottom + TAB_BAR_HEIGHT },
         headerShown: false,
-        tabBarButton: HapticTab,
       }}
     >
+      <Tabs.Screen
+        name="index"
+        options={{ href: null }}
+      />
       <Tabs.Screen
         name="home"
         options={{
@@ -101,6 +111,21 @@ function AndroidTabs() {
   );
 }
 
+function NativeTabHaptic() {
+  const segments = useSegments();
+  const prevTab = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    const tab = (typeof segments[1] === 'string' ? segments[1] : '') as string;
+    if (prevTab.current !== null && prevTab.current !== tab) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    prevTab.current = tab;
+  }, [segments]);
+
+  return null;
+}
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const c = Colors[colorScheme ?? 'dark'];
@@ -125,6 +150,7 @@ export default function TabLayout() {
     return (
       <>
         <NotificationListener />
+        <NativeTabHaptic />
         <NativeTabs
           minimizeBehavior="onScrollDown"
           iconColor="#FAFAFA"

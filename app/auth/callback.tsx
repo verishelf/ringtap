@@ -57,7 +57,7 @@ export default function AuthCallbackScreen() {
         if (error) throw error;
         if (mounted) {
           setStatus('success');
-          router.replace('/(tabs)');
+          router.replace('/(tabs)/home');
         }
       } catch (e) {
         if (mounted) {

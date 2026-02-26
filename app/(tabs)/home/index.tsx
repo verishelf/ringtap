@@ -152,14 +152,28 @@ export default function HomeScreen() {
     const startViews = 0;
     const endViews = viewsThisWeek;
     const startTime = Date.now();
+    let lastTicks = 0;
+    const TICK_INTERVAL_MS = 80; // Throttle haptic ticks during animation
 
     const step = () => {
       const now = Date.now();
       const progress = Math.min(1, (now - startTime) / duration);
       const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
 
-      setDisplayTaps(Math.round(startTaps + (endTaps - startTaps) * ease));
-      setDisplayViews(Math.round(startViews + (endViews - startViews) * ease));
+      const taps = Math.round(startTaps + (endTaps - startTaps) * ease);
+      const views = Math.round(startViews + (endViews - startViews) * ease);
+      setDisplayTaps(taps);
+      setDisplayViews(views);
+
+      // Throttled haptic during animation
+      if (progress < 1 && (endTaps > 0 || endViews > 0)) {
+        const elapsed = now - startTime;
+        const ticks = Math.floor(elapsed / TICK_INTERVAL_MS);
+        if (ticks > lastTicks) {
+          lastTicks = ticks;
+          Haptics.selectionAsync();
+        }
+      }
 
       if (progress < 1) {
         frame = requestAnimationFrame(step);
