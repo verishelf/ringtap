@@ -71,11 +71,24 @@ The app calls `https://www.ringtap.me/api/iap/validate-receipt`. Ensure:
 - The website is deployed and reachable
 - CORS and auth work (Bearer token from Supabase session)
 
-## 8. Review Notes (Optional)
+## 8. Provide Sandbox Account for Review (Recommended)
 
-When submitting for review, you can add a note:
+Apple reviewers need a sandbox account to test IAP. If they don't have one or use the wrong one, purchases can fail.
 
-> IAP is implemented and functional for Pro subscription (Guideline 3.1.1). Pro subscriptions are purchased only via App Store in-app purchase. Sandbox testing completed successfully.
+1. App Store Connect → Your App → **App Information**
+2. Scroll to **App Review Information**
+3. Under **Sign-in required**, add a **Sandbox** account:
+   - Create a sandbox tester: Users and Access → Sandbox → Testers → +
+   - Use a real but unused email (e.g. `ringtap-review@yourdomain.com`)
+   - Add that email + password to the App Review Information
+
+This gives reviewers a known-good account to test IAP.
+
+## 9. Review Notes (Optional)
+
+When submitting for review, add a note in the **Notes for reviewer** field:
+
+> In-App Purchase: Pro subscription (products 006, 007). Sandbox account provided in App Review Information. Please sign in with that account to test Subscribe and Restore purchases. IAP validated successfully in sandbox before submission.
 
 ## Quick Checklist
 
@@ -86,3 +99,4 @@ When submitting for review, you can add a note:
 | Shared secret set | Website env: `APPLE_SHARED_SECRET` |
 | Product IDs match | `006`, `007` in code and App Store Connect |
 | Sandbox tested | Physical device, sandbox account signed in |
+| Sandbox account for review | App Store Connect → App → App Review Information |

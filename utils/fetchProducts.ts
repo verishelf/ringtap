@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 /** Product IDs - must match App Store Connect exactly */
 const PRODUCT_IDS = ['006', '007'] as const;
-const CONNECT_TIMEOUT_MS = 15000;
+const CONNECT_TIMEOUT_MS = 25000;
 
 export type IAPProduct = {
   productId: string;

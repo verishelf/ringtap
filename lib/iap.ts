@@ -52,7 +52,7 @@ export type IAPState = 'idle' | 'connecting' | 'loading' | 'purchasing' | 'resto
 let isConnected = false;
 let purchaseResolver: ((success: boolean) => void) | null = null;
 
-const CONNECT_TIMEOUT_MS = 15000;
+const CONNECT_TIMEOUT_MS = 25000;
 
 /**
  * Connect to the store. Call once when the purchase screen mounts.
