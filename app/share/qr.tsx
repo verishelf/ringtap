@@ -8,9 +8,9 @@ import { captureRef } from 'react-native-view-shot';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { getProfileUrlQr } from '@/lib/api';
 
 const QR_SIZE = 280;
