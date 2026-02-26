@@ -32,7 +32,7 @@ export default function AboutScreen() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>About & attributions</Text>
         <View style={styles.headerBack} />
       </View>
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Layout.screenPaddingBottom }]}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: Layout.screenPaddingBottom }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Legal</Text>
           <Pressable onPress={openTerms} style={styles.row}>

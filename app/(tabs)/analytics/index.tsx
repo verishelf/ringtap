@@ -159,7 +159,7 @@ export default function AnalyticsScreen() {
   if (error && data) {
     return (
       <ThemedView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
           <View style={[styles.errorCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="warning-outline" size={40} color={colors.accent} />
             <Text style={[styles.errorTitle, { color: colors.text }]}>{error}</Text>
@@ -240,7 +240,7 @@ export default function AnalyticsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={styles.periodRow}>
           {periods.map(({ value, label }) => (
             <Pressable

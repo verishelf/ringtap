@@ -69,7 +69,7 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.sectionGap }]}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>

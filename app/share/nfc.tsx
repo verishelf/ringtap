@@ -32,7 +32,7 @@ export default function NFCShareScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Ionicons name="phone-portrait-outline" size={56} color={colors.accent} />
           <Text style={[styles.title, { color: colors.text }]}>Share with NFC</Text>

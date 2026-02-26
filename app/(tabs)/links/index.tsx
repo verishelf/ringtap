@@ -196,6 +196,8 @@ export default function LinksScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
         />
       )}
 

@@ -172,6 +172,7 @@ export default function ProfileByIdScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
       >
         <ProfileScanPreview
           profile={profile}

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Image } from 'expo-image';
@@ -7,16 +8,16 @@ import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
     View
 } from 'react-native';
-
 import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
-import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -35,11 +36,17 @@ const PRO_RING_COLOR = '#D4AF37';
 
 type RecentContact = { type: 'scanned'; data: ScannedContact } | { type: 'saved'; data: SavedContact };
 
+// Subtle gradient colors (dark: deep with hints of blue/purple; light: soft pastel)
+const GRADIENT_DARK = ['#0A0A0B', '#0d0f18', '#0f0a14', '#0a0c14', '#0A0A0B'] as const;
+const GRADIENT_LIGHT = ['#FAFAFA', '#f5f7ff', '#faf5ff', '#f5f8fa', '#FAFAFA'] as const;
+
 export default function HomeScreen() {
   const { user } = useSession();
   const { profile } = useProfile();
   const { isPro } = useSubscription();
   const colors = useThemeColors();
+  const colorScheme = useColorScheme();
+  const gradientColors = (colorScheme === 'light' ? GRADIENT_LIGHT : GRADIENT_DARK) as unknown as readonly [string, string, ...string[]];
   const [recentContacts, setRecentContacts] = useState<RecentContact[]>([]);
   const [recentMessages, setRecentMessages] = useState<ConversationWithPeer[]>([]);
   const [recentAvatarByUserId, setRecentAvatarByUserId] = useState<Record<string, string | null>>({});
@@ -174,8 +181,13 @@ export default function HomeScreen() {
   );
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={gradientColors}
+        locations={[0, 0.25, 0.5, 0.75, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.greeting, { color: colors.text }]}>
@@ -201,7 +213,7 @@ export default function HomeScreen() {
 
         {/* Tap to share — glowing rings */}
         <Link href="/share/qr" asChild>
-          <Pressable style={styles.scanRingWrap}>
+          <Pressable style={[styles.scanRingWrap, styles.scanRingGlow, { backgroundColor: colors.surface + '12' }]}>
             <View style={[styles.scanRingContainer, { width: RING_SIZE, height: RING_SIZE }]}>
               <Animated.View
                 style={[
@@ -241,7 +253,7 @@ export default function HomeScreen() {
         {/* Dashboard */}
         <View style={styles.dashboard}>
           {/* This week — mini stats */}
-          <View style={[styles.statsCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
+          <View style={[styles.statsCard, styles.cardGlow, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>This week</Text>
             {loadingDashboard ? (
               <View style={styles.dashLoader}>
@@ -266,7 +278,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Recent messages */}
-          <View style={[styles.recentCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
+          <View style={[styles.recentCard, styles.cardGlow, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
             <View style={styles.recentHeader}>
               <View style={styles.recentHeaderTitleRow}>
                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent messages</Text>
@@ -329,7 +341,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Recently scanned cards */}
-          <View style={[styles.recentCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
+          <View style={[styles.recentCard, styles.cardGlow, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
             <View style={styles.recentHeader}>
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent contacts</Text>
               <Link href="/(tabs)/contacts" asChild>
@@ -392,7 +404,7 @@ export default function HomeScreen() {
 
           {/* Store card */}
           <Pressable
-            style={[styles.storeCard, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}
+            style={[styles.storeCard, styles.cardGlow, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}
             onPress={() => Linking.openURL(STORE_URL)}
           >
             <View style={[styles.storeIconWrap, { backgroundColor: colors.accent + '33' }]}>
@@ -408,7 +420,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </ScrollView>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -452,10 +464,41 @@ const styles = StyleSheet.create({
   profileAvatar: { width: 44, height: 44, borderRadius: 22 },
   scanRingWrap: {
     alignItems: 'center',
-    marginBottom: Layout.sectionGap,
+    justifyContent: 'center',
+    marginTop: Layout.sectionGap,
+    marginBottom: Layout.sectionGap + 32,
+    marginHorizontal: Layout.sectionGap,
     paddingVertical: Layout.cardPadding,
+    paddingBottom: Layout.cardPadding + 12,
+    borderRadius: Layout.radiusXl,
   },
   dashboard: { gap: Layout.sectionGap },
+  cardGlow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#6B7FD7',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  scanRingGlow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#8B9FD7',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
   statsCard: {
     borderRadius: Layout.radiusLg,
     borderWidth: 1,
@@ -507,6 +550,7 @@ const styles = StyleSheet.create({
   recentRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'nowrap',
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     direction: 'ltr',
@@ -524,7 +568,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginRight: 12,
   },
-  recentAvatarWrap: { marginRight: 12 },
+  recentAvatarWrap: { marginRight: 12, flexShrink: 0 },
   recentAvatarText: { fontSize: 15, fontWeight: '700' },
   recentInfo: { flex: 1, minWidth: 0 },
   recentName: { fontSize: Layout.bodySmall, fontWeight: '600' },
@@ -549,6 +593,7 @@ const styles = StyleSheet.create({
   storeSubtitle: { fontSize: Layout.caption, marginTop: 2 },
   scanRingContainer: {
     position: 'relative',
+    alignSelf: 'center',
   },
   scanRingOuter: {
     position: 'absolute',
@@ -565,6 +610,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scanRingLabel: { fontSize: Layout.titleSection + 1, fontWeight: '700', marginTop: 14 },
-  scanRingHint: { fontSize: Layout.caption, marginTop: 4 },
+  scanRingLabel: { fontSize: Layout.titleSection + 1, fontWeight: '700', marginTop: 14, textAlign: 'center', alignSelf: 'stretch' },
+  scanRingHint: { fontSize: Layout.caption, marginTop: 4, marginBottom: 16, textAlign: 'center', alignSelf: 'stretch' },
 });

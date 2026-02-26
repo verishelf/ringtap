@@ -135,7 +135,7 @@ export default function ActivateScreen() {
             styles.scroll,
             { paddingTop: insets.top + Layout.sectionGap, paddingBottom: Math.max(insets.bottom, Layout.screenPaddingBottom) },
           ]}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}
         >
           <Text style={[styles.title, { color: colors.text }]}>Link your ring</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -204,7 +204,7 @@ export default function ActivateScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.text }]}>Claim your ring</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Link this NFC ring to your RingTap account

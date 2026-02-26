@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { NotificationListener } from '@/components/NotificationListener';
@@ -12,9 +14,12 @@ import { useSession } from '@/hooks/useSession';
 import { savePushToken } from '@/lib/api';
 import { getExpoPushTokenAsync } from '@/utils/registerPushNotifications';
 
+const TAB_BAR_HEIGHT = 49;
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const c = Colors[colorScheme ?? 'dark'];
+  const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { prefs, permissionStatus } = useNotifications();
 
@@ -39,10 +44,33 @@ export default function TabLayout() {
         tabBarActiveTintColor: c.tabIconSelected,
         tabBarInactiveTintColor: c.tabIconDefault,
         tabBarStyle: {
-          backgroundColor: c.tabBarBackground,
-          borderTopColor: c.tabBarBorder,
-          borderTopWidth: 1,
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: c.tabBarBorder + '50',
+          elevation: 0,
+          shadowOpacity: 0,
+          overflow: 'hidden',
         },
+        tabBarBackground: () =>
+          Platform.OS === 'ios' ? (
+            <BlurView
+              tint={colorScheme === 'dark' ? 'dark' : 'light'}
+              intensity={60}
+              style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}
+            />
+          ) : (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: colorScheme === 'dark' ? 'rgba(20,20,22,0.4)' : 'rgba(250,250,250,0.4)',
+                  overflow: 'hidden',
+                },
+              ]}
+            />
+          ),
+        sceneStyle: { paddingBottom: insets.bottom + TAB_BAR_HEIGHT },
         headerStyle: { backgroundColor: c.background },
         headerTintColor: c.text,
         headerTitleStyle: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 17 },

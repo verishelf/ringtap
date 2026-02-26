@@ -148,7 +148,7 @@ export default function UpgradeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Ionicons name="rocket-outline" size={48} color={colors.accent} />
           <Text style={[styles.title, { color: colors.text }]}>Upgrade to Pro</Text>

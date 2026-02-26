@@ -75,7 +75,7 @@ export default function ManageSubscriptionScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[styles.planName, { color: colors.text }]}>Pro</Text>
           <Text style={[styles.status, { color: colors.textSecondary }]}>{status ?? 'active'}</Text>

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -124,13 +124,20 @@ export default function ChatScreen() {
           ) : null}
         </View>
       );
+      const avatarLink = isMe ? (
+        <Link href="/(tabs)/profile" asChild>
+          <Pressable style={styles.chatAvatarWrap}>{avatarWithBadge}</Pressable>
+        </Link>
+      ) : peerId ? (
+        <Link href={`/profile/${peerId}` as const} asChild>
+          <Pressable style={styles.chatAvatarWrap}>{avatarWithBadge}</Pressable>
+        </Link>
+      ) : (
+        <View style={styles.chatAvatarWrap}>{avatarWithBadge}</View>
+      );
       return (
         <View style={[styles.bubbleRow, isMe ? styles.bubbleRowMe : styles.bubbleRowThem]}>
-          {!isMe && (
-            <>
-              <View style={styles.chatAvatarWrap}>{avatarWithBadge}</View>
-            </>
-          )}
+          {!isMe && avatarLink}
           <View style={[styles.bubbleWithTime, isMe ? styles.bubbleWithTimeMe : styles.bubbleWithTimeThem]}>
             <View
               style={[
@@ -144,13 +151,11 @@ export default function ChatScreen() {
               {formatMessageTime(item.createdAt)}
             </Text>
           </View>
-          {isMe && (
-            <View style={styles.chatAvatarWrap}>{avatarWithBadge}</View>
-          )}
+          {isMe && avatarLink}
         </View>
       );
     },
-    [colors, myAvatarUrl, myIsPro, peerAvatarUrl, peerIsPro, user?.id]
+    [colors, myAvatarUrl, myIsPro, peerAvatarUrl, peerId, peerIsPro, user?.id]
   );
 
   if (!conversationId || !user) {
@@ -184,6 +189,8 @@ export default function ChatScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 60 }]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: colors.textSecondary, marginTop: 24 }]}>
             No messages yet. Say hi!

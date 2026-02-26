@@ -80,6 +80,7 @@ export default function QRShareScreen() {
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
       >
         <View style={styles.centered}>
           <View ref={qrRef} collapsable={false} style={[styles.qrWrap, { backgroundColor: colors.surface }]}>

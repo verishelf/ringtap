@@ -283,6 +283,8 @@ export default function ContactsScreen() {
         data={contacts}
         keyExtractor={(item) => item.id}
         renderItem={renderContactItem}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
           contacts.length === 0 && styles.listEmpty,

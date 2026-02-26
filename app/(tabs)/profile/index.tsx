@@ -354,7 +354,7 @@ export default function ProfileEditorScreen() {
         )}
       </View>
 
-      <ScrollView
+      <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.sectionGap }]}
         keyboardShouldPersistTaps="handled"
       >
@@ -754,7 +754,7 @@ export default function ProfileEditorScreen() {
               <Ionicons name="close" size={28} color={colors.text} />
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={[styles.previewModalContent, { paddingBottom: insets.bottom + 24 }]}>
+          <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.previewModalContent, { paddingBottom: insets.bottom + 24 }]}>
             <ProfileScanPreview
               profile={displayProfile}
               links={previewLinks}

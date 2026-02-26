@@ -14,7 +14,7 @@ export default function PricingScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[styles.planName, { color: colors.text }]}>Free</Text>
           <Text style={[styles.price, { color: colors.text }]}>$0</Text>

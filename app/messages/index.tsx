@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -93,18 +93,21 @@ export default function MessagesScreen() {
         friction={2}
         rightThreshold={40}
       >
-          <Pressable
-            style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-            onPress={() => router.push(`/messages/${item.id}`)}
-          >
-            <ProAvatar
-              avatarUrl={item.peerAvatarUrl}
-              isPro={item.peerIsPro}
-              size="medium"
-              placeholderLetter={item.peerName || '?'}
-              style={styles.avatarWrap}
-            />
-            <View style={styles.content}>
+          <View style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Link href={`/profile/${item.peerUserId}` as const} asChild>
+              <Pressable style={styles.avatarWrap}>
+                <ProAvatar
+                  avatarUrl={item.peerAvatarUrl}
+                  isPro={item.peerIsPro}
+                  size="medium"
+                  placeholderLetter={item.peerName || '?'}
+                />
+              </Pressable>
+            </Link>
+            <Pressable
+              style={styles.content}
+              onPress={() => router.push(`/messages/${item.id}`)}
+            >
               <View style={styles.contentText}>
                 <NameWithVerified name={item.peerName || 'Unknown'} isPro={item.peerIsPro} />
                 <Text style={[styles.preview, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -112,8 +115,8 @@ export default function MessagesScreen() {
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
         </Swipeable>
     ),
     [colors, router, renderRightActions]
@@ -147,6 +150,8 @@ export default function MessagesScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={[styles.listContent, conversations.length === 0 && styles.listEmpty]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             No conversations yet. Open a saved contact and tap Message to start.
@@ -165,13 +170,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'nowrap',
+    direction: 'ltr',
     paddingVertical: 12,
     paddingHorizontal: Layout.screenPadding,
     marginBottom: 8,
     borderRadius: Layout.radiusMd,
     borderWidth: 1,
   },
-  avatarWrap: { marginRight: 12 },
+  avatarWrap: { marginRight: 12, flexShrink: 0 },
   content: {
     flex: 1,
     flexDirection: 'row',
