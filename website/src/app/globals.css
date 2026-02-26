@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* RingTap — futuristic monochrome luxury (matches app theme) */
 :root {

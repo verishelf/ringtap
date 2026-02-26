@@ -30,6 +30,7 @@ const FOOTER_COLUMNS = [
   {
     title: "Resources",
     links: [
+      { href: "/blog", label: "Blog" },
       { href: "/demo", label: "NFC demo" },
     ],
   },

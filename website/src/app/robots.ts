@@ -15,6 +15,11 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/api/"],
       },
+      // Allow AI crawlers for LLM indexing (blog, content)
+      { userAgent: "GPTBot", allow: "/", disallow: ["/api/"] },
+      { userAgent: "Claude-Web", allow: "/", disallow: ["/api/"] },
+      { userAgent: "anthropic-ai", allow: "/", disallow: ["/api/"] },
+      { userAgent: "PerplexityBot", allow: "/", disallow: ["/api/"] },
     ],
     sitemap: `${BASE}/sitemap.xml`,
     host: BASE,

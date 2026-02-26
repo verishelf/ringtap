@@ -71,9 +71,13 @@ export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },
 };
 
+// Same linear gradient as app home tab (dark: deep with hints of blue/purple)
+const HOME_GRADIENT =
+  "linear-gradient(180deg, #0A0A0B 0%, #0d0f18 25%, #0f0a14 50%, #0a0c14 75%, #0A0A0B 100%)";
+
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen relative" style={{ background: HOME_GRADIENT }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
