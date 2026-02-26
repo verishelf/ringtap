@@ -1,11 +1,11 @@
 import { Stack } from 'expo-router';
 
-export default function AnalyticsLayout() {
+export default function HomeLayout() {
   return (
     <Stack
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="index" options={{ title: 'Analytics' }} />
+      <Stack.Screen name="home" options={{ title: 'Home' }} />
     </Stack>
   );
 }

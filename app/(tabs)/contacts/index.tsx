@@ -201,7 +201,7 @@ export default function ContactsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.centered, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <Image
           source={require('@/assets/images/loading.gif')}
           style={{ width: 64, height: 64 }}
@@ -211,7 +211,7 @@ export default function ContactsScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]}>
+    <View style={[styles.container, { paddingTop: insets.top + Layout.screenPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]}>
       <Pressable
         style={({ pressed }) => [
           styles.messagesCard,

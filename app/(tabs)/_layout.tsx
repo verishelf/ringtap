@@ -51,24 +51,12 @@ function AndroidTabs() {
           />
         ),
         sceneStyle: { paddingBottom: insets.bottom + TAB_BAR_HEIGHT },
-        headerStyle: { backgroundColor: 'transparent' },
-        headerStatusBarHeight: insets.top,
-        headerBackground: () => (
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: c.background },
-            ]}
-          />
-        ),
-        headerTintColor: c.text,
-        headerTitleStyle: { fontFamily: 'SpaceGrotesk_600SemiBold', fontSize: 17 },
-        headerShown: true,
+        headerShown: false,
         tabBarButton: HapticTab,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
@@ -145,7 +133,7 @@ export default function TabLayout() {
           blurEffect="systemChromeMaterialDark"
           labelStyle={{ color: '#A1A1AA' }}
         >
-          <NativeTabs.Trigger name="index">
+          <NativeTabs.Trigger name="home">
             <Label>Home</Label>
             <Icon sf={{ default: 'house', selected: 'house.fill' }} />
           </NativeTabs.Trigger>

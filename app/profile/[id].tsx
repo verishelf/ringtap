@@ -159,7 +159,7 @@ export default function ProfileByIdScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.borderLight, paddingTop: insets.top + 12, paddingBottom: 12 }]}>
+      <View style={[styles.header, { borderBottomColor: colors.borderLight, paddingTop: insets.top, paddingBottom: 12 }]}>
         <Pressable onPress={handleBack} style={styles.headerBack} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
@@ -170,7 +170,7 @@ export default function ProfileByIdScreen() {
       </View>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
       >
@@ -203,5 +203,5 @@ const styles = StyleSheet.create({
   headerBack: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
   headerTitle: { fontSize: 17, fontWeight: '600', flex: 1, textAlign: 'center' },
   scroll: { flex: 1 },
-  scrollContent: { padding: Layout.screenPadding, paddingBottom: 40 },
+  scrollContent: { padding: Layout.screenPadding },
 });

@@ -161,7 +161,7 @@ export default function LinksScreen() {
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { paddingTop: insets.top + Layout.screenPadding }]}>
       <View style={styles.header}>
         <Text style={[styles.planText, { color: colors.text }]}>
           {links.length} / {isPro ? '∞' : FREE_PLAN_MAX_LINKS} links
