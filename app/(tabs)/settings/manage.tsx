@@ -3,6 +3,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
@@ -17,6 +18,7 @@ const GOOGLE_PLAY_SUBSCRIPTIONS_URL = 'https://play.google.com/store/account/sub
 
 export default function ManageSubscriptionScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { plan, status, refresh, hasStripeSubscription } = useSubscription();
   const [loading, setLoading] = useState(false);
@@ -75,7 +77,14 @@ export default function ManageSubscriptionScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderLight, paddingTop: insets.top, paddingBottom: 12 }]}>
+        <Pressable onPress={() => router.back()} style={styles.headerBack} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Manage subscription</Text>
+        <View style={styles.headerBack} />
+      </View>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[styles.planName, { color: colors.text }]}>Pro</Text>
           <Text style={[styles.status, { color: colors.textSecondary }]}>{status ?? 'active'}</Text>
@@ -112,7 +121,16 @@ export default function ManageSubscriptionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: Layout.screenPadding, paddingBottom: Layout.screenPaddingBottom },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Layout.screenPadding,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerBack: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
+  headerTitle: { fontSize: 17, fontWeight: '600', flex: 1, textAlign: 'center' },
+  scroll: { padding: Layout.screenPadding },
   card: {
     padding: Layout.cardPadding,
     borderRadius: Layout.radiusLg,

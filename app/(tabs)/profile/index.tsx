@@ -320,43 +320,44 @@ export default function ProfileEditorScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* Fixed header: Edit / Preview in view mode, Cancel / Save in edit mode */}
+      <View style={[styles.headerRow, styles.headerRowFixed, { backgroundColor: colors.background, borderBottomColor: colors.borderLight, paddingTop: insets.top + 8 }]}>
+        {isEditing ? (
+          <>
+            <Pressable onPress={cancelEditing} style={[styles.headerButton, { minWidth: 72 }]}>
+              <Text style={[styles.headerButtonText, { color: colors.accent }]}>Cancel</Text>
+            </Pressable>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Edit profile</Text>
+            <Pressable onPress={saveEditing} style={[styles.headerButton, { minWidth: 72 }]} disabled={saving}>
+              {saving ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <Text style={[styles.headerButtonText, { color: colors.accent, fontWeight: '700' }]}>Save</Text>
+              )}
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <View style={styles.headerSpacer} />
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+            <View style={styles.headerActions}>
+              <Pressable onPress={() => setPreviewModalVisible(true)} style={styles.headerButton}>
+                <Ionicons name="eye-outline" size={22} color={colors.accent} />
+                <Text style={[styles.headerButtonText, { color: colors.accent }]}>Preview</Text>
+              </Pressable>
+              <Pressable onPress={startEditing} style={styles.headerButton}>
+                <Ionicons name="pencil" size={22} color={colors.accent} />
+                <Text style={[styles.headerButtonText, { color: colors.accent }]}>Edit</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + Layout.screenPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]}
+        contentContainerStyle={[styles.scroll, styles.scrollNoTopPadding, { paddingTop: Layout.rowGap, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header: Edit / Preview in view mode, Cancel / Save in edit mode */}
-        <View style={[styles.headerRow, { borderBottomColor: colors.borderLight }]}>
-          {isEditing ? (
-            <>
-              <Pressable onPress={cancelEditing} style={[styles.headerButton, { minWidth: 72 }]}>
-                <Text style={[styles.headerButtonText, { color: colors.accent }]}>Cancel</Text>
-              </Pressable>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>Edit profile</Text>
-              <Pressable onPress={saveEditing} style={[styles.headerButton, { minWidth: 72 }]} disabled={saving}>
-                {saving ? (
-                  <ActivityIndicator size="small" color={colors.accent} />
-                ) : (
-                  <Text style={[styles.headerButtonText, { color: colors.accent, fontWeight: '700' }]}>Save</Text>
-                )}
-              </Pressable>
-            </>
-          ) : (
-            <>
-              <View style={styles.headerSpacer} />
-              <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-              <View style={styles.headerActions}>
-                <Pressable onPress={() => setPreviewModalVisible(true)} style={styles.headerButton}>
-                  <Ionicons name="eye-outline" size={22} color={colors.accent} />
-                  <Text style={[styles.headerButtonText, { color: colors.accent }]}>Preview</Text>
-                </Pressable>
-                <Pressable onPress={startEditing} style={styles.headerButton}>
-                  <Ionicons name="pencil" size={22} color={colors.accent} />
-                  <Text style={[styles.headerButtonText, { color: colors.accent }]}>Edit</Text>
-                </Pressable>
-              </View>
-            </>
-          )}
-        </View>
         {isEditing && editForm ? (
           /* ---------- Edit mode: form ---------- */
           <>
@@ -782,8 +783,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Layout.screenPadding,
     paddingVertical: 8,
-    marginBottom: Layout.rowGap,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerRowFixed: {
+    marginBottom: 0,
   },
   headerTitle: { fontSize: 18, fontWeight: '700' },
   headerButton: { padding: Layout.tightGap, flexDirection: 'row', alignItems: 'center', gap: 6 },

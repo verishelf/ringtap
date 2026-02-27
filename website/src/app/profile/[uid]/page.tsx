@@ -209,25 +209,25 @@ export default function ProfilePage() {
               </>
             ) : null}
             <div className={`flex items-center gap-4 ${profile.background_image_url?.trim() ? 'relative' : ''}`}>
-              {profile.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt=""
+            {profile.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt=""
                   className="w-20 h-20 rounded-full object-cover bg-surface-elevated shrink-0"
-                />
-              ) : (
+              />
+            ) : (
                 <div className="w-20 h-20 rounded-full bg-surface-elevated flex items-center justify-center text-2xl text-muted shrink-0">
-                  {profile.name?.charAt(0) ?? '?'}
-                </div>
-              )}
-              <div>
+                {profile.name?.charAt(0) ?? '?'}
+              </div>
+            )}
+            <div>
                 <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography), ...(getDotsFontEnhancementWeb(profile.theme?.typography) ?? {}) }}>{profile.name || 'No name'}</h1>
                 {profile.title ? <p className="text-muted-light" style={{ fontFamily: getProfileFontFamilyWeb(profile.theme?.typography), ...(getDotsFontEnhancementWeb(profile.theme?.typography) ?? {}) }}>{profile.title}</p> : null}
-                {profile.username ? (
-                  <p className="text-sm text-muted">ringtap.me/{profile.username}</p>
-                ) : null}
-              </div>
+              {profile.username ? (
+                <p className="text-sm text-muted">ringtap.me/{profile.username}</p>
+              ) : null}
             </div>
+          </div>
           </div>
           <div className="px-6 pb-6 space-y-4">
           {profile.bio ? (
@@ -252,16 +252,16 @@ export default function ProfilePage() {
                 const label = SOCIAL_LABELS[key] ?? key;
                 const href = url.startsWith('http') ? url : `https://${url}`;
                 return (
-                  <a
-                    key={key}
+                <a
+                  key={key}
                     href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  target="_blank"
+                  rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-lg bg-surface-elevated px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-background transition-colors"
-                  >
+                >
                     <SocialIcon platform={key} />
                     <span>{label}</span>
-                  </a>
+                </a>
                 );
               })}
             </div>

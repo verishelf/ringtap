@@ -1,12 +1,10 @@
 /**
  * Upgrade to Pro screen
  *
- * Per Apple Guideline 3.1.1: In-app purchase only for App Store builds.
- * Uses isStoreBuild() to enable IAP. Buttons stay ACTIVE in store builds
- * even when StoreKit returns zero products (e.g. subscriptions not yet
- * attached to version in App Store Connect).
+ * Uses expo-in-app-purchases for App Store subscriptions.
+ * IAP enabled in store builds (TestFlight, App Store). Use isStoreBuild() to gate the UI.
+ * In Expo Go: shows web upgrade option.
  */
-
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useState } from 'react';
@@ -20,6 +18,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
@@ -28,100 +27,81 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
 import {
   IAP_FALLBACK_PRICES,
-  iapConnect,
-  iapDisconnect,
   iapPurchase,
   iapRestore,
-  iapSetPurchaseListener,
 } from '@/lib/iap';
-import { supabase } from '@/lib/supabase/supabaseClient';
-import { fetchProducts, type IAPProduct } from '@/utils/fetchProducts';
 import { isStoreBuild } from '@/utils/isStoreBuild';
+import { fetchProducts, type IAPProduct } from '@/utils/fetchProducts';
 
 const UPGRADE_BASE_URL = 'https://www.ringtap.me/upgrade';
 
 export default function UpgradeScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const { user } = useSession();
+  const { user, session } = useSession();
   const { isPro, refresh } = useSubscription();
-
   const [products, setProducts] = useState<IAPProduct[]>([]);
-  const [fetchStatus, setFetchStatus] = useState<'ok' | 'missing_products' | 'unavailable'>('unavailable');
-  const [iapState, setIapState] = useState<'idle' | 'connecting' | 'loading' | 'purchasing' | 'restoring'>('idle');
-  const storeBuild = isStoreBuild();
+  const [loading, setLoading] = useState(false);
+  const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
-  const getAuth = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token || !session.user?.id) return null;
-    return { accessToken: session.access_token, userId: session.user.id };
+  const loadProducts = useCallback(async () => {
+    if (!isStoreBuild() || Platform.OS === 'web') return;
+    setLoading(true);
+    const result = await fetchProducts();
+    setProducts(result.status === 'ok' ? result.products : []);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === 'web' || !storeBuild) {
-      setIapState('idle');
-      return;
-    }
+    loadProducts();
+  }, [loadProducts]);
 
-    let mounted = true;
-    const run = async () => {
-      setIapState('connecting');
-      const connected = await iapConnect();
-      if (!mounted) return;
-      if (!connected) {
-        setIapState('idle');
+  const monthlyProduct = products.find((p) => p.productId === '006');
+  const yearlyProduct = products.find((p) => p.productId === '007');
+
+  const handlePurchase = useCallback(
+    async (productId: string) => {
+      if (!user?.id || !session?.access_token) {
+        Alert.alert('Sign in required', 'Sign in so your Pro subscription is linked to your account.');
         return;
       }
+      setPurchasingProductId(productId);
+      try {
+        const { purchased, error } = await iapPurchase(productId, session.access_token, user.id);
+        if (purchased) {
+          refresh();
+          Alert.alert('Success', 'You now have Pro!');
+        } else if (error && error !== 'Cancelled') {
+          Alert.alert('Purchase failed', error);
+        }
+      } finally {
+        setPurchasingProductId(null);
+      }
+    },
+    [user?.id, session?.access_token, refresh]
+  );
 
-      iapSetPurchaseListener(getAuth, (success) => {
-        if (!mounted) return;
-        setIapState('idle');
-        if (success) refresh();
-      });
-
-      setIapState('loading');
-      const result = await fetchProducts();
-      if (!mounted) return;
-      setProducts(result.products);
-      setFetchStatus(result.status);
-      setIapState('idle');
-    };
-    run();
-    return () => {
-      mounted = false;
-      iapDisconnect();
-    };
-  }, [getAuth, refresh, storeBuild]);
-
-  const handlePurchase = async (productId: string) => {
-    const email = user?.email?.trim();
-    if (!email) {
-      Alert.alert('Sign in required', 'Sign in so your Pro subscription is linked to your account.');
+  const handleRestore = useCallback(async () => {
+    if (!user?.id || !session?.access_token) {
+      Alert.alert('Sign in required', 'Sign in to restore your Pro subscription.');
       return;
     }
-    setIapState('purchasing');
-    const ok = await iapPurchase(productId);
-    setIapState('idle');
-    if (ok) refresh();
-  };
-
-  const handleRestore = async () => {
-    const auth = await getAuth();
-    if (!auth) {
-      Alert.alert('Sign in required', 'Sign in to restore your purchase.');
-      return;
+    setRestoring(true);
+    try {
+      const { restored, error } = await iapRestore(session.access_token, user.id);
+      if (restored) {
+        refresh();
+        Alert.alert('Restored', 'Your Pro subscription has been restored.');
+      } else {
+        Alert.alert('Restore failed', error ?? 'No purchases to restore.');
+      }
+    } finally {
+      setRestoring(false);
     }
-    setIapState('restoring');
-    const { restored, error } = await iapRestore(auth.accessToken, auth.userId);
-    setIapState('idle');
-    if (restored) {
-      refresh();
-      Alert.alert('Restored', 'Your Pro subscription has been restored.');
-    } else {
-      Alert.alert('Restore', error ?? 'No purchases to restore.');
-    }
-  };
+  }, [user?.id, session?.access_token, refresh]);
 
-  const handleExternalUpgrade = async () => {
+  const handleExternalUpgrade = useCallback(async () => {
     const email = user?.email?.trim();
     if (!email) {
       Alert.alert('Sign in required', 'Use the email from your RingTap account so your Pro subscription is linked.');
@@ -136,19 +116,24 @@ export default function UpgradeScreen() {
     } catch {
       Alert.alert('Error', 'Could not open payment page. Try again.');
     }
-  };
+  }, [user?.id, user?.email]);
 
-  const monthlyProduct = products.find((p) => p.productId === '006');
-  const yearlyProduct = products.find((p) => p.productId === '007');
-  const primaryProduct = monthlyProduct ?? yearlyProduct ?? null;
-  const monthlyPrice = monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly;
-  const yearlyPrice = yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly;
   const isWebOnly = Platform.OS === 'web';
-  const canPurchase = storeBuild;
+  const iapEnabled = isStoreBuild() && !isWebOnly;
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingTop: insets.top + Layout.screenPadding,
+            paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+      >
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Ionicons name="rocket-outline" size={48} color={colors.accent} />
           <Text style={[styles.title, { color: colors.text }]}>Upgrade to Pro</Text>
@@ -160,10 +145,7 @@ export default function UpgradeScreen() {
         {isWebOnly ? (
           <>
             <Text style={[styles.price, { color: colors.text }]}>$9.99/mo or $99.99/yr</Text>
-            <Pressable
-              style={[styles.button, { backgroundColor: colors.accent }]}
-              onPress={handleExternalUpgrade}
-            >
+            <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade}>
               <Ionicons name="open-outline" size={22} color={colors.text} />
               <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro</Text>
             </Pressable>
@@ -171,93 +153,82 @@ export default function UpgradeScreen() {
               Opens the browser to subscribe via Stripe. Cancel anytime from Settings → Manage subscription.
             </Text>
           </>
-        ) : !storeBuild ? (
+        ) : !iapEnabled ? (
           <>
-            <Text style={[styles.price, { color: colors.text }]}>
-              {IAP_FALLBACK_PRICES.monthly}/mo or {IAP_FALLBACK_PRICES.yearly}/yr
-            </Text>
+            <Text style={[styles.price, { color: colors.text }]}>$14.99/mo or $119.99/yr</Text>
             <View style={[styles.disabledMessage, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.disabledText, { color: colors.textSecondary }]}>
-                IAP disabled in development mode
+                In-app purchases require a development build. Use TestFlight or build with EAS to subscribe in-app.
               </Text>
             </View>
+            <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade}>
+              <Ionicons name="open-outline" size={22} color={colors.text} />
+              <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade via web</Text>
+            </Pressable>
             <Text style={[styles.note, { color: colors.textSecondary }]}>
-              Install from TestFlight or the App Store to subscribe.
+              Subscribe via the website. Cancel anytime from Settings → Manage subscription.
             </Text>
           </>
         ) : (
           <>
             <Text style={[styles.price, { color: colors.text }]}>
-              {monthlyPrice}/mo or {yearlyPrice}/yr
+              {monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly}/mo or {yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly}/yr
             </Text>
-            {(iapState === 'connecting' || iapState === 'loading') && (
+            {loading ? (
               <View style={styles.loadingRow}>
                 <ActivityIndicator color={colors.accent} size="small" />
-                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                  Loading subscription options…
-                </Text>
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading subscription options…</Text>
               </View>
-            )}
-
-            {fetchStatus === 'missing_products' && iapState === 'idle' && (
-              <View style={[styles.missingProductsHint, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={[styles.missingProductsText, { color: colors.textSecondary }]}>
-                  Subscriptions not loaded. In App Store Connect, add products 006 & 007 to this app version.
-                </Text>
-              </View>
-            )}
-            {iapState === 'idle' && canPurchase && (
+            ) : (
               <>
                 <Pressable
-                  style={[styles.button, { backgroundColor: colors.accent }]}
-                  onPress={() => handlePurchase(primaryProduct?.productId ?? '006')}
-                  disabled={iapState !== 'idle'}
+                  style={[styles.button, { backgroundColor: colors.accent }, purchasingProductId && styles.buttonDisabled]}
+                  onPress={() => handlePurchase('006')}
+                  disabled={!!purchasingProductId || products.length === 0}
                 >
-                  <Ionicons name="cart-outline" size={22} color={colors.text} />
-                  <Text style={[styles.buttonText, { color: colors.text }]}>
-                    Subscribe via App Store – {primaryProduct?.price ?? monthlyPrice}/mo
-                  </Text>
+                  {purchasingProductId === '006' ? (
+                    <ActivityIndicator color={colors.text} size="small" />
+                  ) : (
+                    <>
+                      <Ionicons name="cart-outline" size={22} color={colors.text} />
+                      <Text style={[styles.buttonText, { color: colors.text }]}>Subscribe monthly</Text>
+                    </>
+                  )}
                 </Pressable>
-
                 <Pressable
-                  style={[styles.buttonSecondary, { borderColor: colors.border, borderWidth: 1 }]}
+                  style={[styles.button, { backgroundColor: colors.accent }, purchasingProductId && styles.buttonDisabled]}
                   onPress={() => handlePurchase('007')}
+                  disabled={!!purchasingProductId || products.length === 0}
                 >
-                  <Text style={[styles.buttonTextSecondary, { color: colors.text }]}>
-                    {yearlyPrice}/year
-                  </Text>
+                  {purchasingProductId === '007' ? (
+                    <ActivityIndicator color={colors.text} size="small" />
+                  ) : (
+                    <>
+                      <Ionicons name="cart-outline" size={22} color={colors.text} />
+                      <Text style={[styles.buttonText, { color: colors.text }]}>Subscribe yearly</Text>
+                    </>
+                  )}
                 </Pressable>
-
                 <Pressable
-                  style={styles.restoreButton}
+                  style={[styles.button, styles.buttonOutlined, { borderColor: colors.borderLight }]}
                   onPress={handleRestore}
-                  disabled={iapState !== 'idle'}
+                  disabled={restoring}
                 >
-                  <Text style={[styles.restoreText, { color: colors.textSecondary }]}>
-                    Restore purchases
-                  </Text>
+                  {restoring ? (
+                    <ActivityIndicator color={colors.accent} size="small" />
+                  ) : (
+                    <Text style={[styles.buttonText, { color: colors.accent }]}>Restore purchases</Text>
+                  )}
                 </Pressable>
-
                 <Text style={[styles.note, { color: colors.textSecondary }]}>
                   Subscribe via the App Store. Manage or cancel from Settings → Manage subscription.
                 </Text>
               </>
             )}
-
-            {(iapState === 'purchasing' || iapState === 'restoring') && (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color={colors.accent} size="small" />
-                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                  {iapState === 'purchasing' ? 'Processing…' : 'Restoring…'}
-                </Text>
-              </View>
-            )}
           </>
         )}
 
-        {isPro && (
-          <Text style={[styles.proBadge, { color: colors.accent }]}>You have Pro</Text>
-        )}
+        {isPro && <Text style={[styles.proBadge, { color: colors.accent }]}>You have Pro</Text>}
       </ScrollView>
     </ThemedView>
   );
@@ -265,7 +236,7 @@ export default function UpgradeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: Layout.screenPadding, paddingBottom: Layout.screenPaddingBottom },
+  scroll: { padding: Layout.screenPadding },
   card: {
     alignItems: 'center',
     padding: Layout.cardPadding,
@@ -284,19 +255,12 @@ const styles = StyleSheet.create({
     borderRadius: Layout.radiusMd,
     marginBottom: Layout.rowGap,
   },
-  buttonSecondary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Layout.inputGap,
-    height: Layout.buttonHeight,
-    borderRadius: Layout.radiusMd,
-    marginBottom: Layout.rowGap,
+  buttonOutlined: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
   },
   buttonText: { fontSize: Layout.body, fontWeight: '600' },
-  buttonTextSecondary: { fontSize: Layout.body, fontWeight: '500' },
-  restoreButton: { paddingVertical: Layout.tightGap, marginBottom: Layout.sectionGap },
-  restoreText: { fontSize: Layout.bodySmall },
+  buttonDisabled: { opacity: 0.7 },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -311,13 +275,6 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   disabledText: { fontSize: Layout.body, textAlign: 'center' },
-  missingProductsHint: {
-    padding: Layout.cardPadding,
-    borderRadius: Layout.radiusMd,
-    borderWidth: 1,
-    marginBottom: Layout.sectionGap,
-  },
-  missingProductsText: { fontSize: Layout.bodySmall, textAlign: 'center', lineHeight: 20 },
   note: {
     fontSize: Layout.caption,
     marginTop: Layout.tightGap,

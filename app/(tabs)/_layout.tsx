@@ -156,7 +156,8 @@ export default function TabLayout() {
           iconColor="#FAFAFA"
           tintColor="#FAFAFA"
           backgroundColor="#0A0A0B"
-          blurEffect="systemChromeMaterialDark"
+          blurEffect="dark"
+          disableTransparentOnScrollEdge
           labelStyle={{ color: '#A1A1AA' }}
         >
           <NativeTabs.Trigger name="home">
