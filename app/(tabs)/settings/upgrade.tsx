@@ -6,6 +6,7 @@
  * In Expo Go: shows web upgrade option.
  */
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -27,6 +28,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
 import {
   IAP_FALLBACK_PRICES,
+  iapConnect,
   iapPurchase,
   iapRestore,
 } from '@/lib/iap';
@@ -34,6 +36,22 @@ import { isStoreBuild } from '@/utils/isStoreBuild';
 import { fetchProducts, type IAPProduct } from '@/utils/fetchProducts';
 
 const UPGRADE_BASE_URL = 'https://www.ringtap.me/upgrade';
+const TERMS_URL = 'https://www.ringtap.me/terms';
+const PRIVACY_URL = 'https://www.ringtap.me/privacy';
+
+function LegalLinks({ colors }: { colors: { accent: string; textSecondary: string } }) {
+  return (
+    <View style={styles.legalLinks}>
+      <Pressable onPress={() => Linking.openURL(TERMS_URL)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Text style={[styles.linkText, { color: colors.accent }]}>Terms of Use</Text>
+      </Pressable>
+      <Text style={[styles.linkSeparator, { color: colors.textSecondary }]}> · </Text>
+      <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Text style={[styles.linkText, { color: colors.accent }]}>Privacy Policy</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export default function UpgradeScreen() {
   const insets = useSafeAreaInsets();
@@ -45,17 +63,38 @@ export default function UpgradeScreen() {
   const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
 
+  const [productsError, setProductsError] = useState<string | null>(null);
+
   const loadProducts = useCallback(async () => {
     if (!isStoreBuild() || Platform.OS === 'web') return;
     setLoading(true);
-    const result = await fetchProducts();
-    setProducts(result.status === 'ok' ? result.products : []);
-    setLoading(false);
+    setProductsError(null);
+    try {
+      const result = await fetchProducts();
+      if (result.status === 'ok') {
+        setProducts(result.products);
+      } else {
+        setProductsError(result.error ?? 'Could not load subscription options');
+        setProducts([]);
+      }
+    } catch (e) {
+      setProductsError(e instanceof Error ? e.message : 'Failed to load');
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  // Pre-connect to App Store when screen loads (iPad/sandbox can be slow on first connect)
+  useEffect(() => {
+    if (isStoreBuild() && Platform.OS !== 'web') {
+      iapConnect().catch(() => {});
+    }
+  }, []);
 
   const monthlyProduct = products.find((p) => p.productId === '006');
   const yearlyProduct = products.find((p) => p.productId === '007');
@@ -83,6 +122,7 @@ export default function UpgradeScreen() {
   );
 
   const handleRestore = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!user?.id || !session?.access_token) {
       Alert.alert('Sign in required', 'Sign in to restore your Pro subscription.');
       return;
@@ -133,6 +173,7 @@ export default function UpgradeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Ionicons name="rocket-outline" size={48} color={colors.accent} />
@@ -145,10 +186,11 @@ export default function UpgradeScreen() {
         {isWebOnly ? (
           <>
             <Text style={[styles.price, { color: colors.text }]}>$9.99/mo or $99.99/yr</Text>
-            <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade}>
+            <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Ionicons name="open-outline" size={22} color={colors.text} />
               <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro</Text>
             </Pressable>
+            <LegalLinks colors={colors} />
             <Text style={[styles.note, { color: colors.textSecondary }]}>
               Opens the browser to subscribe via Stripe. Cancel anytime from Settings → Manage subscription.
             </Text>
@@ -161,51 +203,73 @@ export default function UpgradeScreen() {
                 In-app purchases require a development build. Use TestFlight or build with EAS to subscribe in-app.
               </Text>
             </View>
-            <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade}>
+            <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Ionicons name="open-outline" size={22} color={colors.text} />
               <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade via web</Text>
             </Pressable>
+            <LegalLinks colors={colors} />
             <Text style={[styles.note, { color: colors.textSecondary }]}>
               Subscribe via the website. Cancel anytime from Settings → Manage subscription.
             </Text>
           </>
         ) : (
           <>
+            <Text style={[styles.subscriptionTitle, { color: colors.text }]}>RingTap Pro</Text>
             <Text style={[styles.price, { color: colors.text }]}>
-              {monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly}/mo or {yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly}/yr
+              {monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly}/month or {yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly}/year
+            </Text>
+            <Text style={[styles.subscriptionLength, { color: colors.textSecondary }]}>
+              Auto-renewable subscription. Cancel anytime.
             </Text>
             {loading ? (
               <View style={styles.loadingRow}>
                 <ActivityIndicator color={colors.accent} size="small" />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading subscription options…</Text>
               </View>
+            ) : productsError ? (
+              <View style={styles.errorRow}>
+                <Text style={[styles.errorText, { color: colors.textSecondary }]}>{productsError}</Text>
+                <Pressable
+                  style={[styles.retryButton, { borderColor: colors.accent }]}
+                  onPress={loadProducts}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
+                </Pressable>
+              </View>
             ) : (
               <>
                 <Pressable
                   style={[styles.button, { backgroundColor: colors.accent }, purchasingProductId && styles.buttonDisabled]}
                   onPress={() => handlePurchase('006')}
-                  disabled={!!purchasingProductId || products.length === 0}
+                  disabled={!!purchasingProductId}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {purchasingProductId === '006' ? (
                     <ActivityIndicator color={colors.text} size="small" />
                   ) : (
                     <>
                       <Ionicons name="cart-outline" size={22} color={colors.text} />
-                      <Text style={[styles.buttonText, { color: colors.text }]}>Subscribe monthly</Text>
+                      <Text style={[styles.buttonText, { color: colors.text }]}>
+                        Subscribe monthly — {monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly}/mo
+                      </Text>
                     </>
                   )}
                 </Pressable>
                 <Pressable
                   style={[styles.button, { backgroundColor: colors.accent }, purchasingProductId && styles.buttonDisabled]}
                   onPress={() => handlePurchase('007')}
-                  disabled={!!purchasingProductId || products.length === 0}
+                  disabled={!!purchasingProductId}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {purchasingProductId === '007' ? (
                     <ActivityIndicator color={colors.text} size="small" />
                   ) : (
                     <>
                       <Ionicons name="cart-outline" size={22} color={colors.text} />
-                      <Text style={[styles.buttonText, { color: colors.text }]}>Subscribe yearly</Text>
+                      <Text style={[styles.buttonText, { color: colors.text }]}>
+                        Subscribe yearly — {yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly}/yr
+                      </Text>
                     </>
                   )}
                 </Pressable>
@@ -213,6 +277,7 @@ export default function UpgradeScreen() {
                   style={[styles.button, styles.buttonOutlined, { borderColor: colors.borderLight }]}
                   onPress={handleRestore}
                   disabled={restoring}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {restoring ? (
                     <ActivityIndicator color={colors.accent} size="small" />
@@ -220,6 +285,7 @@ export default function UpgradeScreen() {
                     <Text style={[styles.buttonText, { color: colors.accent }]}>Restore purchases</Text>
                   )}
                 </Pressable>
+                <LegalLinks colors={colors} />
                 <Text style={[styles.note, { color: colors.textSecondary }]}>
                   Subscribe via the App Store. Manage or cancel from Settings → Manage subscription.
                 </Text>
@@ -244,7 +310,9 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   title: { fontSize: 22, fontWeight: '700', marginTop: 16 },
-  price: { fontSize: 28, fontWeight: '800', marginTop: Layout.tightGap, marginBottom: Layout.rowGap },
+  subscriptionTitle: { fontSize: 18, fontWeight: '600', marginTop: 4 },
+  price: { fontSize: 24, fontWeight: '800', marginTop: Layout.tightGap, marginBottom: 4 },
+  subscriptionLength: { fontSize: Layout.caption, marginBottom: Layout.rowGap },
   subtitle: { fontSize: Layout.bodySmall + 1, marginTop: Layout.rowGap, textAlign: 'center' },
   button: {
     flexDirection: 'row',
@@ -268,6 +336,19 @@ const styles = StyleSheet.create({
     marginBottom: Layout.sectionGap,
   },
   loadingText: { fontSize: Layout.bodySmall },
+  errorRow: { alignItems: 'center', marginBottom: Layout.sectionGap },
+  errorText: { fontSize: Layout.bodySmall, marginBottom: Layout.rowGap, textAlign: 'center' },
+  retryButton: { paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderRadius: Layout.radiusMd },
+  retryText: { fontSize: Layout.body, fontWeight: '600' },
+  legalLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: Layout.tightGap,
+  },
+  linkText: { fontSize: Layout.caption, textDecorationLine: 'underline' },
+  linkSeparator: { fontSize: Layout.caption },
   disabledMessage: {
     padding: Layout.cardPadding,
     borderRadius: Layout.radiusMd,

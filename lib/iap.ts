@@ -93,6 +93,10 @@ export async function iapPurchase(
   const iap = getIAP();
   if (!iap) return { purchased: false, error: 'IAP not available' };
 
+  // Ensure connected before purchase (required for iPad/sandbox)
+  const connected = await iapConnect();
+  if (!connected) return { purchased: false, error: 'Could not connect to store. Please try again.' };
+
   const IAPResponseCode = iap.IAPResponseCode ?? { OK: 0, USER_CANCELED: 1, ERROR: 2, DEFERRED: 3 };
 
   let settled = false;
@@ -139,6 +143,9 @@ export async function iapRestore(
 ): Promise<{ restored: boolean; error?: string }> {
   const iap = getIAP();
   if (!iap) return { restored: false, error: 'IAP not available' };
+
+  const connected = await iapConnect();
+  if (!connected) return { restored: false, error: 'Could not connect to store. Please try again.' };
 
   try {
     const { responseCode, results } = await iap.getPurchaseHistoryAsync?.() ?? { responseCode: 1, results: [] };

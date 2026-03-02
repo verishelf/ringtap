@@ -90,6 +90,21 @@ When submitting for review, add a note in the **Notes for reviewer** field:
 
 > In-App Purchase: Pro subscription (products 006, 007). Sandbox account provided in App Review Information. Please sign in with that account to test Subscribe and Restore purchases. IAP validated successfully in sandbox before submission.
 
+## 10. Guideline 3.1.2 – Subscription Metadata (Required)
+
+Apps offering auto-renewable subscriptions must include:
+
+**In the app (Upgrade screen):**
+- Title of subscription (e.g. "RingTap Pro") ✓
+- Length of subscription (e.g. "1 month", "1 year") ✓
+- Price of subscription ✓
+- Functional link to **Terms of Use** (https://www.ringtap.me/terms) ✓
+- Functional link to **Privacy Policy** (https://www.ringtap.me/privacy) ✓
+
+**In App Store Connect metadata:**
+- **Privacy Policy URL** — App Store Connect → App Information → Privacy Policy URL: `https://www.ringtap.me/privacy`
+- **Terms of Use (EULA)** — Either use standard Apple EULA, or add link to `https://www.ringtap.me/terms` in App Description, or add custom EULA in App Information
+
 ## Quick Checklist
 
 | Check | Where |
@@ -100,3 +115,5 @@ When submitting for review, add a note in the **Notes for reviewer** field:
 | Product IDs match | `006`, `007` in code and App Store Connect |
 | Sandbox tested | Physical device, sandbox account signed in |
 | Sandbox account for review | App Store Connect → App → App Review Information |
+| Privacy Policy URL | App Store Connect → App Information |
+| Terms of Use / EULA | App Description or EULA field |
