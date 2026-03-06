@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import RevenueCatUI from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
@@ -20,8 +21,29 @@ export default function ManageSubscriptionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const { plan, status, refresh, hasStripeSubscription } = useSubscription();
+  const { plan, status, refresh, hasStripeSubscription, hasRevenueCatSubscription } = useSubscription();
   const [loading, setLoading] = useState(false);
+
+  const openCustomerCenter = useCallback(async () => {
+    if (Platform.OS === 'web') return;
+    setLoading(true);
+    try {
+      await RevenueCatUI.presentCustomerCenter({
+        callbacks: {
+          onRestoreCompleted: () => refresh(),
+          onRestoreFailed: () => refresh(),
+        },
+      });
+      await refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Could not open Customer Center';
+      if (!msg.includes('Preview API') && !msg.includes('Native module')) {
+        Alert.alert('Error', msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [refresh]);
 
   const openStripePortal = async () => {
     const {
@@ -66,14 +88,20 @@ export default function ManageSubscriptionScreen() {
   };
 
   const handleManage = async () => {
-    if (hasStripeSubscription) {
+    if (hasRevenueCatSubscription) {
+      await openCustomerCenter();
+    } else if (hasStripeSubscription) {
       await openStripePortal();
     } else {
       await openStoreSubscriptions();
     }
   };
 
-  const subscriptionSource = hasStripeSubscription ? 'Stripe' : 'App Store';
+  const subscriptionSource = hasRevenueCatSubscription
+    ? 'App Store (RevenueCat)'
+    : hasStripeSubscription
+      ? 'Stripe'
+      : 'App Store';
 
   return (
     <ThemedView style={styles.container}>
@@ -107,9 +135,11 @@ export default function ManageSubscriptionScreen() {
             <>
               <Ionicons name="open-outline" size={22} color={colors.text} />
               <Text style={[styles.buttonText, { color: colors.text }]}>
-                {hasStripeSubscription
-                  ? 'Manage Stripe billing'
-                  : 'Manage in App Store'}
+                {hasRevenueCatSubscription
+                  ? 'Manage subscription'
+                  : hasStripeSubscription
+                    ? 'Manage Stripe billing'
+                    : 'Manage in App Store'}
               </Text>
             </>
           )}

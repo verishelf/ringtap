@@ -45,10 +45,15 @@ eas build --platform android --profile production
 eas build --platform all --profile production
 ```
 
-Before building, set env vars in EAS:
+Before building, set env vars in EAS (Dashboard → Project → Secrets, or Environment variables):
 
-- **EAS Dashboard → Project → Environment variables**  
-  Add `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` for the **production** profile.
+- `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (required)
+- `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (for RevenueCat paywall)
+
+```bash
+eas secret:create --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_YOUR_KEY --scope project
+eas secret:create --name EXPO_PUBLIC_REVENUECAT_ANDROID_KEY --value goog_YOUR_KEY --scope project
+```
 
 Or use a local `.env` and run:
 

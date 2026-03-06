@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
@@ -9,6 +10,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function AboutScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
 
   const openFlaticon = () => {
@@ -25,7 +27,7 @@ export default function AboutScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.header, { borderBottomColor: colors.borderLight }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderLight, paddingTop: insets.top, paddingBottom: 12 }]}>
         <Pressable onPress={() => router.back()} style={styles.headerBack} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
@@ -67,8 +69,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Layout.screenPadding,
-    paddingTop: Layout.screenPadding,
-    paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerBack: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },

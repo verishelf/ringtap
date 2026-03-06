@@ -1,9 +1,9 @@
 /**
  * Upgrade to Pro screen
  *
- * Uses expo-in-app-purchases for App Store subscriptions.
- * IAP enabled in store builds (TestFlight, App Store). Use isStoreBuild() to gate the UI.
- * In Expo Go: shows web upgrade option.
+ * Uses RevenueCat for in-app subscriptions (Paywall UI).
+ * When RevenueCat is available: presents RevenueCat Paywall.
+ * Fallback: web upgrade (Stripe) or legacy IAP for store builds.
  */
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -19,6 +19,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import RevenueCatUI from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
@@ -26,12 +27,14 @@ import { Layout } from '@/constants/theme';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
+import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import {
   IAP_FALLBACK_PRICES,
   iapConnect,
   iapPurchase,
   iapRestore,
 } from '@/lib/iap';
+import { ENTITLEMENT_ID } from '@/lib/revenuecat';
 import { isStoreBuild } from '@/utils/isStoreBuild';
 import { fetchProducts, type IAPProduct } from '@/utils/fetchProducts';
 
@@ -58,12 +61,34 @@ export default function UpgradeScreen() {
   const colors = useThemeColors();
   const { user, session } = useSession();
   const { isPro, refresh } = useSubscription();
+  const { isAvailable: isRevenueCatAvailable, offering } = useRevenueCat();
   const [products, setProducts] = useState<IAPProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const [presentingPaywall, setPresentingPaywall] = useState(false);
 
   const [productsError, setProductsError] = useState<string | null>(null);
+
+  const handlePresentRevenueCatPaywall = useCallback(async () => {
+    if (Platform.OS === 'web') return;
+    setPresentingPaywall(true);
+    try {
+      // Use presentPaywall to always show when user taps; presentPaywallIfNeeded can skip if already Pro
+      const result = await RevenueCatUI.presentPaywall({
+        offering: offering ?? undefined,
+        displayCloseButton: true,
+      });
+      if (result === RevenueCatUI.PAYWALL_RESULT.PURCHASED || result === RevenueCatUI.PAYWALL_RESULT.RESTORED) {
+        await refresh();
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Could not open paywall';
+      Alert.alert('Paywall error', msg);
+    } finally {
+      setPresentingPaywall(false);
+    }
+  }, [offering, refresh]);
 
   const loadProducts = useCallback(async () => {
     if (!isStoreBuild() || Platform.OS === 'web') return;
@@ -193,6 +218,41 @@ export default function UpgradeScreen() {
             <LegalLinks colors={colors} />
             <Text style={[styles.note, { color: colors.textSecondary }]}>
               Opens the browser to subscribe via Stripe. Cancel anytime from Settings → Manage subscription.
+            </Text>
+          </>
+        ) : isRevenueCatAvailable ? (
+          <>
+            <Text style={[styles.subscriptionTitle, { color: colors.text }]}>RingTap Pro</Text>
+            <Text style={[styles.price, { color: colors.text }]}>Monthly, yearly, or lifetime</Text>
+            <Text style={[styles.subscriptionLength, { color: colors.textSecondary }]}>
+              Subscribe in-app. Cancel anytime.
+            </Text>
+            <Pressable
+              style={[styles.button, { backgroundColor: colors.accent }, presentingPaywall && styles.buttonDisabled]}
+              onPress={handlePresentRevenueCatPaywall}
+              disabled={presentingPaywall}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              {presentingPaywall ? (
+                <ActivityIndicator color={colors.text} size="small" />
+              ) : (
+                <>
+                  <Ionicons name="cart-outline" size={22} color={colors.text} />
+                  <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro</Text>
+                </>
+              )}
+            </Pressable>
+            <Pressable
+              style={[styles.button, styles.buttonOutlined, { borderColor: colors.borderLight }]}
+              onPress={handleExternalUpgrade}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="open-outline" size={22} color={colors.accent} />
+              <Text style={[styles.buttonText, { color: colors.accent }]}>Upgrade via web</Text>
+            </Pressable>
+            <LegalLinks colors={colors} />
+            <Text style={[styles.note, { color: colors.textSecondary }]}>
+              Subscribe via the App Store. Manage or cancel from Settings → Manage subscription.
             </Text>
           </>
         ) : !iapEnabled ? (

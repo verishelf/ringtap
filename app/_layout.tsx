@@ -17,6 +17,7 @@ import { Colors } from '@/constants/theme';
 import { AppearanceProvider } from '@/contexts/AppearanceContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
+import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useActivation } from '@/hooks/useActivation';
 
@@ -117,11 +118,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <AppearanceProvider>
-          <NotificationsProvider>
-            <RootLayoutNav />
-          </NotificationsProvider>
-        </AppearanceProvider>
+        <RevenueCatProvider>
+          <AppearanceProvider>
+            <NotificationsProvider>
+              <RootLayoutNav />
+            </NotificationsProvider>
+          </AppearanceProvider>
+        </RevenueCatProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
