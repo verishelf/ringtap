@@ -13,7 +13,6 @@ import * as Haptics from 'expo-haptics';
 import { NotificationListener } from '@/components/NotificationListener';
 import { Colors } from '@/constants/theme';
 import { useNotifications } from '@/contexts/NotificationsContext';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSession } from '@/hooks/useSession';
 import { savePushToken } from '@/lib/api';
 import { getExpoPushTokenAsync } from '@/utils/registerPushNotifications';
@@ -21,8 +20,7 @@ import { getExpoPushTokenAsync } from '@/utils/registerPushNotifications';
 const TAB_BAR_HEIGHT = 49;
 
 function AndroidTabs() {
-  const colorScheme = useColorScheme();
-  const c = Colors[colorScheme ?? 'dark'];
+  const c = Colors.dark;
   const insets = useSafeAreaInsets();
 
   return (
@@ -51,7 +49,7 @@ function AndroidTabs() {
             style={[
               StyleSheet.absoluteFill,
               {
-                backgroundColor: colorScheme === 'dark' ? '#0A0A0B' : 'rgba(250,250,250,0.92)',
+                backgroundColor: '#0A0A0B',
                 overflow: 'hidden',
               },
             ]}
@@ -127,8 +125,6 @@ function NativeTabHaptic() {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const c = Colors[colorScheme ?? 'dark'];
   const { user } = useSession();
   const { prefs, permissionStatus } = useNotifications();
 
