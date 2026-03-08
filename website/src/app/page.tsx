@@ -111,8 +111,9 @@ export default function Home() {
         </div>
       </ParallaxHero>
 
-      {/* 2. Demo — Show the tap moment */}
-      <section id="demo" className="border-t border-border-light/50 py-24 px-6">
+      {/* 2. Demo / How it works — Show the tap moment */}
+      <div id="how-it-works">
+        <section id="demo" className="border-t border-border-light/50 py-24 px-6">
         <FadeInOnScroll className="mx-auto max-w-4xl">
           <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
             See it in action
@@ -145,12 +146,13 @@ export default function Home() {
                 </div>
               </div>
             </Link>
-            <div className="mt-8">
+            <div id="sample-profile" className="mt-8">
               <SampleProfilePreview />
             </div>
           </div>
         </FadeInOnScroll>
       </section>
+      </div>
 
       {/* 3. Benefits — Why this improves their networking */}
       <section id="benefits" className="border-t border-border-light/50 py-24 px-6">
@@ -400,7 +402,7 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-muted-light">
-            Or <a href="#download" className="text-accent hover:underline">download the app</a> for iOS and Android.
+            Or <a href="/#download" className="text-accent hover:underline">download the app</a> for iOS and Android.
           </p>
           <div className="mt-10 pt-10 border-t border-border-light/50">
             <ShareSection />

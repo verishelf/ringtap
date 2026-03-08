@@ -13,14 +13,14 @@ type NavLinkItem = {
 };
 
 const homeLinks: NavLinkItem[] = [
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#store", label: "Shop" },
+  { href: "/#features", label: "Features" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#store", label: "Shop" },
   { href: "/store", label: "Store" },
   { href: "/about", label: "About" },
   { href: "/blog", label: "Blog" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#download", label: "Download", cta: true },
+  { href: "/#pricing", label: "Pricing" },
+  { href: "/#download", label: "Download", cta: true },
 ];
 
 const storeLinks: NavLinkItem[] = [
