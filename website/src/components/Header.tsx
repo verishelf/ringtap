@@ -100,10 +100,13 @@ export function Header({
           {variant === "store" && (
             <Link
               href="/store/cart"
-              className="relative text-sm font-medium text-muted-light hover:text-foreground transition-colors"
+              className="relative inline-flex items-center gap-1 text-sm font-medium text-muted-light hover:text-foreground transition-colors"
               onClick={() => setMenuOpen(false)}
             >
               Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-1 h-2 w-2 rounded-full bg-red-500" aria-hidden />
+              )}
             </Link>
           )}
           {links.map((link) => (
@@ -121,10 +124,13 @@ export function Header({
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
-          className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg text-foreground hover:bg-surface-elevated transition-colors"
+          className="md:hidden relative flex h-10 w-10 items-center justify-center rounded-lg text-foreground hover:bg-surface-elevated transition-colors"
           aria-expanded={menuOpen}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
+          {variant === "store" && cartCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" aria-hidden />
+          )}
           {menuOpen ? (
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -148,10 +154,13 @@ export function Header({
             <div className="border-b border-border-light/30">
               <Link
                 href="/store/cart"
-                className="block py-3 text-sm font-medium text-muted-light hover:text-foreground"
+                className="relative inline-flex items-center gap-2 block py-3 text-sm font-medium text-muted-light hover:text-foreground"
                 onClick={() => setMenuOpen(false)}
               >
                 Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+                {cartCount > 0 && (
+                  <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" aria-hidden />
+                )}
               </Link>
             </div>
           )}
