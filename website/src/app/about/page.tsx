@@ -5,29 +5,75 @@ import Link from "next/link";
 const SITE_URL = "https://www.ringtap.me";
 
 export const metadata: Metadata = {
-  title: "About — RingTap",
+  title: "About RingTap — Digital Business Card App | NFC & QR Contact Sharing",
   description:
-    "RingTap is your digital business card. Share your profile instantly with NFC rings, QR codes, or your personal link. Learn more about our mission and how we're changing contact sharing.",
+    "Learn about RingTap, the digital business card app that lets you share your profile instantly with NFC rings, QR codes, or your personal link. Free to start. No app needed for recipients. ringtap.me/you.",
+  keywords: [
+    "about RingTap",
+    "digital business card app",
+    "NFC business card",
+    "NFC ring",
+    "QR code business card",
+    "contact sharing app",
+    "ringtap.me",
+    "digital profile",
+  ],
   openGraph: {
-    title: "About — RingTap",
-    description: "Your digital business card. One tap shares your profile with NFC, QR, or link.",
+    title: "About RingTap — Digital Business Card. One Tap to Share.",
+    description: "RingTap is your digital business card. Share your profile with NFC, QR, or link. Free to start. Learn about our mission.",
     url: `${SITE_URL}/about`,
     type: "website",
+    siteName: "RingTap",
+    images: [{ url: `${SITE_URL}/og.png`, width: 1200, height: 630, alt: "RingTap - Digital business card" }],
   },
   twitter: {
-    card: "summary",
-    title: "About — RingTap",
-    description: "Your digital business card. One tap shares your profile.",
+    card: "summary_large_image",
+    title: "About RingTap — Digital Business Card. One Tap.",
+    description: "Share your profile with NFC, QR, or link. Free to start.",
   },
   alternates: { canonical: `${SITE_URL}/about` },
+  robots: { index: true, follow: true },
+  category: "technology",
+};
+
+const aboutPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  name: "About RingTap — Digital Business Card App",
+  description: "RingTap is a digital business card app. Share your profile instantly with NFC rings, QR codes, or your personal link. Free to start. No app needed for recipients.",
+  url: `${SITE_URL}/about`,
+  mainEntity: {
+    "@type": "Organization",
+    name: "RingTap",
+    url: SITE_URL,
+    logo: `${SITE_URL}/og.png`,
+    description: "Digital business card app. Share your profile with NFC, QR, or link. Free to start.",
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "About", item: `${SITE_URL}/about` },
+  ],
 };
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <Header variant="home" />
 
-      <main className="pt-24 pb-20 px-6">
+      <main className="pt-24 pb-20 px-6" role="main">
         <div className="mx-auto max-w-3xl">
           <Link
             href="/"
@@ -46,9 +92,9 @@ export default function AboutPage() {
             Your digital business card. One tap to share.
           </p>
 
-          <div className="mt-12 space-y-10 text-foreground">
-            <section>
-              <h2 className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
+          <article className="mt-12 space-y-10 text-foreground">
+            <section aria-labelledby="what-we-do">
+              <h2 id="what-we-do" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
                 What we do
               </h2>
               <p className="mt-4 text-muted-light leading-relaxed">
@@ -56,8 +102,8 @@ export default function AboutPage() {
               </p>
             </section>
 
-            <section>
-              <h2 className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
+            <section aria-labelledby="how-it-works">
+              <h2 id="how-it-works" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
                 How it works
               </h2>
               <ul className="mt-4 space-y-3 text-muted-light leading-relaxed">
@@ -76,8 +122,8 @@ export default function AboutPage() {
               </ul>
             </section>
 
-            <section>
-              <h2 className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
+            <section aria-labelledby="our-mission">
+              <h2 id="our-mission" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
                 Our mission
               </h2>
               <p className="mt-4 text-muted-light leading-relaxed">
@@ -122,7 +168,7 @@ export default function AboutPage() {
                 Get RingTap
               </Link>
             </div>
-          </div>
+          </article>
         </div>
       </main>
     </div>
