@@ -9,6 +9,7 @@ import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
+    InteractionManager,
     Platform,
     Pressable,
     ScrollView,
@@ -63,13 +64,17 @@ export default function HomeScreen() {
 
   const glowAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const glowLoop = Animated.loop(
+  const glowLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  // Use useNativeDriver: false for both to avoid mixing native/JS drivers in same view tree (crashes on some devices)
+  const startGlowLoops = useCallback(() => {
+    glowLoopRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, {
           toValue: 1,
           duration: 1500,
-          useNativeDriver: false, // needed for color interpolation
+          useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
@@ -78,27 +83,41 @@ export default function HomeScreen() {
         }),
       ])
     );
-    const pulseLoop = Animated.loop(
+    pulseLoopRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1.08,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0.95,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );
-    glowLoop.start();
-    pulseLoop.start();
-    return () => {
-      glowLoop.stop();
-      pulseLoop.stop();
-    };
+    glowLoopRef.current.start();
+    pulseLoopRef.current.start();
   }, [glowAnim, pulseAnim]);
+
+  const stopGlowLoops = useCallback(() => {
+    glowLoopRef.current?.stop();
+    pulseLoopRef.current?.stop();
+    glowLoopRef.current = null;
+    pulseLoopRef.current = null;
+  }, []);
+
+  // Start on focus, stop on blur — avoids crash when switching tabs or unmounting during animation
+  useFocusEffect(
+    useCallback(() => {
+      const task = InteractionManager.runAfterInteractions(() => startGlowLoops());
+      return () => {
+        task.cancel();
+        stopGlowLoops();
+      };
+    }, [startGlowLoops, stopGlowLoops])
+  );
 
   const loadDashboard = useCallback(async () => {
     if (!user?.id) {

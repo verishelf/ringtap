@@ -1,10 +1,10 @@
 'use client';
 
+import { getDotsFontEnhancementWeb, getProfileFontFamilyWeb } from '@/lib/profileFonts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getProfileFontFamilyWeb, getDotsFontEnhancementWeb } from '@/lib/profileFonts';
 
 declare global {
   interface Window {
@@ -260,6 +260,11 @@ export default function UsernameProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [calendlyModalOpen, setCalendlyModalOpen] = useState(false);
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [connectEmail, setConnectEmail] = useState('');
+  const [connectLoading, setConnectLoading] = useState(false);
+  const [connectSent, setConnectSent] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (!slug) {
@@ -341,6 +346,34 @@ export default function UsernameProfilePage() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://www.ringtap.me';
+
+  const handleConnect = useCallback(async () => {
+    const trimmed = connectEmail.trim();
+    if (!trimmed) {
+      setConnectError('Enter your email');
+      return;
+    }
+    if (!profile?.user_id) return;
+    setConnectLoading(true);
+    setConnectError(null);
+    try {
+      const { getSupabase } = await import('@/lib/supabase');
+      const supabase = getSupabase();
+      const redirectTo = `${SITE_URL}/auth/callback?connect=1&owner_id=${encodeURIComponent(profile.user_id)}`;
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+        options: { emailRedirectTo: redirectTo },
+      });
+      if (otpError) throw otpError;
+      setConnectSent(true);
+    } catch (e) {
+      setConnectError(e instanceof Error ? e.message : 'Failed to send link');
+    } finally {
+      setConnectLoading(false);
+    }
+  }, [connectEmail, profile?.user_id]);
 
   if (loading) {
     return (
@@ -574,8 +607,24 @@ export default function UsernameProfilePage() {
             </div>
           )}
 
-          {/* Save contact .vcf + Save in App — always shown */}
+          {/* Connect (lead capture + signup) + Save contact — always shown */}
           <div className="border-t border-border-light px-6 py-4 space-y-3">
+            {profile.user_id && (
+              <button
+                type="button"
+                onClick={() => setConnectModalOpen(true)}
+                className={`w-full ${btnClass} bg-accent text-background px-4 py-3.5 text-center font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2`}
+                style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}), ...(accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : {}) }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Connect with {profile.name?.trim() || profile.username}
+              </button>
+            )}
             {profile.theme?.calendlyUrl?.trim() ? (
               <button
                 type="button"
@@ -616,8 +665,9 @@ export default function UsernameProfilePage() {
               </a>
             )}
             <p className="text-xs text-muted-light mt-1.5 text-center">
-              Downloads a .vcf file to add to your phone contacts
-              {userId ? ' · Exchange contact opens the app and adds you both to each other\'s contacts' : ''}
+              {profile.user_id ? 'Connect creates your RingTap account and adds you to their contacts. ' : ''}
+              Save contact downloads a .vcf file
+              {userId ? ' · Exchange opens the app for mutual contact save' : ''}
             </p>
           </div>
         </div>
@@ -628,6 +678,86 @@ export default function UsernameProfilePage() {
           <Link href="/" className="text-accent hover:underline" style={accentColor ? { color: accentColor } : undefined}>RingTap</Link>
         </p>
       </div>
+
+      {/* Connect modal — lead capture + signup */}
+      {connectModalOpen && profile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          onClick={() => !connectSent && setConnectModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Connect and get your own RingTap card"
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl bg-surface border border-border-light overflow-hidden shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-5">
+              <h2 className="text-xl font-bold text-foreground" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>
+                Connect with {profile.name?.trim() || profile.username}
+              </h2>
+              <p className="mt-1 text-sm text-muted-light">
+                Enter your email to get your own RingTap card. You&apos;ll be added to their contacts automatically.
+              </p>
+              {connectSent ? (
+                <div className="mt-6 text-center">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mb-4">
+                    <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-foreground font-medium">Check your email</p>
+                  <p className="mt-1 text-sm text-muted-light">
+                    We sent a link to <strong className="text-foreground">{connectEmail}</strong>. Click it to create your account and connect.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setConnectModalOpen(false); setConnectSent(false); setConnectEmail(''); setConnectError(null); }}
+                    className="mt-6 rounded-xl bg-accent px-6 py-2.5 text-background font-semibold hover:opacity-90"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label htmlFor="connect-email" className="block text-sm font-medium text-foreground mb-1">Email</label>
+                    <input
+                      id="connect-email"
+                      type="email"
+                      value={connectEmail}
+                      onChange={(e) => { setConnectEmail(e.target.value); setConnectError(null); }}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      disabled={connectLoading}
+                      className="w-full rounded-xl border border-border-light bg-surface-elevated px-4 py-3 text-foreground placeholder:text-muted-light focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-70"
+                    />
+                  </div>
+                  {connectError && <p className="text-sm text-destructive">{connectError}</p>}
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setConnectModalOpen(false)}
+                      className="flex-1 rounded-xl border border-border-light px-4 py-3 font-semibold text-foreground hover:bg-surface-elevated transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConnect}
+                      disabled={connectLoading}
+                      className="flex-1 rounded-xl bg-accent px-4 py-3 font-semibold text-background hover:opacity-90 disabled:opacity-70 transition-opacity"
+                      style={accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : undefined}
+                    >
+                      {connectLoading ? 'Sending…' : 'Connect'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Calendly modal */}
       {calendlyModalOpen && profile?.theme?.calendlyUrl?.trim() ? (

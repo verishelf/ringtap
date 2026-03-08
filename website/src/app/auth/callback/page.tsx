@@ -10,6 +10,8 @@ const DEEP_LINK = 'ringtap://';
 function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get('plan') === 'pro' ? 'pro' : 'free';
+  const isConnect = searchParams.get('connect') === '1';
+  const ownerId = searchParams.get('owner_id')?.trim() ?? '';
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ function AuthCallbackContent() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        setError('Could not sign you in. The link may have expired. Try signing up again.');
+        setError('Could not sign you in. The link may have expired. Try connecting again.');
         setStatus('error');
         return;
       }
@@ -47,6 +49,23 @@ function AuthCallbackContent() {
         return;
       }
 
+      // Connect flow: add viewer to profile owner's contacts
+      if (isConnect && ownerId && /^[0-9a-f-]{36}$/i.test(ownerId)) {
+        const connectRes = await fetch('/api/connect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ owner_id: ownerId }),
+        });
+        if (!connectRes.ok) {
+          const json = await connectRes.json().catch(() => ({}));
+          console.warn('[auth/callback] Connect failed:', json.error);
+          // Don't block — profile was created; contact save is best-effort
+        }
+      }
+
       setStatus('ready');
 
       if (plan === 'pro') {
@@ -63,7 +82,7 @@ function AuthCallbackContent() {
       setError(e instanceof Error ? e.message : 'Something went wrong');
       setStatus('error');
     }
-  }, [plan]);
+  }, [plan, isConnect, ownerId]);
 
   useEffect(() => {
     init();
