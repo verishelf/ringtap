@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Dimensions,
     Modal,
     Pressable,
     ScrollView,
@@ -108,6 +109,7 @@ export default function ProfileEditorScreen() {
   const { isPro } = useSubscription();
   const [isEditing, setIsEditing] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -612,7 +614,10 @@ export default function ProfileEditorScreen() {
             <View style={[styles.viewCard, { backgroundColor: colors.surface, borderColor: isPro ? (profile.theme?.profileBorderColor ?? '#D4AF37') : colors.borderLight }]}>
               {/* Centered header: avatar, name, title, tagline */}
               <View style={styles.viewCardHeaderCentered}>
-                <View style={[styles.viewCardAvatarWrap, isPro && [styles.viewCardAvatarProRing, { borderColor: profile.theme?.profileBorderColor ?? '#D4AF37' }]]}>
+                <Pressable
+                  style={[styles.viewCardAvatarWrap, isPro && [styles.viewCardAvatarProRing, { borderColor: profile.theme?.profileBorderColor ?? '#D4AF37' }]]}
+                  onPress={() => profile.avatarUrl && setAvatarModalVisible(true)}
+                >
                   {profile.avatarUrl ? (
                     <Image source={{ uri: profile.avatarUrl }} style={styles.viewCardAvatarLarge} />
                   ) : (
@@ -620,7 +625,7 @@ export default function ProfileEditorScreen() {
                       <Ionicons name="person" size={48} color={colors.textSecondary} />
                     </View>
                   )}
-                </View>
+                </Pressable>
                 <View style={styles.viewCardNameRow}>
                   <Text style={[styles.viewCardName, { color: colors.text, fontFamily: getProfileFontFamily(profile.theme?.typography), ...(getDotsFontEnhancement(profile.theme?.typography) ?? {}) }]} numberOfLines={1}>
                     {profile.name?.trim() || 'Your name'}
@@ -766,6 +771,22 @@ export default function ProfileEditorScreen() {
             />
           </ScrollView>
         </View>
+      </Modal>
+
+      {/* Avatar full-size modal */}
+      <Modal visible={avatarModalVisible} transparent animationType="fade" onRequestClose={() => setAvatarModalVisible(false)}>
+        <Pressable
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 }]}
+          onPress={() => setAvatarModalVisible(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <Image
+              source={{ uri: profile.avatarUrl! }}
+              style={{ width: Math.min(Dimensions.get('window').width - 48, 320), height: Math.min(Dimensions.get('window').width - 48, 320), borderRadius: 160 }}
+              contentFit="cover"
+            />
+          </Pressable>
+        </Pressable>
       </Modal>
 
     </ThemedView>

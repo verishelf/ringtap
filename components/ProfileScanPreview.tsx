@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getProfileFontFamily, getDotsFontEnhancement } from '@/lib/profileFonts';
 import { Layout } from '@/constants/theme';
@@ -144,8 +144,12 @@ export function ProfileScanPreview({
 
   const borderColor = (showProRing && (profile.theme?.profileBorderColor ?? PRO_RING_COLOR)) || colors.borderLight;
   const cardBorderColor = showProRing ? (profile.theme?.profileBorderColor ?? PRO_RING_COLOR) : colors.borderLight;
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
+  const { width: screenWidth } = Dimensions.get('window');
+  const avatarModalSize = Math.min(screenWidth - 48, 320);
 
   return (
+    <>
     <View style={styles.wrapper}>
       <View style={[styles.card, { borderColor: cardBorderColor, backgroundColor: colors.surface }]}>
         {/* Header with optional background behind avatar, name, title, tagline */}
@@ -157,7 +161,10 @@ export function ProfileScanPreview({
             </View>
           ) : null}
           <View style={styles.headerCentered}>
-            <View style={[styles.avatarWrap, showProRing && [styles.avatarProRing, { borderColor }]]}>
+            <Pressable
+              style={[styles.avatarWrap, showProRing && [styles.avatarProRing, { borderColor }]]}
+              onPress={() => profile.avatarUrl && setAvatarModalVisible(true)}
+            >
               {profile.avatarUrl ? (
                 <Image source={{ uri: profile.avatarUrl }} style={styles.avatarLarge} />
               ) : (
@@ -165,7 +172,7 @@ export function ProfileScanPreview({
                   <Ionicons name="person" size={48} color={colors.textSecondary} />
                 </View>
               )}
-            </View>
+            </Pressable>
             <View style={styles.nameRow}>
               <Text style={[styles.nameCentered, { color: colors.text, fontFamily, ...(dotsEnhance ?? {}) }]} numberOfLines={1}>
                 {profile.name?.trim() || 'Your name'}
@@ -346,6 +353,27 @@ export function ProfileScanPreview({
         )}
       </View>
     </View>
+
+    <Modal
+      visible={avatarModalVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setAvatarModalVisible(false)}
+    >
+      <Pressable
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 }]}
+        onPress={() => setAvatarModalVisible(false)}
+      >
+        <Pressable onPress={(e) => e.stopPropagation()} style={{ width: avatarModalSize, height: avatarModalSize }}>
+          <Image
+            source={{ uri: profile.avatarUrl! }}
+            style={{ width: avatarModalSize, height: avatarModalSize, borderRadius: avatarModalSize / 2 }}
+            contentFit="cover"
+          />
+        </Pressable>
+      </Pressable>
+    </Modal>
+    </>
   );
 }
 

@@ -261,6 +261,7 @@ export default function UsernameProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [calendlyModalOpen, setCalendlyModalOpen] = useState(false);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [connectEmail, setConnectEmail] = useState('');
   const [connectLoading, setConnectLoading] = useState(false);
   const [connectSent, setConnectSent] = useState(false);
@@ -346,6 +347,13 @@ export default function UsernameProfilePage() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  // Auto-open Connect modal when profile loads (lead capture)
+  useEffect(() => {
+    if (!loading && profile?.user_id && !isInApp) {
+      setConnectModalOpen(true);
+    }
+  }, [loading, profile?.user_id, isInApp]);
 
   const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://www.ringtap.me';
 
@@ -440,9 +448,12 @@ export default function UsernameProfilePage() {
               </>
             ) : null}
             <div className="relative">
-              <div
-                className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-surface-elevated ${profile.plan === 'pro' ? 'w-[94px] h-[94px] border-[3px]' : 'w-[88px] h-[88px] border border-border-light'}`}
+              <button
+                type="button"
+                onClick={() => profile.avatar_url && setAvatarModalOpen(true)}
+                className={`mx-auto mb-4 flex items-center justify-center rounded-full bg-surface-elevated cursor-pointer hover:opacity-90 transition-opacity ${profile.plan === 'pro' ? 'w-[94px] h-[94px] border-[3px]' : 'w-[88px] h-[88px] border border-border-light'}`}
                 style={profile.plan === 'pro' ? { borderColor: proBorderColor } : undefined}
+                aria-label="View profile photo"
               >
                 {profile.avatar_url ? (
                   <img
@@ -455,7 +466,7 @@ export default function UsernameProfilePage() {
                     {profile.name?.charAt(0) ?? '?'}
                   </div>
                 )}
-              </div>
+              </button>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>
                 {profile.name?.trim() || 'No name'}
                 {profile.plan === 'pro' ? (
@@ -678,6 +689,35 @@ export default function UsernameProfilePage() {
           <Link href="/" className="text-accent hover:underline" style={accentColor ? { color: accentColor } : undefined}>RingTap</Link>
         </p>
       </div>
+
+      {/* Avatar modal — full-size profile photo */}
+      {avatarModalOpen && profile?.avatar_url && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+          onClick={() => setAvatarModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Profile photo"
+        >
+          <button
+            type="button"
+            onClick={() => setAvatarModalOpen(false)}
+            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          <img
+            src={profile.avatar_url}
+            alt={profile.name?.trim() || 'Profile photo'}
+            className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* Connect modal — lead capture + signup */}
       {connectModalOpen && profile && (
