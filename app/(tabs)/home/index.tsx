@@ -61,25 +61,44 @@ export default function HomeScreen() {
   const [displayViews, setDisplayViews] = useState(0);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
-  const glowAnim = useRef(new Animated.Value(0.5)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    const loop = Animated.loop(
+    const glowLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 1200,
-          useNativeDriver: true,
+          duration: 1500,
+          useNativeDriver: false, // needed for color interpolation
         }),
         Animated.timing(glowAnim, {
-          toValue: 0.5,
-          duration: 1200,
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.08,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.95,
+          duration: 1000,
           useNativeDriver: true,
         }),
       ])
     );
-    loop.start();
-    return () => loop.stop();
-  }, [glowAnim]);
+    glowLoop.start();
+    pulseLoop.start();
+    return () => {
+      glowLoop.stop();
+      pulseLoop.stop();
+    };
+  }, [glowAnim, pulseAnim]);
 
   const loadDashboard = useCallback(async () => {
     if (!user?.id) {
@@ -229,10 +248,20 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Tap to share — glowing rings */}
+        {/* Tap to share — colorful glowing rings */}
         <Link href="/share/qr" asChild>
-          <Pressable style={[styles.scanRingWrap, styles.scanRingGlow, { backgroundColor: colors.surface + '12' }]}>
-            <View style={[styles.scanRingContainer, { width: RING_SIZE, height: RING_SIZE }]}>
+          <Pressable style={[styles.scanRingWrap, styles.scanRingGlowShadow, { backgroundColor: colors.surface + '18' }]}>
+            <Animated.View
+                style={[
+                  styles.scanRingContainer,
+                  {
+                    width: RING_SIZE,
+                    height: RING_SIZE,
+                    transform: [{ scale: pulseAnim }],
+                  },
+                ]}
+              >
+              {/* Outer ring — cyan/magenta pulse */}
               <Animated.View
                 style={[
                   styles.scanRingOuter,
@@ -240,29 +269,57 @@ export default function HomeScreen() {
                     width: RING_SIZE,
                     height: RING_SIZE,
                     borderRadius: RING_SIZE / 2,
-                    borderColor: colors.borderLight,
-                    opacity: glowAnim.interpolate({ inputRange: [0.5, 1], outputRange: [0.6, 1] }),
+                    borderColor: glowAnim.interpolate({
+                      inputRange: [0, 0.33, 0.66, 1],
+                      outputRange: ['#00D4FF', '#B84DFF', '#FF6B9D', '#00D4FF'],
+                    }),
+                    opacity: glowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.5, 1, 0.5] }),
+                    borderWidth: 4,
                   },
                 ]}
               />
+              {/* Mid ring — accent/yellow pulse */}
               <Animated.View
                 style={[
                   styles.scanRingMid,
                   {
-                    width: RING_SIZE - 24,
-                    height: RING_SIZE - 24,
-                    borderRadius: (RING_SIZE - 24) / 2,
-                    borderColor: colors.accent,
-                    left: 12,
-                    top: 12,
-                    opacity: glowAnim,
+                    width: RING_SIZE - 20,
+                    height: RING_SIZE - 20,
+                    borderRadius: (RING_SIZE - 20) / 2,
+                    borderColor: glowAnim.interpolate({
+                      inputRange: [0, 0.33, 0.66, 1],
+                      outputRange: [colors.accent, '#FFD93D', '#6BFF6B', colors.accent],
+                    }),
+                    left: 10,
+                    top: 10,
+                    opacity: glowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }),
+                    borderWidth: 3,
+                  },
+                ]}
+              />
+              {/* Inner ring — soft glow */}
+              <Animated.View
+                style={[
+                  styles.scanRingOuter,
+                  {
+                    width: RING_SIZE - 40,
+                    height: RING_SIZE - 40,
+                    borderRadius: (RING_SIZE - 40) / 2,
+                    left: 20,
+                    top: 20,
+                    borderColor: glowAnim.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: ['#B84DFF', '#00D4FF', '#B84DFF'],
+                    }),
+                    opacity: glowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.4, 0.8, 0.4] }),
+                    borderWidth: 2,
                   },
                 ]}
               />
               <View style={[styles.scanRingInner, { width: INNER_CIRCLE, height: INNER_CIRCLE, borderRadius: INNER_CIRCLE / 2, backgroundColor: colors.surface, left: (RING_SIZE - INNER_CIRCLE) / 2, top: (RING_SIZE - INNER_CIRCLE) / 2 }]}>
                 <Ionicons name="phone-portrait-outline" size={28} color={colors.accent} />
               </View>
-            </View>
+            </Animated.View>
             <Text style={[styles.scanRingLabel, { color: colors.text }]}>Tap to share</Text>
             <Text style={[styles.scanRingHint, { color: colors.textSecondary }]}>NFC or QR — your card, one tap</Text>
           </Pressable>
@@ -490,6 +547,19 @@ const styles = StyleSheet.create({
     paddingBottom: Layout.cardPadding + 12,
     borderRadius: Layout.radiusXl,
   },
+  scanRingGlowShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#00D4FF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.75,
+        shadowRadius: 40,
+      },
+      android: {
+        elevation: 24,
+      },
+    }),
+  },
   dashboard: { gap: Layout.sectionGap },
   cardGlow: {
     ...Platform.select({
@@ -501,19 +571,6 @@ const styles = StyleSheet.create({
       },
       android: {
         elevation: 4,
-      },
-    }),
-  },
-  scanRingGlow: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#8B9FD7',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
-      },
-      android: {
-        elevation: 2,
       },
     }),
   },

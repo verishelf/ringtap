@@ -1,5 +1,6 @@
+import { ResizeMode, Video } from 'expo-av';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -12,7 +13,6 @@ import {
     View,
 } from 'react-native';
 
-import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { supabase } from '@/lib/supabase/supabaseClient';
@@ -20,6 +20,11 @@ import { supabase } from '@/lib/supabase/supabaseClient';
 export default function SignupScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const videoRef = useRef<Video>(null);
+
+  useEffect(() => {
+    videoRef.current?.playAsync().catch(() => {});
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,60 +62,88 @@ export default function SignupScreen() {
     }
   }
 
+  const videoBackground = (
+    <>
+      <Video
+        ref={videoRef}
+        source={require('../../assets/ringtap.mp4')}
+        style={styles.videoBackground}
+        resizeMode={ResizeMode.COVER}
+        isLooping
+        isMuted
+        shouldPlay
+      />
+      <View style={styles.videoOverlay} />
+    </>
+  );
+
   return (
-    <ThemedView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboard}
-      >
-        <View style={styles.card}>
-          <Text style={[styles.logo, { color: colors.text }]}>RingTap</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Create your account</Text>
+    <View style={styles.screen}>
+      {videoBackground}
+      <View style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboard}
+        >
+          <View style={[styles.card, { backgroundColor: colors.surface + 'E6' }]}>
+            <Text style={[styles.logo, { color: colors.text }]}>RingTap</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Create your account</Text>
 
-          <TextInput
-            style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
-            placeholder="Email"
-            placeholderTextColor={colors.textSecondary}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-          />
-          <TextInput
-            style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
-            placeholder="Password (min 6 characters)"
-            placeholderTextColor={colors.textSecondary}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="new-password"
-          />
+            <TextInput
+              style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Email"
+              placeholderTextColor={colors.textSecondary}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+            />
+            <TextInput
+              style={[styles.input, { borderColor: colors.borderLight, color: colors.text }]}
+              placeholder="Password (min 6 characters)"
+              placeholderTextColor={colors.textSecondary}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="new-password"
+            />
 
-          <Pressable
-            style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
-            onPress={signUp}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.text} size="small" />
-            ) : (
-              <Text style={[styles.buttonText, { color: colors.text }]}>Sign up</Text>
-            )}
-          </Pressable>
-
-          <Link href="/(auth)/login" asChild>
-            <Pressable style={styles.linkButton}>
-              <Text style={[styles.linkText, { color: colors.accent }]}>Already have an account? Sign in</Text>
+            <Pressable
+              style={[styles.button, { backgroundColor: colors.accent }, loading && styles.buttonDisabled]}
+              onPress={signUp}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.text} size="small" />
+              ) : (
+                <Text style={[styles.buttonText, { color: colors.text }]}>Sign up</Text>
+              )}
             </Pressable>
-          </Link>
-        </View>
-      </KeyboardAvoidingView>
-    </ThemedView>
+
+            <Link href="/(auth)/login" asChild>
+              <Pressable style={styles.linkButton}>
+                <Text style={[styles.linkText, { color: colors.accent }]}>Already have an account? Sign in</Text>
+              </Pressable>
+            </Link>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  videoBackground: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  videoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 10, 11, 0.65)',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -122,6 +155,8 @@ const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     gap: 16,
+    padding: Layout.sectionGap,
+    borderRadius: Layout.radiusLg,
   },
   logo: {
     fontSize: 32,

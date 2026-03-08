@@ -53,6 +53,7 @@ export default function DemoPage() {
             <video
               className="w-full aspect-video"
               controls
+              muted
               playsInline
               preload="metadata"
             >
