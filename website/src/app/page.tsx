@@ -417,7 +417,7 @@ export default function Home() {
             Download the app
           </h2>
           <p className="mt-4 text-muted-light">
-            Free on the App Store and Google Play. Create your profile and share your ringtap.me link.
+            Free on the App Store (Android coming soon). Create your profile and share your ringtap.me link.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
             <a
@@ -433,19 +433,8 @@ export default function Home() {
                 className="h-12 w-auto"
               />
             </a>
-            <a
-              href="https://play.google.com/store/apps/details?id=me.ringtap.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block transition-opacity hover:opacity-90"
-              aria-label="Get it on Google Play"
-            >
-              <img
-                src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-                alt="Get it on Google Play"
-                className="h-12 w-auto"
-              />
-            </a>
+            {/* Google Play coming soon - hide until available */}
+            <span className="inline-block text-sm text-muted-light">Android coming soon</span>
         </div>
         </FadeInOnScroll>
       </section>
