@@ -96,6 +96,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 });
   }
 
+  // add CEO contact by default (ringtap.me/mrposada)
+  try {
+    const { data: ceo } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('username', 'mrposada')
+      .maybeSingle();
+    if (ceo?.user_id) {
+      await supabase.from('user_contacts').insert({
+        owner_id: user.id,
+        contact_user_id: ceo.user_id,
+        display_name: 'RingTap CEO',
+        avatar_url: null,
+      });
+    }
+  } catch (e) {
+    console.warn('[profile/create] default CEO contact error', e);
+  }
+
   // Record affiliate signup referral (only for new profiles)
   if (affiliateRef) {
     const { data: aff } = await supabase.from('affiliates').select('code').eq('code', affiliateRef).maybeSingle();
