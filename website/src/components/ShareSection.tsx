@@ -12,7 +12,8 @@ function shareUrl(platform: string, url: string, title: string, text: string): s
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encoded(url)}`;
     case "facebook":
-      return `https://www.facebook.com/sharer/sharer.php?u=${encoded(url)}`;
+      // link directly to CEO's profile as requested
+      return "https://www.facebook.com/profile.php?id=61582754347003";
     default:
       return url;
   }
