@@ -7,13 +7,14 @@ const SITE_DESC = "Share your profile with NFC and QR. Your link, your theme: ri
 function shareUrl(platform: string, url: string, title: string, text: string): string {
   const encoded = encodeURIComponent;
   switch (platform) {
-    case "twitter":
-      return `https://twitter.com/intent/tweet?text=${encoded(text)}&url=${encoded(url)}`;
-    case "linkedin":
-      return `https://www.linkedin.com/sharing/share-offsite/?url=${encoded(url)}`;
+    // twitter/share removed per request
+    // linkedin removed per request
     case "facebook":
       // link directly to CEO's profile as requested
       return "https://www.facebook.com/profile.php?id=61582754347003";
+    case "instagram":
+      // open official RingTap Instagram page
+      return "https://www.instagram.com/ringtap.me";
     default:
       return url;
   }
@@ -33,26 +34,7 @@ export function ShareSection() {
   return (
     <div className="flex flex-wrap items-center justify-center gap-3">
       <span className="text-sm text-muted-light">Share RingTap:</span>
-      <button
-        type="button"
-        onClick={() => handleShare("twitter")}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-border-light bg-surface text-muted-light hover:border-accent hover:text-accent transition-colors"
-        aria-label="Share on X (Twitter)"
-      >
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        onClick={() => handleShare("linkedin")}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-border-light bg-surface text-muted-light hover:border-accent hover:text-accent transition-colors"
-        aria-label="Share on LinkedIn"
-      >
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-        </svg>
-      </button>
+      {/* LinkedIn and X buttons removed per request */}
       <button
         type="button"
         onClick={() => handleShare("facebook")}
@@ -61,6 +43,16 @@ export function ShareSection() {
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => handleShare("instagram")}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-border-light bg-surface text-muted-light hover:border-accent hover:text-accent transition-colors"
+        aria-label="Visit our Instagram"
+      >
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 1.5A4.25 4.25 0 003.5 7.75v8.5A4.25 4.25 0 007.75 20.5h8.5a4.25 4.25 0 004.25-4.25v-8.5A4.25 4.25 0 0016.25 3.5h-8.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 1.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm5.25-.75a1 1 0 110 2 1 1 0 010-2z" />
         </svg>
       </button>
       <button
