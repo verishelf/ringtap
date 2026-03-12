@@ -22,6 +22,7 @@ export type SavedContact = {
   contactUserId: string;
   displayName: string;
   avatarUrl: string | null;
+  metAtLocation: string | null;
   createdAt: string;
 };
 
@@ -168,7 +169,7 @@ export async function getSavedContacts(): Promise<SavedContact[]> {
   if (!user) return [];
   const { data, error } = await supabase
     .from('user_contacts')
-    .select('id, contact_user_id, display_name, avatar_url, created_at')
+    .select('id, contact_user_id, display_name, avatar_url, met_at_location, created_at')
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
   if (error) return [];
@@ -177,6 +178,7 @@ export async function getSavedContacts(): Promise<SavedContact[]> {
     contactUserId: row.contact_user_id as string,
     displayName: (row.display_name as string) ?? '',
     avatarUrl: resolveStorageUrlIfPath((row.avatar_url as string) ?? null),
+    metAtLocation: (row.met_at_location as string)?.trim() || null,
     createdAt: row.created_at as string,
   }));
 }
@@ -189,7 +191,8 @@ export async function deleteSavedContact(contactId: string): Promise<boolean> {
 export async function saveContact(
   contactUserId: string,
   displayName?: string,
-  avatarUrl?: string
+  avatarUrl?: string,
+  metAtLocation?: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Sign in to save contacts' };
@@ -200,6 +203,7 @@ export async function saveContact(
     contact_user_id: contactUserId,
     display_name: (displayName ?? '').trim(),
     avatar_url: resolved ?? raw,
+    met_at_location: (metAtLocation ?? '').trim() || null,
   });
   if (error) {
     if (error.code === '23505') return { success: true };
@@ -235,6 +239,68 @@ export async function exchangeContact(
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Exchange failed' };
   }
+}
+
+// --- Map presence (Networking Map, Pro) ---
+export type MapPresenceUser = {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  latitude: number;
+  longitude: number;
+  lastActive: string;
+  bio?: string;
+};
+
+export async function upsertMapPresence(
+  userId: string,
+  name: string,
+  avatarUrl: string | null,
+  latitude: number,
+  longitude: number
+): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
+  const resolved = avatarUrl?.trim() ? resolveStorageUrlIfPath(avatarUrl.trim()) : null;
+  const { error } = await supabase.from('map_presence').upsert(
+    {
+      user_id: userId,
+      name: (name ?? '').trim(),
+      avatar_url: resolved ?? avatarUrl?.trim() ?? null,
+      latitude,
+      longitude,
+      last_active: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' }
+  );
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function getNearbyMapPresence(
+  centerLat: number,
+  centerLon: number,
+  radiusKm: number = 10,
+  excludeUserId?: string | null
+): Promise<MapPresenceUser[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase.rpc('get_nearby_map_presence', {
+    center_lat: centerLat,
+    center_lon: centerLon,
+    radius_km: radiusKm,
+    exclude_user_id: excludeUserId ?? user.id,
+    max_rows: 100,
+  });
+  if (error) return [];
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    userId: row.user_id as string,
+    name: (row.name as string) ?? '',
+    avatarUrl: (row.avatar_url as string)?.trim() || null,
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    lastActive: row.last_active as string,
+  }));
 }
 
 // --- Links ---

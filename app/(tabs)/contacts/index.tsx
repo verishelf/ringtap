@@ -181,12 +181,22 @@ export default function ContactsScreen() {
             placeholderLetter={displayName.charAt(0)}
           />
           <View style={styles.contactBox}>
-            <Text
-              style={[styles.contactName, { color: colors.text }]}
-              numberOfLines={1}
-            >
-              {displayName}
-            </Text>
+            <View style={styles.contactNameWrap}>
+              <Text
+                style={[styles.contactName, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {displayName}
+              </Text>
+              {item.metAtLocation ? (
+                <Text
+                  style={[styles.metAt, { color: colors.textSecondary }]}
+                  numberOfLines={1}
+                >
+                  Met at {item.metAtLocation}
+                </Text>
+              ) : null}
+            </View>
             <Ionicons
               name="chevron-forward"
               size={20}
@@ -407,10 +417,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 18,
   },
+  contactNameWrap: { flex: 1, minWidth: 0 },
   contactName: {
-    flex: 1,
     fontSize: 16,
     fontWeight: '600',
+  },
+  metAt: {
+    fontSize: 12,
+    marginTop: 2,
+    opacity: 0.9,
   },
   emptyText: { textAlign: 'center', fontSize: 16, lineHeight: 24 },
 });

@@ -8,8 +8,6 @@ import * as Linking from 'expo-linking';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    InteractionManager,
     Platform,
     Pressable,
     ScrollView,
@@ -61,63 +59,6 @@ export default function HomeScreen() {
   const [displayTaps, setDisplayTaps] = useState(0);
   const [displayViews, setDisplayViews] = useState(0);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
-
-  const glowAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const glowLoopRef = useRef<Animated.CompositeAnimation | null>(null);
-  const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
-
-  // Use useNativeDriver: false for both to avoid mixing native/JS drivers in same view tree (crashes on some devices)
-  const startGlowLoops = useCallback(() => {
-    glowLoopRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: 1500,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    pulseLoopRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.08,
-          duration: 1000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0.95,
-          duration: 1000,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    glowLoopRef.current.start();
-    pulseLoopRef.current.start();
-  }, [glowAnim, pulseAnim]);
-
-  const stopGlowLoops = useCallback(() => {
-    glowLoopRef.current?.stop();
-    pulseLoopRef.current?.stop();
-    glowLoopRef.current = null;
-    pulseLoopRef.current = null;
-  }, []);
-
-  // Start on focus, stop on blur — avoids crash when switching tabs or unmounting during animation
-  useFocusEffect(
-    useCallback(() => {
-      const task = InteractionManager.runAfterInteractions(() => startGlowLoops());
-      return () => {
-        task.cancel();
-        stopGlowLoops();
-      };
-    }, [startGlowLoops, stopGlowLoops])
-  );
 
   const loadDashboard = useCallback(async () => {
     if (!user?.id) {
@@ -267,57 +208,42 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Tap to share — colorful glowing rings */}
+        {/* Tap to share — static colorful rings (no animation to avoid crashes) */}
         <Link href="/share/qr" asChild>
           <Pressable style={[styles.scanRingWrap, styles.scanRingGlowShadow, { backgroundColor: colors.surface + '18' }]}>
-            <Animated.View
-                style={[
-                  styles.scanRingContainer,
-                  {
-                    width: RING_SIZE,
-                    height: RING_SIZE,
-                    transform: [{ scale: pulseAnim }],
-                  },
-                ]}
-              >
-              {/* Outer ring — cyan/magenta pulse */}
-              <Animated.View
+            <View style={[styles.scanRingContainer, { width: RING_SIZE, height: RING_SIZE }]}>
+              {/* Outer ring — cyan */}
+              <View
                 style={[
                   styles.scanRingOuter,
                   {
                     width: RING_SIZE,
                     height: RING_SIZE,
                     borderRadius: RING_SIZE / 2,
-                    borderColor: glowAnim.interpolate({
-                      inputRange: [0, 0.33, 0.66, 1],
-                      outputRange: ['#00D4FF', '#B84DFF', '#FF6B9D', '#00D4FF'],
-                    }),
-                    opacity: glowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.5, 1, 0.5] }),
+                    borderColor: '#00D4FF',
+                    opacity: 0.8,
                     borderWidth: 4,
                   },
                 ]}
               />
-              {/* Mid ring — accent/yellow pulse */}
-              <Animated.View
+              {/* Mid ring — accent */}
+              <View
                 style={[
                   styles.scanRingMid,
                   {
                     width: RING_SIZE - 20,
                     height: RING_SIZE - 20,
                     borderRadius: (RING_SIZE - 20) / 2,
-                    borderColor: glowAnim.interpolate({
-                      inputRange: [0, 0.33, 0.66, 1],
-                      outputRange: [colors.accent, '#FFD93D', '#6BFF6B', colors.accent],
-                    }),
+                    borderColor: colors.accent,
                     left: 10,
                     top: 10,
-                    opacity: glowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }),
+                    opacity: 0.9,
                     borderWidth: 3,
                   },
                 ]}
               />
-              {/* Inner ring — soft glow */}
-              <Animated.View
+              {/* Inner ring — magenta */}
+              <View
                 style={[
                   styles.scanRingOuter,
                   {
@@ -326,11 +252,8 @@ export default function HomeScreen() {
                     borderRadius: (RING_SIZE - 40) / 2,
                     left: 20,
                     top: 20,
-                    borderColor: glowAnim.interpolate({
-                      inputRange: [0, 0.5, 1],
-                      outputRange: ['#B84DFF', '#00D4FF', '#B84DFF'],
-                    }),
-                    opacity: glowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.4, 0.8, 0.4] }),
+                    borderColor: '#B84DFF',
+                    opacity: 0.6,
                     borderWidth: 2,
                   },
                 ]}
@@ -338,7 +261,7 @@ export default function HomeScreen() {
               <View style={[styles.scanRingInner, { width: INNER_CIRCLE, height: INNER_CIRCLE, borderRadius: INNER_CIRCLE / 2, backgroundColor: colors.surface, left: (RING_SIZE - INNER_CIRCLE) / 2, top: (RING_SIZE - INNER_CIRCLE) / 2 }]}>
                 <Ionicons name="phone-portrait-outline" size={28} color={colors.accent} />
               </View>
-            </Animated.View>
+            </View>
             <Text style={[styles.scanRingLabel, { color: colors.text }]}>Tap to share</Text>
             <Text style={[styles.scanRingHint, { color: colors.textSecondary }]}>NFC or QR — your card, one tap</Text>
           </Pressable>

@@ -146,7 +146,7 @@ export function Header({
       {/* Mobile dropdown menu */}
       <div
         className={`md:hidden overflow-hidden border-t border-border-light/50 bg-background transition-[max-height,opacity] duration-200 ease-out ${
-          menuOpen ? "max-h-[380px] opacity-100" : "max-h-0 opacity-0"
+          menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <nav className="flex flex-col px-4 py-4 gap-0">

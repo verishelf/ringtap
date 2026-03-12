@@ -421,7 +421,7 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
             <a
-              href="https://apps.apple.com/app/ringtap"
+              href="https://apps.apple.com/us/app/ringtap-me/id6758565822"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block transition-opacity hover:opacity-90"

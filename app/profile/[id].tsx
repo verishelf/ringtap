@@ -16,6 +16,7 @@ import { ProfileScanPreview } from '@/components/ProfileScanPreview';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
+import { getMetAtLocation } from '@/lib/getMetAtLocation';
 import {
   getProfile,
   getLinks,
@@ -99,7 +100,13 @@ export default function ProfileByIdScreen() {
     if (!user || !profile) return;
     setSaving(true);
     try {
-      const result = await saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined);
+      const metAtLocation = await getMetAtLocation();
+      const result = await saveContact(
+        profile.userId,
+        profile.name,
+        profile.avatarUrl ?? undefined,
+        metAtLocation ?? undefined
+      );
       if (result.success) {
         setIsAlreadySaved(true);
         Alert.alert('Contact saved!', undefined, [{ text: 'OK' }]);

@@ -85,6 +85,13 @@ function AndroidTabs() {
         }}
       />
       <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Map',
+          tabBarIcon: ({ color, size }) => <Ionicons name="map" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="links"
         options={{
           title: 'Links',
@@ -167,6 +174,10 @@ export default function TabLayout() {
           <NativeTabs.Trigger name="contacts">
             <Label>Contacts</Label>
             <Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="map">
+            <Label>Map</Label>
+            <Icon sf={{ default: 'map', selected: 'map.fill' }} />
           </NativeTabs.Trigger>
           <NativeTabs.Trigger name="links">
             <Label>Links</Label>

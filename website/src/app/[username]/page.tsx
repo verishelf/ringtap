@@ -262,7 +262,9 @@ export default function UsernameProfilePage() {
   const [calendlyModalOpen, setCalendlyModalOpen] = useState(false);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [connectName, setConnectName] = useState('');
   const [connectEmail, setConnectEmail] = useState('');
+  const [connectPhone, setConnectPhone] = useState('');
   const [connectLoading, setConnectLoading] = useState(false);
   const [connectSent, setConnectSent] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
@@ -351,16 +353,29 @@ export default function UsernameProfilePage() {
   // Auto-open Connect modal when profile loads (lead capture)
   useEffect(() => {
     if (!loading && profile?.user_id && !isInApp) {
-      setConnectModalOpen(true);
+      const timer = setTimeout(() => {
+        setConnectModalOpen(true);
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [loading, profile?.user_id, isInApp]);
 
   const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://www.ringtap.me';
 
   const handleConnect = useCallback(async () => {
-    const trimmed = connectEmail.trim();
-    if (!trimmed) {
+    const nameTrimed = connectName.trim();
+    const emailTrimmed = connectEmail.trim();
+    const phoneTrimmed = connectPhone.trim();
+    if (!nameTrimed) {
+      setConnectError('Enter your name');
+      return;
+    }
+    if (!emailTrimmed) {
       setConnectError('Enter your email');
+      return;
+    }
+    if (!phoneTrimmed) {
+      setConnectError('Enter your phone number');
       return;
     }
     if (!profile?.user_id) return;
@@ -371,7 +386,7 @@ export default function UsernameProfilePage() {
       const supabase = getSupabase();
       const redirectTo = `${SITE_URL}/auth/callback?connect=1&owner_id=${encodeURIComponent(profile.user_id)}`;
       const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: trimmed,
+        email: emailTrimmed,
         options: { emailRedirectTo: redirectTo },
       });
       if (otpError) throw otpError;
@@ -381,7 +396,7 @@ export default function UsernameProfilePage() {
     } finally {
       setConnectLoading(false);
     }
-  }, [connectEmail, profile?.user_id]);
+  }, [connectName, connectEmail, connectPhone, profile?.user_id]);
 
   if (loading) {
     return (
@@ -752,7 +767,7 @@ export default function UsernameProfilePage() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => { setConnectModalOpen(false); setConnectSent(false); setConnectEmail(''); setConnectError(null); }}
+                    onClick={() => { setConnectModalOpen(false); setConnectSent(false); setConnectName(''); setConnectEmail(''); setConnectPhone(''); setConnectError(null); }}
                     className="mt-6 rounded-xl bg-accent px-6 py-2.5 text-background font-semibold hover:opacity-90"
                   >
                     Done
@@ -760,6 +775,19 @@ export default function UsernameProfilePage() {
                 </div>
               ) : (
                 <div className="mt-4 space-y-4">
+                  <div>
+                    <label htmlFor="connect-name" className="block text-sm font-medium text-foreground mb-1">Name</label>
+                    <input
+                      id="connect-name"
+                      type="text"
+                      value={connectName}
+                      onChange={(e) => { setConnectName(e.target.value); setConnectError(null); }}
+                      placeholder="Your name"
+                      autoComplete="name"
+                      disabled={connectLoading}
+                      className="w-full rounded-xl border border-border-light bg-surface-elevated px-4 py-3 text-foreground placeholder:text-muted-light focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-70"
+                    />
+                  </div>
                   <div>
                     <label htmlFor="connect-email" className="block text-sm font-medium text-foreground mb-1">Email</label>
                     <input
@@ -773,11 +801,24 @@ export default function UsernameProfilePage() {
                       className="w-full rounded-xl border border-border-light bg-surface-elevated px-4 py-3 text-foreground placeholder:text-muted-light focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-70"
                     />
                   </div>
+                  <div>
+                    <label htmlFor="connect-phone" className="block text-sm font-medium text-foreground mb-1">Phone</label>
+                    <input
+                      id="connect-phone"
+                      type="tel"
+                      value={connectPhone}
+                      onChange={(e) => { setConnectPhone(e.target.value); setConnectError(null); }}
+                      placeholder="(555) 123-4567"
+                      autoComplete="tel"
+                      disabled={connectLoading}
+                      className="w-full rounded-xl border border-border-light bg-surface-elevated px-4 py-3 text-foreground placeholder:text-muted-light focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-70"
+                    />
+                  </div>
                   {connectError && <p className="text-sm text-destructive">{connectError}</p>}
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={() => setConnectModalOpen(false)}
+                      onClick={() => { setConnectModalOpen(false); setConnectName(''); setConnectEmail(''); setConnectPhone(''); setConnectError(null); }}
                       className="flex-1 rounded-xl border border-border-light px-4 py-3 font-semibold text-foreground hover:bg-surface-elevated transition-colors"
                     >
                       Cancel
