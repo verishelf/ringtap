@@ -29,9 +29,6 @@ export async function generateMetadata({ params }: { params: Promise<{ uid: stri
       twitter: { card: "summary", title, description },
       alternates: { canonical: profileUrl },
       robots: { index: true, follow: true },
-      other: {
-        "apple-itunes-app": `app-id=6758565822, app-argument=${profileUrl}`,
-      },
     };
   } catch {
     return { title: "Profile | RingTap" };
