@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, useSegments } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -19,9 +20,13 @@ const ICON_BOX_SIZE = 28;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const segments = useSegments();
+  const inProfileStack = segments.includes('profile') && segments[segments.length - 1] !== 'index';
+  const topPadding = inProfileStack ? Layout.screenPadding : insets.top + Layout.screenPadding;
   const { user, signOut } = useSession();
   const { plan, isPro } = useSubscription();
   const { isLight, setTheme } = useAppearance();
+  const { locationEnabled, setLocationEnabled } = useLocation();
   const { prefs: notifPrefs, setPrefs: setNotifPrefs, permissionStatus, requestPermission } = useNotifications();
   const colors = useThemeColors();
   const router = useRouter();
@@ -69,7 +74,7 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + Layout.screenPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: topPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -78,6 +83,21 @@ export default function SettingsScreen() {
               <Switch
                 value={isLight}
                 onValueChange={(on) => setTheme(on ? 'light' : 'dark')}
+                trackColor={{ false: colors.borderLight, true: colors.accent }}
+                thumbColor={colors.text}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Map</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <View style={[styles.row, { borderBottomWidth: 0 }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Location sharing</Text>
+              <Switch
+                value={locationEnabled}
+                onValueChange={setLocationEnabled}
                 trackColor={{ false: colors.borderLight, true: colors.accent }}
                 thumbColor={colors.text}
               />

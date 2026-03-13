@@ -93,7 +93,7 @@ export interface AnalyticsSummary {
   byDay: Array<{ date: string; count: number; type: string }>;
 }
 
-export type ScannedContactSource = 'nfc' | 'qr' | 'manual';
+export type ScannedContactSource = 'nfc' | 'qr' | 'manual' | 'camera';
 
 export interface ScannedContact {
   id: string;

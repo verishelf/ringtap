@@ -98,7 +98,7 @@ interface ProfileScanPreviewProps {
   footerText?: string;
   /** When true, show a verified checkmark next to the name (e.g. for Pro). */
   showVerified?: boolean;
-  /** When true, show a gold ring around the profile avatar (e.g. for Pro). */
+  /** When true, show a gold ring around the profile avatar and verified check (Pro users always get both). */
   showProRing?: boolean;
   /** When false, suppress the \"About Me\" section (bio) in the body to avoid repeating it. */
   showAboutSection?: boolean;
@@ -177,7 +177,7 @@ export function ProfileScanPreview({
               <Text style={[styles.nameCentered, { color: colors.text, fontFamily, ...(dotsEnhance ?? {}) }]} numberOfLines={1}>
                 {profile.name?.trim() || 'Your name'}
               </Text>
-              {showVerified ? (
+              {(showVerified || showProRing) ? (
                 <Image
                   source={require('@/assets/images/verified.png')}
                   style={styles.verifiedBadge}

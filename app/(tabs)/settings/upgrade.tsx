@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useState } from 'react';
+import { useSegments } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useRouter } from 'expo-router';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
@@ -58,6 +60,9 @@ function LegalLinks({ colors }: { colors: { accent: string; textSecondary: strin
 
 export default function UpgradeScreen() {
   const insets = useSafeAreaInsets();
+  const segments = useSegments();
+  const inProfileStack = segments.includes('profile') && segments[segments.length - 1] !== 'index';
+  const topPadding = inProfileStack ? Layout.screenPadding : insets.top + Layout.screenPadding;
   const colors = useThemeColors();
   const { user, session } = useSession();
   const { isPro, refresh } = useSubscription();
@@ -192,7 +197,7 @@ export default function UpgradeScreen() {
         contentContainerStyle={[
           styles.scroll,
           {
-            paddingTop: insets.top + Layout.screenPadding,
+            paddingTop: topPadding,
             paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap,
           },
         ]}
@@ -201,14 +206,27 @@ export default function UpgradeScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Ionicons name="rocket-outline" size={48} color={colors.accent} />
-          <Text style={[styles.title, { color: colors.text }]}>Upgrade to Pro</Text>
+          <Ionicons name={isPro ? 'checkmark-circle' : 'rocket-outline'} size={48} color={colors.accent} />
+          <Text style={[styles.title, { color: colors.text }]}>
+            {isPro ? 'RingTap Pro' : 'Upgrade to Pro'}
+          </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Unlimited links, themes, analytics, and video intro.
+            {isPro
+              ? 'You have access to unlimited links, themes, analytics, and video intro.'
+              : 'Unlimited links, themes, analytics, and video intro.'}
           </Text>
         </View>
 
-        {isWebOnly ? (
+        {isPro ? (
+          <Pressable
+            style={[styles.button, { backgroundColor: colors.accent }]}
+            onPress={() => router.push('/(tabs)/settings/manage')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="card-outline" size={22} color={colors.text} />
+            <Text style={[styles.buttonText, { color: colors.text }]}>Manage subscription</Text>
+          </Pressable>
+        ) : isWebOnly ? (
           <>
             <Text style={[styles.price, { color: colors.text }]}>$9.99/mo or $99.99/yr</Text>
             <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -353,8 +371,6 @@ export default function UpgradeScreen() {
             )}
           </>
         )}
-
-        {isPro && <Text style={[styles.proBadge, { color: colors.accent }]}>You have Pro</Text>}
       </ScrollView>
     </ThemedView>
   );

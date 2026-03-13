@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useSegments } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import dayjs from 'dayjs';
 import { Image } from 'expo-image';
@@ -28,6 +28,9 @@ type Period = 7 | 30 | 90;
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
+  const segments = useSegments();
+  const inProfileStack = Array.isArray(segments) && segments.includes('profile') && segments[segments.length - 1] !== 'index';
+  const topPadding = inProfileStack ? Layout.screenPadding : insets.top + Layout.screenPadding;
   const { profile, loading: profileLoading } = useProfile();
   const { isPro } = useSubscription();
   const { user, signOut } = useSession();
@@ -100,7 +103,7 @@ export default function AnalyticsScreen() {
 
   if (!isPro) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={[styles.container, { paddingTop: topPadding }]}>
         <View style={styles.locked}>
           <Ionicons name="lock-closed" size={64} color={colors.textSecondary} />
           <Text style={[styles.lockedTitle, { color: colors.text }]}>Analytics is a Pro feature</Text>
@@ -119,7 +122,7 @@ export default function AnalyticsScreen() {
 
   if (!user?.id && !profileLoading && !loading) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={[styles.container, { paddingTop: topPadding }]}>
         <View style={[styles.centered, styles.errorBlock]}>
           <Ionicons name="person-outline" size={48} color={colors.textSecondary} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>Sign in to see analytics</Text>
@@ -133,7 +136,7 @@ export default function AnalyticsScreen() {
 
   if (user?.id && !data && !loading) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={[styles.container, { paddingTop: topPadding }]}>
         <View style={[styles.centered, styles.errorBlock]}>
           <Ionicons name="person-outline" size={48} color={colors.textSecondary} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>Create your profile</Text>
@@ -147,7 +150,7 @@ export default function AnalyticsScreen() {
 
   if (loading && !data) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={[styles.container, { paddingTop: topPadding }]}>
         <View style={styles.centered}>
           <Image
             source={require('@/assets/images/loading.gif')}
@@ -161,7 +164,7 @@ export default function AnalyticsScreen() {
   if (error && data) {
     return (
       <ThemedView style={styles.container}>
-        <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + Layout.screenPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: topPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
           <View style={[styles.errorCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="warning-outline" size={40} color={colors.accent} />
             <Text style={[styles.errorTitle, { color: colors.text }]}>{error}</Text>
@@ -186,7 +189,7 @@ export default function AnalyticsScreen() {
 
   if (!data) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={[styles.container, { paddingTop: topPadding }]}>
         <View style={styles.centered}>
           <Image
             source={require('@/assets/images/loading.gif')}
@@ -242,7 +245,7 @@ export default function AnalyticsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + Layout.screenPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: topPadding, paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap }]} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View style={styles.periodRow}>
           {periods.map(({ value, label }) => (
             <Pressable

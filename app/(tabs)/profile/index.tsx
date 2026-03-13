@@ -32,6 +32,7 @@ import { getDotsFontEnhancement, getProfileFontFamily, TYPOGRAPHY_OPTIONS } from
 import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
+import { Link, useRouter } from 'expo-router';
 
 const SOCIAL_PLATFORMS: { key: SocialPlatform; label: string; placeholder: string }[] = [
   { key: 'instagram', label: 'Instagram', placeholder: 'instagram.com/username' },
@@ -103,6 +104,7 @@ function initEditForm(profile: UserProfile): EditForm {
 
 export default function ProfileEditorScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const colors = useThemeColors();
   const { profile, loading: profileLoading, refresh, updateProfile } = useProfile();
   const { user } = useSession();
@@ -728,6 +730,62 @@ export default function ProfileEditorScreen() {
             </View>
 
             <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Tools & settings</Text>
+              <View style={[styles.toolsCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                <Pressable
+                  style={({ pressed }) => [styles.toolsRow, { borderBottomColor: colors.borderLight }, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/(tabs)/profile/links')}
+                >
+                  <View style={[styles.toolsIconWrap, { backgroundColor: colors.accent + '22' }]}>
+                    <Ionicons name="link" size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[styles.toolsLabel, { color: colors.text }]}>Links</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.toolsRow, { borderBottomColor: colors.borderLight }, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/(tabs)/profile/feed')}
+                >
+                  <View style={[styles.toolsIconWrap, { backgroundColor: colors.accent + '22' }]}>
+                    <Ionicons name="newspaper" size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[styles.toolsLabel, { color: colors.text }]}>Opportunities</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.toolsRow, { borderBottomColor: colors.borderLight }, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/(tabs)/profile/analytics')}
+                >
+                  <View style={[styles.toolsIconWrap, { backgroundColor: colors.accent + '22' }]}>
+                    <Ionicons name="bar-chart" size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[styles.toolsLabel, { color: colors.text }]}>Analytics</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.toolsRow, { borderBottomColor: colors.borderLight }, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/(tabs)/profile/upgrade')}
+                >
+                  <View style={[styles.toolsIconWrap, { backgroundColor: colors.accent + '22' }]}>
+                    <Ionicons name="diamond" size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[styles.toolsLabel, { color: colors.text }]}>Subscription</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.toolsRow, styles.toolsRowLast, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/(tabs)/profile/settings')}
+                >
+                  <View style={[styles.toolsIconWrap, { backgroundColor: colors.accent + '22' }]}>
+                    <Ionicons name="settings" size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[styles.toolsLabel, { color: colors.text }]}>Settings</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Profile link</Text>
               {profile.username ? (
                 <Text style={[styles.profileUrl, { color: colors.textSecondary }]}>{getProfileUrl(profile.username)}</Text>
@@ -977,6 +1035,28 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: { fontWeight: '600' },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: Layout.tightGap, marginBottom: 4 },
+  toolsCard: {
+    borderRadius: Layout.radiusLg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  toolsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: Layout.cardPadding,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 14,
+  },
+  toolsRowLast: { borderBottomWidth: 0 },
+  toolsIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolsLabel: { flex: 1, fontSize: 16, fontWeight: '500' },
   contactDetailText: { fontSize: Layout.caption, flex: 1 },
   modalOverlay: {
     flex: 1,

@@ -11,7 +11,7 @@ import type {
 } from '@/lib/supabase/types';
 import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
 
-export type { UserProfile, UserLink };
+export type { UserProfile, UserLink, ScannedContact };
 
 const PROFILE_URL_BASE = 'https://ringtap.me';
 const RING_API_BASE = 'https://www.ringtap.me';
@@ -303,6 +303,102 @@ export async function getNearbyMapPresence(
   }));
 }
 
+export type MapEvent = {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  eventDate: string;
+  createdAt: string;
+};
+
+export async function getNearbyMapEvents(
+  centerLat: number,
+  centerLon: number,
+  radiusKm: number = 25
+): Promise<MapEvent[]> {
+  const { data, error } = await supabase.rpc('get_nearby_map_events', {
+    center_lat: centerLat,
+    center_lon: centerLon,
+    radius_km: radiusKm,
+    max_rows: 50,
+  });
+  if (error) return [];
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    userId: row.user_id as string,
+    name: (row.name as string) ?? '',
+    description: (row.description as string) ?? '',
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    eventDate: row.event_date as string,
+    createdAt: row.created_at as string,
+  }));
+}
+
+export async function createMapEvent(
+  userId: string,
+  event: { name: string; description?: string; latitude: number; longitude: number; eventDate: string }
+): Promise<{ success: boolean; event?: MapEvent; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
+  const { data, error } = await supabase
+    .from('map_events')
+    .insert({
+      user_id: userId,
+      name: (event.name ?? '').trim(),
+      description: (event.description ?? '').trim() || null,
+      latitude: event.latitude,
+      longitude: event.longitude,
+      event_date: event.eventDate,
+    })
+    .select()
+    .single();
+  if (error) return { success: false, error: error.message };
+  return {
+    success: true,
+    event: {
+      id: data.id,
+      userId: data.user_id,
+      name: data.name ?? '',
+      description: data.description ?? '',
+      latitude: Number(data.latitude),
+      longitude: Number(data.longitude),
+      eventDate: data.event_date,
+      createdAt: data.created_at,
+    },
+  };
+}
+
+export async function updateMapEvent(
+  userId: string,
+  eventId: string,
+  updates: { name?: string; description?: string; latitude?: number; longitude?: number; eventDate?: string }
+): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
+  const payload: Record<string, unknown> = {};
+  if (updates.name !== undefined) payload.name = (updates.name ?? '').trim();
+  if (updates.description !== undefined) payload.description = (updates.description ?? '').trim() || null;
+  if (updates.latitude !== undefined) payload.latitude = updates.latitude;
+  if (updates.longitude !== undefined) payload.longitude = updates.longitude;
+  if (updates.eventDate !== undefined) payload.event_date = updates.eventDate;
+  if (Object.keys(payload).length === 0) return { success: true };
+  const { error } = await supabase.from('map_events').update(payload).eq('id', eventId).eq('user_id', userId);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function deleteMapEvent(userId: string, eventId: string): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
+  const { error } = await supabase.from('map_events').delete().eq('id', eventId).eq('user_id', userId);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
 // --- Links ---
 export async function getLinks(userId: string): Promise<UserLink[]> {
   const { data, error } = await supabase
@@ -522,6 +618,13 @@ export async function getScannedContacts(ownerUserId: string): Promise<ScannedCo
     .order('created_at', { ascending: false });
   if (error) return [];
   return (data ?? []).map(mapScannedContactFromDb);
+}
+
+export async function deleteScannedContact(id: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { error } = await supabase.from('scanned_contacts').delete().eq('id', id).eq('user_id', user.id);
+  return !error;
 }
 
 // --- Messaging ---

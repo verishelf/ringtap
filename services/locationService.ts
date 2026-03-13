@@ -63,7 +63,7 @@ export async function updateMapPresence(params: UpdatePresenceParams): Promise<b
   return result.success;
 }
 
-const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_MS = 30_000;
 
 export function startLocationPolling(
   params: Omit<UpdatePresenceParams, 'latitude' | 'longitude'>,

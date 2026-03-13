@@ -146,7 +146,8 @@
           "contactsPermission": "RingTap syncs your saved contacts to your phone so you can call or message them."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

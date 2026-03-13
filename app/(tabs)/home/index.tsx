@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -17,14 +17,20 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
+import { PostCard } from '@/components/PostCard';
 import { Layout } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useNearbyUsers } from '@/hooks/useNearbyUsers';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ConversationWithPeer, SavedContact } from '@/lib/api';
+import type { Post } from '@/services/postService';
+import { getPosts } from '@/services/postService';
 import { getAnalytics, getConversations, getProfile, getSavedContacts, getScannedContacts, getSubscription } from '@/lib/api';
+import { useLocation } from '@/contexts/LocationContext';
+import { getCurrentCoordinates } from '@/services/locationService';
 import type { ScannedContact } from '@/lib/supabase/types';
 
 dayjs.extend(relativeTime);
@@ -43,9 +49,11 @@ const GRADIENT_LIGHT = ['#FAFAFA', '#f5f7ff', '#faf5ff', '#f5f8fa', '#FAFAFA'] a
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user } = useSession();
   const { profile } = useProfile();
   const { isPro } = useSubscription();
+  const { locationEnabled } = useLocation();
   const colors = useThemeColors();
   const colorScheme = useColorScheme();
   const gradientColors = (colorScheme === 'light' ? GRADIENT_LIGHT : GRADIENT_DARK) as unknown as readonly [string, string, ...string[]];
@@ -59,6 +67,20 @@ export default function HomeScreen() {
   const [displayTaps, setDisplayTaps] = useState(0);
   const [displayViews, setDisplayViews] = useState(0);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [opportunityPosts, setOpportunityPosts] = useState<Post[]>([]);
+  const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const { users: nearbyUsers } = useNearbyUsers({
+    centerLat: currentLocation?.latitude ?? null,
+    centerLon: currentLocation?.longitude ?? null,
+    enabled: !!user?.id && isPro && locationEnabled,
+    excludeUserId: user?.id ?? null,
+  });
+
+  useEffect(() => {
+    if (!user?.id || !isPro || !locationEnabled) return;
+    getCurrentCoordinates().then(setCurrentLocation);
+  }, [user?.id, isPro, locationEnabled]);
 
   const loadDashboard = useCallback(async () => {
     if (!user?.id) {
@@ -69,17 +91,21 @@ export default function HomeScreen() {
     try {
       // Resolve profile id so we load analytics even when useProfile hasn't populated yet
       const profileId = profile?.id ?? (await getProfile(user.id))?.id ?? null;
-      const [scanned, saved, conversations, analytics] = await Promise.all([
+      const [scanned, saved, conversations, analytics, posts] = await Promise.all([
         getScannedContacts(user.id),
         getSavedContacts(),
         getConversations(user.id),
         profileId
           ? getAnalytics(profileId, 7)
           : Promise.resolve({ profileViews: 0, linkClicks: 0, nfcTaps: 0, qrScans: 0 }),
+        getPosts(20),
       ]);
       setRecentMessages((conversations ?? []).slice(0, 5));
+      const isPlaceholder = (c: ScannedContact) =>
+        (c.name?.toLowerCase() === 'john smith' && c.email?.toLowerCase() === 'john.smith@acme.com') ||
+        (c.company?.toLowerCase() === 'acme corp' && c.email?.toLowerCase() === 'john.smith@acme.com');
       const merged: RecentContact[] = [
-        ...scanned.map((c) => ({ type: 'scanned' as const, data: c })),
+        ...scanned.filter((c) => !isPlaceholder(c)).map((c) => ({ type: 'scanned' as const, data: c })),
         ...saved.map((c) => ({ type: 'saved' as const, data: c })),
       ].sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime());
       const list = merged.slice(0, 10);
@@ -104,6 +130,7 @@ export default function HomeScreen() {
       setRecentAvatarByUserId(avatarMap);
       setRecentNameByUserId(nameMap);
       setRecentIsProByUserId(proMap);
+      setOpportunityPosts((posts ?? []).filter((p) => p.userId !== user?.id));
       if (analytics && 'nfcTaps' in analytics) {
         setTapsThisWeek(analytics.nfcTaps + analytics.qrScans);
         setViewsThisWeek(analytics.profileViews);
@@ -113,6 +140,7 @@ export default function HomeScreen() {
       setRecentMessages([]);
       setRecentAvatarByUserId({});
       setRecentNameByUserId({});
+      setOpportunityPosts([]);
       setTapsThisWeek(0);
       setViewsThisWeek(0);
     } finally {
@@ -188,7 +216,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={[styles.greeting, { color: colors.text }]}>
-              Hi{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''}
+              Hi{profile?.name?.trim() ? `, ${profile.name.trim().split(/\s+/)[0]}` : ''}
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Manage your RingTap card</Text>
           </View>
@@ -207,6 +235,20 @@ export default function HomeScreen() {
             </Link>
           </View>
         </View>
+
+        {/* Nearby users banner — opens Map when tapped */}
+        {isPro && locationEnabled && (
+          <Pressable
+            style={[styles.nearbyBanner, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+            onPress={() => router.push('/(tabs)/map')}
+          >
+            <Ionicons name="people" size={24} color={colors.accent} />
+            <Text style={[styles.nearbyBannerText, { color: colors.text }]}>
+              👋 {nearbyUsers.length} RingTap user{nearbyUsers.length !== 1 ? 's' : ''} nearby — tap to view map
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </Pressable>
+        )}
 
         {/* Tap to share — static colorful rings (no animation to avoid crashes) */}
         <Link href="/share/qr" asChild>
@@ -416,6 +458,32 @@ export default function HomeScreen() {
                   <View key={`scanned-${id}`}>{row}</View>
                 );
               })
+            )}
+          </View>
+
+          {/* Opportunities feed */}
+          <View style={[styles.recentCard, styles.cardGlow, { backgroundColor: colors.surface + 'F5', borderColor: colors.borderLight }]}>
+            <View style={styles.recentHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Opportunities</Text>
+              <Pressable onPress={() => router.push('/(tabs)/profile/feed')}>
+                <Text style={[styles.seeAll, { color: colors.accent }]}>See all</Text>
+              </Pressable>
+            </View>
+            {opportunityPosts.length === 0 ? (
+              <Text style={[styles.recentEmpty, { color: colors.textSecondary }]}>
+                No opportunities from others yet. Check back for hiring, partnerships, or services.
+              </Text>
+            ) : (
+              opportunityPosts.slice(0, 3).map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={user?.id ?? null}
+                  onLikeToggled={loadDashboard}
+                  onEditRequested={undefined}
+                  onDeleted={loadDashboard}
+                />
+              ))
             )}
           </View>
 
@@ -629,4 +697,14 @@ const styles = StyleSheet.create({
   },
   scanRingLabel: { fontSize: Layout.titleSection + 1, fontWeight: '700', marginTop: 14, textAlign: 'center', alignSelf: 'stretch' },
   scanRingHint: { fontSize: Layout.caption, marginTop: 4, marginBottom: 16, textAlign: 'center', alignSelf: 'stretch' },
+  nearbyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Layout.cardPadding,
+    borderRadius: Layout.radiusLg,
+    borderWidth: 1,
+    marginBottom: Layout.sectionGap,
+    gap: 12,
+  },
+  nearbyBannerText: { flex: 1, fontSize: 16, fontWeight: '600' },
 });

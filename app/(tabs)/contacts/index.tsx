@@ -6,9 +6,11 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Linking,
   ListRenderItem,
   Platform,
   Pressable,
+  SectionList,
   StyleSheet,
   Text,
   View,
@@ -20,11 +22,13 @@ import { Layout } from '@/constants/theme';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import type { SavedContact } from '@/lib/api';
+import type { SavedContact, ScannedContact } from '@/lib/api';
 import {
   deleteSavedContact,
+  deleteScannedContact,
   getProfile,
   getSavedContacts,
+  getScannedContacts,
   getSubscription,
 } from '@/lib/api';
 import { syncContactsToPhone } from '@/utils/syncContactsToPhone';
@@ -38,22 +42,35 @@ export default function ContactsScreen() {
   const { user } = useSession();
   const { isPro } = useSubscription();
   const [contacts, setContacts] = useState<SavedContact[]>([]);
+  const [scannedContacts, setScannedContacts] = useState<ScannedContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [avatarByUserId, setAvatarByUserId] = useState<Record<string, string | null>>({});
   const [nameByUserId, setNameByUserId] = useState<Record<string, string>>({});
   const [isProByUserId, setIsProByUserId] = useState<Record<string, boolean>>({});
 
+  const isPlaceholderScanned = useCallback((c: ScannedContact) => {
+    return (
+      (c.name?.toLowerCase() === 'john smith' && c.email?.toLowerCase() === 'john.smith@acme.com') ||
+      (c.company?.toLowerCase() === 'acme corp' && c.email?.toLowerCase() === 'john.smith@acme.com')
+    );
+  }, []);
+
   const loadContacts = useCallback(async () => {
     if (!user) {
       setContacts([]);
+      setScannedContacts([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const list = await getSavedContacts();
+      const [list, scanned] = await Promise.all([
+        getSavedContacts(),
+        getScannedContacts(user.id),
+      ]);
       setContacts(list ?? []);
+      setScannedContacts((scanned ?? []).filter((c) => !isPlaceholderScanned(c)));
       setAvatarByUserId({});
       setNameByUserId({});
       setIsProByUserId({});
@@ -93,7 +110,7 @@ export default function ContactsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, isPlaceholderScanned]);
 
   useFocusEffect(
     useCallback(() => {
@@ -113,7 +130,7 @@ export default function ContactsScreen() {
       );
       return;
     }
-    if (contacts.length === 0) {
+    if (contacts.length === 0 && scannedContacts.length === 0) {
       Alert.alert('No contacts', 'Add contacts first, then sync to your phone.');
       return;
     }
@@ -136,7 +153,25 @@ export default function ContactsScreen() {
     } finally {
       setSyncing(false);
     }
-  }, [contacts, isPro, router]);
+  }, [contacts, scannedContacts.length, isPro, router]);
+
+  const handleDeleteScanned = useCallback((scanned: ScannedContact) => {
+    Alert.alert(
+      'Remove scanned contact',
+      `Remove ${scanned.name || scanned.email || 'this contact'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await deleteScannedContact(scanned.id);
+            if (ok) setScannedContacts((prev) => prev.filter((c) => c.id !== scanned.id));
+          },
+        },
+      ]
+    );
+  }, []);
 
   const handleDelete = useCallback((contact: SavedContact, resolvedName?: string) => {
     Alert.alert(
@@ -207,6 +242,47 @@ export default function ContactsScreen() {
       );
     },
     [avatarByUserId, nameByUserId, isProByUserId, colors, router, handleDelete]
+  );
+
+  const renderScannedItem: ListRenderItem<ScannedContact> = useCallback(
+    ({ item }) => {
+      const displayName = item.name?.trim() || item.email?.trim() || 'Scanned contact';
+      return (
+        <Pressable
+          style={({ pressed }) => [
+            styles.contactRow,
+            {
+              backgroundColor: colors.surfaceElevated ?? colors.surface,
+              borderColor: colors.border,
+              opacity: pressed ? 0.9 : 1,
+            },
+          ]}
+          onPress={() => {
+            if (item.email?.trim()) Linking.openURL(`mailto:${item.email.trim()}`);
+            else if (item.phone?.trim()) Linking.openURL(`tel:${item.phone.trim()}`);
+          }}
+          onLongPress={() => handleDeleteScanned(item)}
+        >
+          <View style={[styles.scannedAvatar, { backgroundColor: colors.accent + '33' }]}>
+            <Ionicons name="document-text-outline" size={22} color={colors.accent} />
+          </View>
+          <View style={styles.contactBox}>
+            <View style={styles.contactNameWrap}>
+              <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>
+                {displayName}
+              </Text>
+              {(item.company || item.phone) ? (
+                <Text style={[styles.metAt, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {[item.company, item.phone].filter(Boolean).join(' • ')}
+                </Text>
+              ) : null}
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </View>
+        </Pressable>
+      );
+    },
+    [colors, handleDeleteScanned]
   );
 
   if (loading) {
@@ -289,24 +365,36 @@ export default function ContactsScreen() {
         </Pressable>
       )}
 
-      <FlatList
-        data={contacts}
-        keyExtractor={(item) => item.id}
-        renderItem={renderContactItem}
+      <SectionList
+        sections={[
+          { title: 'RingTap contacts', data: contacts, key: 'saved' },
+          { title: 'Scanned cards', data: scannedContacts, key: 'scanned' },
+        ].filter((s) => s.data.length > 0)}
+        keyExtractor={(item) => (item as SavedContact & ScannedContact).id}
+        renderItem={({ item, section, index }) =>
+          section.key === 'scanned'
+            ? renderScannedItem({ item: item as ScannedContact, index })
+            : renderContactItem({ item: item as SavedContact, index })
+        }
+        stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
-          contacts.length === 0 && styles.listEmpty,
+          contacts.length === 0 && scannedContacts.length === 0 && styles.listEmpty,
           { paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap },
         ]}
         ItemSeparatorComponent={() => <View style={{ height: ROW_GAP }} />}
+        SectionSeparatorComponent={() => <View style={{ height: 20 }} />}
+        renderSectionHeader={({ section }) =>
+          section.data.length > 0 ? (
+            <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
+              {section.title}
+            </Text>
+          ) : null
+        }
         ListEmptyComponent={
-          <Text
-            style={[styles.emptyText, { color: colors.textSecondary }]}
-          >
-            No saved contacts yet. Open a profile and tap "Save Contact"
-            to add one.
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            No contacts yet. Scan a business card or open a profile and tap &quot;Save Contact&quot;.
           </Text>
         }
       />
@@ -426,6 +514,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
     opacity: 0.9,
+  },
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  scannedAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyText: { textAlign: 'center', fontSize: 16, lineHeight: 24 },
 });

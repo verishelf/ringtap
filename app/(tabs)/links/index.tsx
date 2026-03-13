@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useSegments } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
@@ -39,6 +42,9 @@ const LINK_TYPES: { value: LinkType; label: string }[] = [
 
 export default function LinksScreen() {
   const insets = useSafeAreaInsets();
+  const segments = useSegments();
+  const inProfileStack = segments.includes('profile') && segments[segments.length - 1] !== 'index';
+  const topPadding = inProfileStack ? Layout.screenPadding : insets.top + Layout.screenPadding;
   const { user } = useSession();
   const { plan, isPro } = useSubscription();
   const colors = useThemeColors();
@@ -161,7 +167,7 @@ export default function LinksScreen() {
   );
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top + Layout.screenPadding }]}>
+    <ThemedView style={[styles.container, { paddingTop: topPadding }]}>
       <View style={styles.header}>
         <Text style={[styles.planText, { color: colors.text }]}>
           {links.length} / {isPro ? '∞' : FREE_PLAN_MAX_LINKS} links
@@ -204,7 +210,11 @@ export default function LinksScreen() {
       )}
 
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
+        >
           <View style={[styles.modal, { backgroundColor: colors.surface }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>{editing ? 'Edit link' : 'Add link'}</Text>
             <Text style={[styles.label, { color: colors.text }]}>Type</Text>
@@ -266,7 +276,7 @@ export default function LinksScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ThemedView>
   );

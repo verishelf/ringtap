@@ -16,6 +16,7 @@ import 'react-native-url-polyfill/auto';
 import { Colors } from '@/constants/theme';
 import { AppearanceProvider } from '@/contexts/AppearanceContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { LocationProvider } from '@/contexts/LocationContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -121,7 +122,9 @@ export default function RootLayout() {
         <RevenueCatProvider>
           <AppearanceProvider>
             <NotificationsProvider>
-              <RootLayoutNav />
+              <LocationProvider>
+                <RootLayoutNav />
+              </LocationProvider>
             </NotificationsProvider>
           </AppearanceProvider>
         </RevenueCatProvider>

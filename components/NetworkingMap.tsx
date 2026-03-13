@@ -21,12 +21,35 @@ import {
     Text,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const INITIAL_DELTA = { latitudeDelta: 0.04, longitudeDelta: 0.04 };
 const MARKER_SIZE = 44;
-const SHEET_HANDLE_HEIGHT = 24;
+
+function distanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function formatDistance(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m away`;
+  return `${km.toFixed(1)} km away`;
+}
 
 export type NetworkingMapProps = {
   currentUserId: string | null;
@@ -36,6 +59,7 @@ export type NetworkingMapProps = {
   onConnect: (userId: string) => void;
   onViewProfile: (userId: string) => void;
   locationPermissionDenied?: boolean;
+  locationEnabled?: boolean;
 };
 
 export function NetworkingMap({
@@ -46,8 +70,10 @@ export function NetworkingMap({
   onConnect,
   onViewProfile,
   locationPermissionDenied,
+  locationEnabled = true,
 }: NetworkingMapProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const [selectedUser, setSelectedUser] = useState<MapPresenceUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -126,7 +152,15 @@ export function NetworkingMap({
   if (!currentLocation) {
     return (
       <View style={[styles.deniedWrap, { backgroundColor: colors.background }]}>
-        {loading ? (
+        {!locationEnabled ? (
+          <>
+            <Ionicons name="locate-outline" size={48} color={colors.textSecondary} />
+            <Text style={[styles.deniedTitle, { color: colors.text }]}>Location off</Text>
+            <Text style={[styles.deniedText, { color: colors.textSecondary }]}>
+              Turn on the Location toggle above to see nearby users.
+            </Text>
+          </>
+        ) : loading ? (
           <Text style={[styles.deniedText, { color: colors.textSecondary }]}>Getting your location…</Text>
         ) : (
           <>
@@ -206,6 +240,7 @@ export function NetworkingMap({
             styles.sheetOverlay,
             {
               opacity: sheetAnim,
+              paddingBottom: insets.bottom + Layout.tabBarHeight,
             },
           ]}
         >
@@ -243,9 +278,23 @@ export function NetworkingMap({
                     </Text>
                   </View>
                 )}
-                <Text style={[styles.sheetName, { color: colors.text }]} numberOfLines={1}>
-                  {selectedUser.name || 'Unknown'}
-                </Text>
+                <View style={styles.sheetHeaderText}>
+                  <Text style={[styles.sheetName, { color: colors.text }]} numberOfLines={1}>
+                    {selectedUser.name || 'Unknown'}
+                  </Text>
+                  {currentLocation && (
+                    <Text style={[styles.sheetDistance, { color: colors.textSecondary }]}>
+                      {formatDistance(
+                        distanceKm(
+                          currentLocation.latitude,
+                          currentLocation.longitude,
+                          selectedUser.latitude,
+                          selectedUser.longitude
+                        )
+                      )}
+                    </Text>
+                  )}
+                </View>
               </View>
               {profileLoading ? (
                 <Text style={[styles.sheetBio, { color: colors.textSecondary }]}>Loading…</Text>
@@ -356,7 +405,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sheetAvatarLetter: { fontSize: 22, fontWeight: '700' },
-  sheetName: { fontSize: 20, fontWeight: '700', marginLeft: 14, flex: 1 },
+  sheetHeaderText: { marginLeft: 14, flex: 1, minWidth: 0 },
+  sheetName: { fontSize: 20, fontWeight: '700' },
+  sheetDistance: { fontSize: 13, marginTop: 2 },
   sheetBio: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
   sheetActions: { gap: 10 },
   sheetButton: {

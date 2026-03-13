@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useSegments } from 'expo-router';
 import {
-    Icon,
-    Label,
-    NativeTabs,
+  Icon,
+  Label,
+  NativeTabs,
 } from 'expo-router/unstable-native-tabs';
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -59,29 +59,12 @@ function AndroidTabs() {
         headerShown: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{ href: null }}
-      />
+      <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="contacts"
-        options={{
-          title: 'Contacts',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -92,29 +75,49 @@ function AndroidTabs() {
         }}
       />
       <Tabs.Screen
-        name="links"
+        name="scan"
         options={{
-          title: 'Links',
-          tabBarIcon: ({ color, size }) => <Ionicons name="link" size={size} color={color} />,
+          title: 'Scan',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.scanTabIcon, { backgroundColor: focused ? '#E4E4E7' : 'rgba(255,255,255,0.15)' }]}>
+              <Ionicons name="scan" size={26} color={focused ? '#0A0A0B' : '#A1A1AA'} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
-        name="analytics"
+        name="contacts"
         options={{
-          title: 'Analytics',
-          tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart" size={size} color={color} />,
+          title: 'Contacts',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
+      {/* Hidden routes - accessible via Profile */}
+      <Tabs.Screen name="feed" options={{ href: null }} />
+      <Tabs.Screen name="links" options={{ href: null }} />
+      <Tabs.Screen name="analytics" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  scanTabIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -8,
+  },
+});
 
 function NativeTabHaptic() {
   const segments = useSegments();
@@ -148,7 +151,7 @@ export default function TabLayout() {
     };
   }, [user?.id, permissionStatus, prefs.newMessages]);
 
-  // iOS: native liquid glass tab bar with sliding minimize on scroll, dark theme
+  // iOS: native liquid glass tab bar
   if (Platform.OS === 'ios') {
     return (
       <>
@@ -167,36 +170,27 @@ export default function TabLayout() {
             <Label>Home</Label>
             <Icon sf={{ default: 'house', selected: 'house.fill' }} />
           </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="profile">
-            <Label>Profile</Label>
-            <Icon sf={{ default: 'person', selected: 'person.fill' }} />
+          <NativeTabs.Trigger name="map">
+            <Label>Map</Label>
+            <Icon sf={{ default: 'map', selected: 'map.fill' }} />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="scan">
+            <Label>Scan</Label>
+            <Icon sf={{ default: 'viewfinder', selected: 'viewfinder' }} />
           </NativeTabs.Trigger>
           <NativeTabs.Trigger name="contacts">
             <Label>Contacts</Label>
             <Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} />
           </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="map">
-            <Label>Map</Label>
-            <Icon sf={{ default: 'map', selected: 'map.fill' }} />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="links">
-            <Label>Links</Label>
-            <Icon sf={{ default: 'link', selected: 'link' }} />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="analytics">
-            <Label>Analytics</Label>
-            <Icon sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }} />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="settings" disableScrollToTop>
-            <Label>Settings</Label>
-            <Icon sf={{ default: 'gearshape', selected: 'gearshape.fill' }} />
+          <NativeTabs.Trigger name="profile" disableScrollToTop>
+            <Label>Profile</Label>
+            <Icon sf={{ default: 'person', selected: 'person.fill' }} />
           </NativeTabs.Trigger>
         </NativeTabs>
       </>
     );
   }
 
-  // Android & web: standard tabs with glass-style overlay
   return (
     <>
       <NotificationListener />
