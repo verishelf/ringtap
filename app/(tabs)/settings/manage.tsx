@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import RevenueCatUI from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
@@ -17,6 +17,9 @@ const PORTAL_API_BASE = 'https://www.ringtap.me';
 const APPLE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscriptions';
 const GOOGLE_PLAY_SUBSCRIPTIONS_URL = 'https://play.google.com/store/account/subscriptions';
 
+/** RevenueCat Customer Center is not available in Expo Go - use store URL fallback */
+const canUseRevenueCatUI = Platform.OS !== 'web' && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+
 export default function ManageSubscriptionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -26,8 +29,14 @@ export default function ManageSubscriptionScreen() {
 
   const openCustomerCenter = useCallback(async () => {
     if (Platform.OS === 'web') return;
+    if (!canUseRevenueCatUI) {
+      const url = Platform.OS === 'ios' ? APPLE_SUBSCRIPTIONS_URL : GOOGLE_PLAY_SUBSCRIPTIONS_URL;
+      await Linking.openURL(url);
+      return;
+    }
     setLoading(true);
     try {
+      const RevenueCatUI = require('react-native-purchases-ui').default;
       await RevenueCatUI.presentCustomerCenter({
         callbacks: {
           onRestoreCompleted: () => refresh(),
@@ -40,6 +49,8 @@ export default function ManageSubscriptionScreen() {
       if (!msg.includes('Preview API') && !msg.includes('Native module')) {
         Alert.alert('Error', msg);
       }
+      const url = Platform.OS === 'ios' ? APPLE_SUBSCRIPTIONS_URL : GOOGLE_PLAY_SUBSCRIPTIONS_URL;
+      await Linking.openURL(url);
     } finally {
       setLoading(false);
     }
@@ -88,12 +99,17 @@ export default function ManageSubscriptionScreen() {
   };
 
   const handleManage = async () => {
-    if (hasRevenueCatSubscription) {
-      await openCustomerCenter();
-    } else if (hasStripeSubscription) {
-      await openStripePortal();
-    } else {
-      await openStoreSubscriptions();
+    try {
+      if (hasRevenueCatSubscription && canUseRevenueCatUI) {
+        await openCustomerCenter();
+      } else if (hasStripeSubscription) {
+        await openStripePortal();
+      } else {
+        await openStoreSubscriptions();
+      }
+    } catch {
+      const url = Platform.OS === 'ios' ? APPLE_SUBSCRIPTIONS_URL : GOOGLE_PLAY_SUBSCRIPTIONS_URL;
+      await Linking.openURL(url);
     }
   };
 

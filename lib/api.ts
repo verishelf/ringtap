@@ -314,6 +314,25 @@ export type MapEvent = {
   createdAt: string;
 };
 
+export async function getMapEvent(id: string): Promise<MapEvent | null> {
+  const { data, error } = await supabase
+    .from('map_events')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    id: data.id,
+    userId: data.user_id,
+    name: (data.name as string) ?? '',
+    description: (data.description as string) ?? '',
+    latitude: Number(data.latitude),
+    longitude: Number(data.longitude),
+    eventDate: data.event_date as string,
+    createdAt: data.created_at as string,
+  };
+}
+
 export async function getNearbyMapEvents(
   centerLat: number,
   centerLon: number,
@@ -593,6 +612,23 @@ export async function getAnalytics(
 }
 
 // --- Scanned contacts ---
+
+/** Display name for scanned contact: prefer person's name, avoid showing job title (e.g. "General Manager") as the main label. */
+export function getScannedContactDisplayName(c: ScannedContact): string {
+  const titleKeywords = ['ceo', 'cto', 'cfo', 'president', 'director', 'manager', 'lead', 'engineer', 'designer', 'founder', 'vp', 'head of', 'associate', 'analyst', 'specialist', 'coordinator'];
+  const looksLikeJobTitle = (s: string) => titleKeywords.some((k) => s.toLowerCase().includes(k));
+  const n = (c.name ?? '').trim();
+  const t = (c.title ?? '').trim();
+  if (n && !looksLikeJobTitle(n)) return n;
+  if (t && !looksLikeJobTitle(t)) return t;
+  if (n) return n;
+  const email = (c.email ?? '').trim();
+  if (email) return email;
+  const company = (c.company ?? '').trim();
+  if (company) return company;
+  return 'Scanned contact';
+}
+
 function mapScannedContactFromDb(row: Record<string, unknown>): ScannedContact {
   return {
     id: row.id as string,
@@ -603,6 +639,7 @@ function mapScannedContactFromDb(row: Record<string, unknown>): ScannedContact {
     email: (row.email as string) ?? '',
     phone: (row.phone as string) ?? '',
     website: (row.website as string) ?? '',
+    linkedin: (row.linkedin as string)?.trim() || null,
     avatarUrl: resolveStorageUrlIfPath((row.avatar_url as string) ?? null),
     profileUrl: (row.profile_url as string) ?? null,
     source: (row.source as ScannedContactSource) ?? 'manual',
@@ -620,10 +657,45 @@ export async function getScannedContacts(ownerUserId: string): Promise<ScannedCo
   return (data ?? []).map(mapScannedContactFromDb);
 }
 
+export async function getScannedContact(id: string): Promise<ScannedContact | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('scanned_contacts')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapScannedContactFromDb(data);
+}
+
 export async function deleteScannedContact(id: string): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
   const { error } = await supabase.from('scanned_contacts').delete().eq('id', id).eq('user_id', user.id);
+  return !error;
+}
+
+export type ScannedContactUpdate = Partial<Pick<ScannedContact, 'name' | 'title' | 'company' | 'email' | 'phone' | 'website' | 'linkedin'>>;
+
+export async function updateScannedContact(id: string, updates: ScannedContactUpdate): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const payload: Record<string, unknown> = {};
+  if (updates.name !== undefined) payload.name = (updates.name ?? '').trim();
+  if (updates.title !== undefined) payload.title = (updates.title ?? '').trim();
+  if (updates.company !== undefined) payload.company = (updates.company ?? '').trim();
+  if (updates.email !== undefined) payload.email = (updates.email ?? '').trim();
+  if (updates.phone !== undefined) payload.phone = (updates.phone ?? '').trim();
+  if (updates.website !== undefined) payload.website = (updates.website ?? '').trim();
+  if (updates.linkedin !== undefined) payload.linkedin = (updates.linkedin ?? '').trim() || null;
+  if (Object.keys(payload).length === 0) return true;
+  const { error } = await supabase
+    .from('scanned_contacts')
+    .update(payload)
+    .eq('id', id)
+    .eq('user_id', user.id);
   return !error;
 }
 
@@ -887,6 +959,23 @@ export async function uploadVideoIntro(userId: string, uri: string): Promise<Upl
 export async function uploadBackgroundImage(userId: string, uri: string): Promise<UploadResult> {
   const ext = uri.split('.').pop()?.split('?')[0] ?? 'jpg';
   const path = `backgrounds/${userId}/${Date.now()}.${ext}`;
+  try {
+    const { data, mimeType } = await readFileAsArrayBuffer(uri);
+    const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {
+      contentType: mimeType,
+      upsert: true,
+    });
+    if (uploadError) return { url: null, error: uploadError.message };
+    const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
+    return { url: urlData?.publicUrl ?? null };
+  } catch (e) {
+    return { url: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function uploadScannedCardImage(userId: string, uri: string): Promise<UploadResult> {
+  const ext = uri.split('.').pop()?.split('?')[0] ?? 'jpg';
+  const path = `scanned-cards/${userId}/${Date.now()}.${ext}`;
   try {
     const { data, mimeType } = await readFileAsArrayBuffer(uri);
     const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {

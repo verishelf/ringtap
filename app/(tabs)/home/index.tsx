@@ -17,7 +17,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
-import { PostCard } from '@/components/PostCard';
 import { Layout } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
@@ -28,7 +27,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import type { ConversationWithPeer, SavedContact } from '@/lib/api';
 import type { Post } from '@/services/postService';
 import { getPosts } from '@/services/postService';
-import { getAnalytics, getConversations, getProfile, getSavedContacts, getScannedContacts, getSubscription } from '@/lib/api';
+import { getAnalytics, getConversations, getProfile, getSavedContacts, getScannedContacts, getScannedContactDisplayName, getSubscription } from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
 import { getCurrentCoordinates } from '@/services/locationService';
 import type { ScannedContact } from '@/lib/supabase/types';
@@ -110,7 +109,7 @@ export default function HomeScreen() {
       ].sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime());
       const list = merged.slice(0, 10);
       setRecentContacts(list);
-      const userIds = [...new Set(list.map((item) => (item.type === 'saved' ? (item.data as SavedContact).contactUserId : (item.data as ScannedContact).userId)))];
+      const userIds = [...new Set(list.filter((item) => item.type === 'saved').map((item) => (item.data as SavedContact).contactUserId))];
       const avatarMap: Record<string, string | null> = {};
       const nameMap: Record<string, string> = {};
       const proMap: Record<string, boolean> = {};
@@ -424,15 +423,15 @@ export default function HomeScreen() {
               recentContacts.map((item) => {
                 const isSaved = item.type === 'saved';
                 const id = item.data.id;
-                const contactUserId = isSaved ? (item.data as SavedContact).contactUserId : (item.data as ScannedContact).userId;
+                const contactUserId = isSaved ? (item.data as SavedContact).contactUserId : null;
                 const name = isSaved
-                  ? (recentNameByUserId[contactUserId] || (item.data as SavedContact).displayName || 'Saved contact').trim()
-                  : (item.data.name?.trim() || item.data.email?.trim() || 'Unknown');
+                  ? (recentNameByUserId[contactUserId!] || (item.data as SavedContact).displayName || 'Saved contact').trim()
+                  : getScannedContactDisplayName(item.data as ScannedContact);
                 const createdAt = item.data.createdAt;
                 const storedAvatar = (isSaved ? (item.data as SavedContact).avatarUrl : (item.data as ScannedContact).avatarUrl)?.trim() || null;
-                const avatarUrl = recentAvatarByUserId[contactUserId] ?? storedAvatar ?? null;
-                const isPro = recentIsProByUserId[contactUserId] ?? false;
-                const row = (
+                const avatarUrl = isSaved ? (recentAvatarByUserId[contactUserId!] ?? storedAvatar ?? null) : null;
+                const isPro = isSaved ? (recentIsProByUserId[contactUserId!] ?? false) : false;
+                const row = isSaved ? (
                   <View style={[styles.recentRow, { borderBottomColor: colors.borderLight }]}>
                     <ProAvatar
                       avatarUrl={avatarUrl}
@@ -445,7 +444,21 @@ export default function HomeScreen() {
                       <NameWithVerified name={name} isPro={isPro} />
                       <Text style={[styles.recentTime, { color: colors.textSecondary }]}>
                         {dayjs(createdAt).fromNow()}
-                        {isSaved ? ' · Saved' : ''}
+                        {' · Saved'}
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={[styles.recentRow, { borderBottomColor: colors.borderLight }]}>
+                    <View style={[styles.scannedRecentIcon, { backgroundColor: colors.accent + '33' }]}>
+                      <Ionicons name="document-text-outline" size={20} color={colors.accent} />
+                    </View>
+                    <View style={styles.recentInfo}>
+                      <Text style={[styles.recentName, { color: colors.text }]} numberOfLines={1}>
+                        {name}
+                      </Text>
+                      <Text style={[styles.recentTime, { color: colors.textSecondary }]}>
+                        {dayjs(createdAt).fromNow()}
                       </Text>
                     </View>
                   </View>
@@ -455,7 +468,9 @@ export default function HomeScreen() {
                     <Pressable>{row}</Pressable>
                   </Link>
                 ) : (
-                  <View key={`scanned-${id}`}>{row}</View>
+                  <Pressable key={`scanned-${id}`} onPress={() => router.push(`/(tabs)/contacts/scanned/${(item.data as ScannedContact).id}` as const)}>
+                    {row}
+                  </Pressable>
                 );
               })
             )}
@@ -474,16 +489,28 @@ export default function HomeScreen() {
                 No opportunities from others yet. Check back for hiring, partnerships, or services.
               </Text>
             ) : (
-              opportunityPosts.slice(0, 3).map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={user?.id ?? null}
-                  onLikeToggled={loadDashboard}
-                  onEditRequested={undefined}
-                  onDeleted={loadDashboard}
-                />
-              ))
+              opportunityPosts.slice(0, 3).map((post) => {
+                const typeLabel = { hiring: 'Hiring', partnerships: 'Partnerships', investments: 'Investments', services: 'Services', general: 'General' }[post.type] ?? post.type;
+                const preview = (post.content ?? '').trim().slice(0, 60);
+                const truncated = preview.length < (post.content ?? '').trim().length ? `${preview}…` : preview;
+                return (
+                  <Pressable
+                    key={post.id}
+                    style={[styles.opportunityRow, { borderBottomColor: colors.borderLight }]}
+                    onPress={() => router.push('/(tabs)/profile/feed')}
+                  >
+                    <View style={styles.opportunityLineContent}>
+                      <Text style={[styles.opportunityType, { color: colors.accent }]} numberOfLines={1}>
+                        {typeLabel}
+                      </Text>
+                      <Text style={[styles.opportunityPreview, { color: colors.text }]} numberOfLines={1}>
+                        {truncated || 'Opportunity'}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                  </Pressable>
+                );
+              })
             )}
           </View>
 
@@ -632,6 +659,15 @@ const styles = StyleSheet.create({
   recentNewLabel: { fontSize: 16, fontWeight: '600', flexShrink: 0 },
   seeAll: { fontSize: Layout.caption, fontWeight: '600' },
   recentEmpty: { fontSize: Layout.bodySmall, fontStyle: 'italic', paddingVertical: 8 },
+  opportunityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  opportunityLineContent: { flex: 1, minWidth: 0 },
+  opportunityType: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
+  opportunityPreview: { fontSize: 14 },
   recentRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -654,6 +690,15 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   recentAvatarWrap: { marginRight: 12, flexShrink: 0 },
+  scannedRecentIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    flexShrink: 0,
+  },
   recentAvatarText: { fontSize: 15, fontWeight: '700' },
   recentInfo: { flex: 1, minWidth: 0 },
   recentName: { fontSize: Layout.bodySmall, fontWeight: '600' },

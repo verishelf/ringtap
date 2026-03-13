@@ -2,10 +2,10 @@
  * Map view showing nearby events as markers.
  */
 
-import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { MapEvent } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -49,6 +49,7 @@ export type EventsMapViewProps = {
 
 export function EventsMapView({ currentLocation, events }: EventsMapViewProps) {
   const colors = useThemeColors();
+  const router = useRouter();
   const mapRef = useRef<MapView>(null);
   const center = currentLocation ?? (events[0] ? { latitude: events[0].latitude, longitude: events[0].longitude } : null);
   const region = center
@@ -86,6 +87,7 @@ export function EventsMapView({ currentLocation, events }: EventsMapViewProps) {
             coordinate={{ latitude: ev.latitude, longitude: ev.longitude }}
             title={ev.name}
             description={ev.description || undefined}
+            onPress={() => router.push(`/(tabs)/map/event/${ev.id}` as const)}
           >
             <View style={[styles.markerWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               <Ionicons name="calendar" size={20} color={colors.accent} />

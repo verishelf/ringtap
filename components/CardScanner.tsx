@@ -1,9 +1,10 @@
 /**
  * Smart Business Card Scanner
- * Live camera scan, OCR extraction, editable parsed results, save to contacts.
+ * Live camera scan, OCR + AI extraction, editable parsed results, save to contacts with card image.
  */
 
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -22,7 +23,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { parseBusinessCardText, extractTextFromImage, type ParsedContact } from '@/services/ocrService';
+import { extractAndParseContact, type ParsedContact } from '@/services/ocrService';
 import { saveScannedContact, sendInviteToRingTap } from '@/services/contactService';
 
 export type CardScannerProps = {
@@ -49,26 +50,22 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
     if (!focused) setCameraReady(false);
   }, [focused]);
 
-  const processImage = useCallback(
-    async (uri: string) => {
-      setCapturedUri(uri);
-      setParsed(null);
-      setEditing(null);
-      setLoading(true);
-      try {
-        const rawText = await extractTextFromImage(uri);
-        const p = parseBusinessCardText(rawText);
-        setParsed(p);
-        setEditing({ ...p });
-      } catch {
-        setParsed({ name: '', email: '', phone: '', company: '' });
-        setEditing({ name: '', email: '', phone: '', company: '' });
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const processImage = useCallback(async (uri: string) => {
+    setCapturedUri(uri);
+    setParsed(null);
+    setEditing(null);
+    setLoading(true);
+    try {
+      const p = await extractAndParseContact(uri);
+      setParsed(p);
+      setEditing({ ...p });
+    } catch {
+      setParsed({ name: '', email: '', phone: '', company: '' });
+      setEditing({ name: '', email: '', phone: '', company: '' });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const handleCapture = useCallback(async () => {
     if (!permission?.granted) {
@@ -80,27 +77,27 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
     }
     let uri: string | null = null;
     try {
-      if (cameraRef.current && cameraReady) {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.8,
-          skipProcessing: true,
-        });
-        uri = photo?.uri ?? null;
-      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [3, 2],
+        quality: 0.9,
+      });
+      if (result.canceled) return;
+      uri = result.assets[0]?.uri ?? null;
     } catch {
-      uri = null;
-    }
-    if (!uri) {
       try {
-        const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [3, 2],
-          quality: 0.8,
-        });
-        if (result.canceled) return;
-        uri = result.assets[0]?.uri ?? null;
+        if (cameraRef.current && cameraReady) {
+          const photo = await cameraRef.current.takePictureAsync({
+            quality: 0.9,
+            skipProcessing: true,
+          });
+          uri = photo?.uri ?? null;
+        }
       } catch {
+        uri = null;
+      }
+      if (!uri) {
         Alert.alert('Error', 'Could not open camera.');
         return;
       }
@@ -112,7 +109,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
     if (!editing || !userId) return;
     setSaving(true);
     try {
-      const result = await saveScannedContact(userId, editing);
+      const result = await saveScannedContact(userId, editing, capturedUri ?? undefined);
       if (result.success) {
         setSaved(true);
         onSaved?.();
@@ -124,7 +121,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
     } finally {
       setSaving(false);
     }
-  }, [editing, userId, onSaved]);
+  }, [editing, userId, onSaved, capturedUri]);
 
   const handleInvite = useCallback(async () => {
     const email = editing?.email?.trim();
@@ -197,18 +194,31 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                 </Text>
               </View>
               <Pressable
-                style={[
+                style={({ pressed }) => [
                   styles.captureButton,
                   {
-                    backgroundColor: colors.accent,
                     bottom: insets.bottom + Layout.tabBarHeight + 20,
-                    opacity: 1,
+                    transform: [{ scale: pressed ? 0.95 : 1 }],
                   },
                 ]}
                 onPress={handleCapture}
                 disabled={false}
               >
-                <Ionicons name="camera" size={28} color="#0A0A0B" />
+                <View style={[styles.captureButtonGlass, { borderColor: 'rgba(255,255,255,0.35)' }]}>
+                  {Platform.OS === 'ios' ? (
+                    <BlurView intensity={70} tint="dark" style={styles.captureButtonBlur}>
+                      <View style={[styles.captureButtonAccent, { backgroundColor: colors.accent }]}>
+                        <Ionicons name="camera" size={38} color="#0A0A0B" />
+                      </View>
+                    </BlurView>
+                  ) : (
+                    <View style={[styles.captureButtonBlur, { backgroundColor: 'rgba(30,30,35,0.85)' }]}>
+                      <View style={[styles.captureButtonAccent, { backgroundColor: colors.accent }]}>
+                        <Ionicons name="camera" size={38} color="#0A0A0B" />
+                      </View>
+                    </View>
+                  )}
+                </View>
               </Pressable>
             </>
           ) : (
@@ -225,99 +235,124 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
           <ScrollView
             style={styles.scrollInner}
             contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: insets.top + Layout.screenPadding,
-              paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap,
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {loading ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color={colors.accent} />
-              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Extracting text…</Text>
-            </View>
-          ) : editing ? (
-            <>
-              <View style={[styles.cardPreview, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Parsed contact</Text>
-                <TextInput
-                  style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
-                  placeholder="Name"
-                  placeholderTextColor={colors.textSecondary}
-                  value={editing.name}
-                  onChangeText={(t) => setEditing((p) => (p ? { ...p, name: t } : null))}
-                />
-                <TextInput
-                  style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
-                  placeholder="Email"
-                  placeholderTextColor={colors.textSecondary}
-                  value={editing.email}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  onChangeText={(t) => setEditing((p) => (p ? { ...p, email: t } : null))}
-                />
-                <TextInput
-                  style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
-                  placeholder="Phone"
-                  placeholderTextColor={colors.textSecondary}
-                  value={editing.phone}
-                  keyboardType="phone-pad"
-                  onChangeText={(t) => setEditing((p) => (p ? { ...p, phone: t } : null))}
-                />
-                <TextInput
-                  style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
-                  placeholder="Company"
-                  placeholderTextColor={colors.textSecondary}
-                  value={editing.company}
-                  onChangeText={(t) => setEditing((p) => (p ? { ...p, company: t } : null))}
-                />
+              styles.scrollContent,
+              {
+                paddingTop: insets.top + Layout.screenPadding,
+                paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap,
+              },
+            ]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {loading ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator size="large" color={colors.accent} />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Extracting text…</Text>
               </View>
-              {!saved ? (
-                <Pressable
-                  style={[styles.primaryButton, { backgroundColor: colors.accent }]}
-                  onPress={handleSave}
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <ActivityIndicator size="small" color="#0A0A0B" />
-                  ) : (
-                    <Text style={[styles.primaryButtonText, { color: '#0A0A0B' }]}>Save contact</Text>
-                  )}
+            ) : editing ? (
+              <>
+                <View style={[styles.cardPreview, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Parsed contact</Text>
+                  <TextInput
+                    style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
+                    placeholder="Name"
+                    placeholderTextColor={colors.textSecondary}
+                    value={editing.name}
+                    onChangeText={(t) => setEditing((p) => (p ? { ...p, name: t } : null))}
+                  />
+                  <TextInput
+                    style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
+                    placeholder="Title"
+                    placeholderTextColor={colors.textSecondary}
+                    value={editing.title ?? ''}
+                    onChangeText={(t) => setEditing((p) => (p ? { ...p, title: t } : null))}
+                  />
+                  <TextInput
+                    style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
+                    placeholder="Company"
+                    placeholderTextColor={colors.textSecondary}
+                    value={editing.company}
+                    onChangeText={(t) => setEditing((p) => (p ? { ...p, company: t } : null))}
+                  />
+                  <TextInput
+                    style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
+                    placeholder="Email"
+                    placeholderTextColor={colors.textSecondary}
+                    value={editing.email}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    onChangeText={(t) => setEditing((p) => (p ? { ...p, email: t } : null))}
+                  />
+                  <TextInput
+                    style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
+                    placeholder="Phone"
+                    placeholderTextColor={colors.textSecondary}
+                    value={editing.phone}
+                    keyboardType="phone-pad"
+                    onChangeText={(t) => setEditing((p) => (p ? { ...p, phone: t } : null))}
+                  />
+                  <TextInput
+                    style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
+                    placeholder="Website"
+                    placeholderTextColor={colors.textSecondary}
+                    value={editing.website ?? ''}
+                    keyboardType="url"
+                    autoCapitalize="none"
+                    onChangeText={(t) => setEditing((p) => (p ? { ...p, website: t } : null))}
+                  />
+                  <TextInput
+                    style={[styles.input, { color: colors.text, borderColor: colors.borderLight }]}
+                    placeholder="LinkedIn"
+                    placeholderTextColor={colors.textSecondary}
+                    value={editing.linkedin ?? ''}
+                    keyboardType="url"
+                    autoCapitalize="none"
+                    onChangeText={(t) => setEditing((p) => (p ? { ...p, linkedin: t } : null))}
+                  />
+                </View>
+                {!saved ? (
+                  <Pressable
+                    style={[styles.primaryButton, { backgroundColor: colors.accent }]}
+                    onPress={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <ActivityIndicator size="small" color="#0A0A0B" />
+                    ) : (
+                      <Text style={[styles.primaryButtonText, { color: '#0A0A0B' }]}>Save contact</Text>
+                    )}
+                  </Pressable>
+                ) : (
+                  <>
+                    <View style={[styles.savedBadge, { backgroundColor: colors.accent + '33' }]}>
+                      <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+                      <Text style={[styles.savedText, { color: colors.accent }]}>Contact saved</Text>
+                    </View>
+                    {editing.email?.trim() && (
+                      <Pressable
+                        style={[styles.secondaryButton, { borderColor: colors.borderLight }]}
+                        onPress={handleInvite}
+                        disabled={inviting}
+                      >
+                        {inviting ? (
+                          <ActivityIndicator size="small" color={colors.accent} />
+                        ) : (
+                          <>
+                            <Ionicons name="mail-outline" size={20} color={colors.accent} />
+                            <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>
+                              Invite to RingTap
+                            </Text>
+                          </>
+                        )}
+                      </Pressable>
+                    )}
+                  </>
+                )}
+                <Pressable style={styles.resetButton} onPress={handleReset}>
+                  <Text style={[styles.resetText, { color: colors.textSecondary }]}>Scan another</Text>
                 </Pressable>
-              ) : (
-                <>
-                  <View style={[styles.savedBadge, { backgroundColor: colors.accent + '33' }]}>
-                    <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
-                    <Text style={[styles.savedText, { color: colors.accent }]}>Contact saved</Text>
-                  </View>
-                  {editing.email?.trim() && (
-                    <Pressable
-                      style={[styles.secondaryButton, { borderColor: colors.borderLight }]}
-                      onPress={handleInvite}
-                      disabled={inviting}
-                    >
-                      {inviting ? (
-                        <ActivityIndicator size="small" color={colors.accent} />
-                      ) : (
-                        <>
-                          <Ionicons name="mail-outline" size={20} color={colors.accent} />
-                          <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>
-                            Invite to RingTap
-                          </Text>
-                        </>
-                      )}
-                    </Pressable>
-                  )}
-                </>
-              )}
-              <Pressable style={styles.resetButton} onPress={handleReset}>
-                <Text style={[styles.resetText, { color: colors.textSecondary }]}>Scan another</Text>
-              </Pressable>
-            </>
-          ) : null}
+              </>
+            ) : null}
           </ScrollView>
         </KeyboardAvoidingView>
       )}
@@ -343,7 +378,7 @@ const styles = StyleSheet.create({
     left: 24,
     right: 24,
     top: '25%',
-    height: 160,
+    height: 220,
     borderWidth: 2,
     borderRadius: 12,
     alignItems: 'center',
@@ -353,6 +388,29 @@ const styles = StyleSheet.create({
   captureButton: {
     position: 'absolute',
     alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  captureButtonGlass: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureButtonBlur: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureButtonAccent: {
     width: 64,
     height: 64,
     borderRadius: 32,

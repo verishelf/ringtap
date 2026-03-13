@@ -8,14 +8,14 @@ import { EventsMapView } from '@/components/EventsMapView';
 import { HotspotsMapView } from '@/components/HotspotsMapView';
 import { NetworkingMap } from '@/components/NetworkingMap';
 import { Layout } from '@/constants/theme';
+import { useLocation } from '@/contexts/LocationContext';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useLocation } from '@/contexts/LocationContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { deleteMapEvent, saveContact, type MapEvent } from '@/lib/api';
+import { deleteMapEvent, getSavedContacts, saveContact, type MapEvent } from '@/lib/api';
 import {
   getCurrentCoordinates,
   getLocationPermissionStatus,
@@ -23,7 +23,7 @@ import {
   startLocationPolling,
 } from '@/services/locationService';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -64,6 +64,7 @@ export default function MapScreen() {
 
   const [addEventVisible, setAddEventVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<MapEvent | null>(null);
+  const [savedContactUserIds, setSavedContactUserIds] = useState<Set<string>>(new Set());
   const {
     events,
     loading: eventsLoading,
@@ -123,6 +124,15 @@ export default function MapScreen() {
     };
   }, [isPro, user?.id, profile?.name, profile?.avatarUrl, currentLocation]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id || !isPro) return;
+      getSavedContacts().then((contacts) => {
+        setSavedContactUserIds(new Set(contacts.map((c) => c.contactUserId)));
+      });
+    }, [user?.id, isPro])
+  );
+
   const handleConnect = useCallback(
     async (userId: string) => {
       if (!user?.id) return;
@@ -133,6 +143,7 @@ export default function MapScreen() {
         profileToSave?.avatarUrl ?? undefined
       );
       if (result.success) {
+        setSavedContactUserIds((prev) => new Set([...prev, userId]));
         Alert.alert('Contact saved', 'You can message them from Contacts.');
       } else {
         Alert.alert('Could not save', result.error ?? 'Try again.');
@@ -217,6 +228,7 @@ export default function MapScreen() {
               currentLocation={currentLocation}
               users={users}
               loading={loading}
+              savedContactUserIds={savedContactUserIds}
               onConnect={handleConnect}
               onViewProfile={handleViewProfile}
               locationPermissionDenied={permissionDenied}
@@ -266,7 +278,10 @@ export default function MapScreen() {
                   keyExtractor={(e) => e.id}
                   contentContainerStyle={styles.eventsListContent}
                   renderItem={({ item }) => (
-                    <View style={[styles.eventCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                    <Pressable
+                      style={[styles.eventCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+                      onPress={() => router.push(`/(tabs)/map/event/${item.id}` as const)}
+                    >
                       <View style={styles.eventCardIcon}>
                         <Ionicons name="calendar" size={18} color={colors.accent} />
                       </View>
@@ -310,7 +325,7 @@ export default function MapScreen() {
                           </View>
                         )}
                       </View>
-                    </View>
+                    </Pressable>
                   )}
                 />
               )}

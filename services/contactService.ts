@@ -1,9 +1,11 @@
 /**
  * Contact service for business card scanner.
  * Saves scanned contacts to Supabase scanned_contacts table.
+ * Uploads card image to storage when provided.
  */
 
 import { supabase } from '@/lib/supabase/supabaseClient';
+import { uploadScannedCardImage } from '@/lib/api';
 import type { ParsedContact } from './ocrService';
 
 export type ScannedContactRecord = {
@@ -20,10 +22,17 @@ export type ScannedContactRecord = {
 
 export async function saveScannedContact(
   userId: string,
-  contact: ParsedContact & { title?: string; website?: string }
+  contact: ParsedContact & { title?: string; website?: string; linkedin?: string },
+  cardImageUri?: string
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
+
+  let avatarUrl: string | null = null;
+  if (cardImageUri?.trim()) {
+    const { url, error: uploadErr } = await uploadScannedCardImage(userId, cardImageUri.trim());
+    if (!uploadErr && url) avatarUrl = url;
+  }
 
   const { data, error } = await supabase
     .from('scanned_contacts')
@@ -35,6 +44,8 @@ export async function saveScannedContact(
       email: (contact.email ?? '').trim(),
       phone: (contact.phone ?? '').trim(),
       website: (contact.website ?? '').trim(),
+      linkedin: (contact.linkedin ?? '').trim() || null,
+      avatar_url: avatarUrl,
       source: 'camera',
     })
     .select('id')

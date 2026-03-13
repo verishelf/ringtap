@@ -78,6 +78,7 @@ export type HotspotsMapViewProps = {
   currentLocation: { latitude: number; longitude: number } | null;
   users: MapPresenceUser[];
   loading?: boolean;
+  savedContactUserIds?: Set<string>;
   onConnect: (userId: string) => void;
   onViewProfile: (userId: string) => void;
   locationPermissionDenied?: boolean;
@@ -88,6 +89,7 @@ export function HotspotsMapView({
   currentLocation,
   users,
   loading,
+  savedContactUserIds = new Set(),
   onConnect,
   onViewProfile,
   locationPermissionDenied,
@@ -289,6 +291,7 @@ export function HotspotsMapView({
 function HotspotUserRow({
   user,
   currentLocation,
+  isConnected,
   onConnect,
   onViewProfile,
   onCloseSheet,
@@ -296,6 +299,7 @@ function HotspotUserRow({
 }: {
   user: MapPresenceUser;
   currentLocation: { latitude: number; longitude: number };
+  isConnected: boolean;
   onConnect: (userId: string) => void;
   onViewProfile: (userId: string) => void;
   onCloseSheet: () => void;
@@ -327,15 +331,21 @@ function HotspotUserRow({
         </Text>
       </View>
       <View style={styles.userRowActions}>
-        <Pressable
-          style={[styles.userActionBtn, { backgroundColor: colors.accent }]}
-          onPress={() => {
-            onCloseSheet();
-            onConnect(user.userId);
-          }}
-        >
-          <Ionicons name="person-add-outline" size={18} color="#0A0A0B" />
-        </Pressable>
+        {isConnected ? (
+          <View style={[styles.userActionBtn, { borderColor: colors.borderLight, backgroundColor: 'transparent' }]}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.textSecondary} />
+          </View>
+        ) : (
+          <Pressable
+            style={[styles.userActionBtn, { backgroundColor: colors.accent }]}
+            onPress={() => {
+              onCloseSheet();
+              onConnect(user.userId);
+            }}
+          >
+            <Ionicons name="person-add-outline" size={18} color="#0A0A0B" />
+          </Pressable>
+        )}
         <Pressable
           style={[styles.userActionBtn, { borderColor: colors.borderLight }]}
           onPress={() => {

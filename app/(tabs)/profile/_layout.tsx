@@ -23,6 +23,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="feed" options={{ title: 'Opportunities' }} />
       <Stack.Screen name="analytics" options={{ title: 'Analytics' }} />
       <Stack.Screen name="upgrade" options={{ title: 'Subscription' }} />
+      <Stack.Screen name="manage" options={{ title: 'Manage Subscription', headerShown: false }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>
   );

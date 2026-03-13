@@ -9,7 +9,7 @@ import { useSession } from '@/hooks/useSession';
 
 export default function ScanTab() {
   const { user } = useSession();
-  const [focused, setFocused] = useState(true);
+  const [focused, setFocused] = useState(false);
 
   useFocusEffect(
     useCallback(() => {

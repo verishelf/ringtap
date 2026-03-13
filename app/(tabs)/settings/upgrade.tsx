@@ -59,6 +59,7 @@ function LegalLinks({ colors }: { colors: { accent: string; textSecondary: strin
 }
 
 export default function UpgradeScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const inProfileStack = segments.includes('profile') && segments[segments.length - 1] !== 'index';
@@ -220,7 +221,7 @@ export default function UpgradeScreen() {
         {isPro ? (
           <Pressable
             style={[styles.button, { backgroundColor: colors.accent }]}
-            onPress={() => router.push('/(tabs)/settings/manage')}
+            onPress={() => router.push(inProfileStack ? '/(tabs)/profile/manage' : '/(tabs)/settings/manage')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="card-outline" size={22} color={colors.text} />

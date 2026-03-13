@@ -23,6 +23,7 @@ import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { SavedContact, ScannedContact } from '@/lib/api';
+import { getScannedContactDisplayName } from '@/lib/api';
 import {
   deleteSavedContact,
   deleteScannedContact,
@@ -158,7 +159,7 @@ export default function ContactsScreen() {
   const handleDeleteScanned = useCallback((scanned: ScannedContact) => {
     Alert.alert(
       'Remove scanned contact',
-      `Remove ${scanned.name || scanned.email || 'this contact'}?`,
+      `Remove ${getScannedContactDisplayName(scanned)}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -246,7 +247,7 @@ export default function ContactsScreen() {
 
   const renderScannedItem: ListRenderItem<ScannedContact> = useCallback(
     ({ item }) => {
-      const displayName = item.name?.trim() || item.email?.trim() || 'Scanned contact';
+      const displayName = getScannedContactDisplayName(item);
       return (
         <Pressable
           style={({ pressed }) => [
@@ -257,10 +258,7 @@ export default function ContactsScreen() {
               opacity: pressed ? 0.9 : 1,
             },
           ]}
-          onPress={() => {
-            if (item.email?.trim()) Linking.openURL(`mailto:${item.email.trim()}`);
-            else if (item.phone?.trim()) Linking.openURL(`tel:${item.phone.trim()}`);
-          }}
+          onPress={() => router.push(`/(tabs)/contacts/scanned/${item.id}` as const)}
           onLongPress={() => handleDeleteScanned(item)}
         >
           <View style={[styles.scannedAvatar, { backgroundColor: colors.accent + '33' }]}>
@@ -282,7 +280,7 @@ export default function ContactsScreen() {
         </Pressable>
       );
     },
-    [colors, handleDeleteScanned]
+    [colors, handleDeleteScanned, router]
   );
 
   if (loading) {

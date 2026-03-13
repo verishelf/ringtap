@@ -104,6 +104,7 @@ export interface ScannedContact {
   email: string;
   phone: string;
   website: string;
+  linkedin: string | null;
   avatarUrl: string | null;
   profileUrl: string | null;
   source: ScannedContactSource;

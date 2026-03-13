@@ -92,6 +92,8 @@ interface ProfileScanPreviewProps {
   links: UserLink[];
   /** Called when "Save Contact" is pressed (e.g. copy profile link). If provided, the Save Contact button is shown. */
   onSaveContact?: () => void;
+  /** When true, show "Connected" instead of Save Contact (user is already in contacts). */
+  isAlreadyConnected?: boolean;
   /** Called when "Message" is pressed. If provided, the Message button is shown. */
   onMessage?: () => void;
   /** Optional footer line(s) shown below the main CTA. */
@@ -110,6 +112,7 @@ export function ProfileScanPreview({
   profile,
   links,
   onSaveContact,
+  isAlreadyConnected,
   onMessage,
   footerText,
   showVerified,
@@ -323,7 +326,12 @@ export function ProfileScanPreview({
               </Pressable>
             ) : null}
 
-            {onSaveContact && (
+            {isAlreadyConnected ? (
+              <View style={[styles.saveContactButton, styles.messageButton, { borderColor: accent, borderRadius: radius }]}>
+                <Ionicons name="checkmark-circle" size={22} color={accent} />
+                <Text style={[styles.saveContactText, { color: accent }]}>Connected</Text>
+              </View>
+            ) : onSaveContact ? (
               <Pressable
                 style={[styles.saveContactButton, { backgroundColor: accent, borderRadius: radius }]}
                 onPress={onSaveContact}
@@ -332,7 +340,7 @@ export function ProfileScanPreview({
                 <Text style={[styles.saveContactText, { color: colors.primary }]}>Save Contact</Text>
                 <Ionicons name="checkmark" size={20} color={colors.primary} />
               </Pressable>
-            )}
+            ) : null}
 
             {onMessage && (
               <Pressable

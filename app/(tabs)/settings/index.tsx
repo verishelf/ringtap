@@ -165,7 +165,7 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Subscription</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             {isPro ? (
-              <Link href="/(tabs)/settings/manage" asChild>
+              <Link href={inProfileStack ? '/(tabs)/profile/manage' : '/(tabs)/settings/manage'} asChild>
                 <Pressable style={styles.menuItem}>
                   <View style={styles.menuItemLeft}>
                     <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
@@ -179,7 +179,7 @@ export default function SettingsScreen() {
                 </Pressable>
               </Link>
             ) : (
-              <Link href="/(tabs)/settings/upgrade" asChild>
+              <Link href={inProfileStack ? '/(tabs)/profile/upgrade' : '/(tabs)/settings/upgrade'} asChild>
                 <Pressable style={styles.menuItem}>
                   <View style={styles.menuItemLeft}>
                     <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>

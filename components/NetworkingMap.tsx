@@ -56,6 +56,7 @@ export type NetworkingMapProps = {
   currentLocation: { latitude: number; longitude: number } | null;
   users: MapPresenceUser[];
   loading?: boolean;
+  savedContactUserIds?: Set<string>;
   onConnect: (userId: string) => void;
   onViewProfile: (userId: string) => void;
   locationPermissionDenied?: boolean;
@@ -67,6 +68,7 @@ export function NetworkingMap({
   currentLocation,
   users,
   loading,
+  savedContactUserIds = new Set(),
   onConnect,
   onViewProfile,
   locationPermissionDenied,
@@ -304,13 +306,20 @@ export function NetworkingMap({
                 </Text>
               ) : null}
               <View style={styles.sheetActions}>
-                <Pressable
-                  style={[styles.sheetButton, styles.sheetButtonPrimary, { backgroundColor: colors.accent }]}
-                  onPress={() => { closeSheet(); onConnect(selectedUser.userId); }}
-                >
-                  <Ionicons name="person-add-outline" size={20} color="#0A0A0B" />
-                  <Text style={[styles.sheetButtonTextPrimary, { color: '#0A0A0B' }]}>Connect</Text>
-                </Pressable>
+                {savedContactUserIds.has(selectedUser.userId) ? (
+                  <View style={[styles.sheetButton, styles.sheetButtonSecondary, { borderColor: colors.borderLight, flex: 1 }]}>
+                    <Ionicons name="checkmark-circle" size={20} color={colors.textSecondary} />
+                    <Text style={[styles.sheetButtonText, { color: colors.textSecondary }]}>Connected</Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    style={[styles.sheetButton, styles.sheetButtonPrimary, { backgroundColor: colors.accent }]}
+                    onPress={() => { closeSheet(); onConnect(selectedUser.userId); }}
+                  >
+                    <Ionicons name="person-add-outline" size={20} color="#0A0A0B" />
+                    <Text style={[styles.sheetButtonTextPrimary, { color: '#0A0A0B' }]}>Connect</Text>
+                  </Pressable>
+                )}
                 <Pressable
                   style={[styles.sheetButton, styles.sheetButtonSecondary, { borderColor: colors.borderLight }]}
                   onPress={() => { closeSheet(); onViewProfile(selectedUser.userId); }}

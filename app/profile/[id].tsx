@@ -185,6 +185,7 @@ export default function ProfileByIdScreen() {
           profile={profile}
           links={links}
           onSaveContact={user?.id !== profile.userId && !isAlreadySaved ? handleSaveContact : undefined}
+          isAlreadyConnected={user?.id !== profile.userId && isAlreadySaved}
           onMessage={user?.id !== profile.userId ? handleMessage : undefined}
           showProRing={profileIsPro}
           showVerified={profileIsPro}
