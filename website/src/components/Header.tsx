@@ -14,6 +14,7 @@ type NavLinkItem = {
 
 const homeLinks: NavLinkItem[] = [
   { href: "/#features", label: "Features" },
+  { href: "/#whats-new", label: "What's new" },
   { href: "/#how-it-works", label: "How it works" },
   { href: "/#store", label: "Shop" },
   { href: "/store", label: "Store" },
@@ -25,6 +26,7 @@ const homeLinks: NavLinkItem[] = [
 
 const storeLinks: NavLinkItem[] = [
   { href: "/#features", label: "Features" },
+  { href: "/#whats-new", label: "What's new" },
   { href: "/store", label: "Store", active: true },
   { href: "/about", label: "About" },
   { href: "/blog", label: "Blog" },

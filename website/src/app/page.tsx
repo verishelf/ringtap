@@ -219,6 +219,52 @@ export default function Home() {
         </FadeInOnScroll>
       </section>
 
+      {/* 4b. What's new — Recent features */}
+      <section id="whats-new" className="border-t border-border-light/50 py-24 px-6">
+        <FadeInOnScroll className="mx-auto max-w-6xl">
+          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
+            What&apos;s new
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
+            New features to help you connect, discover, and grow your network.
+          </p>
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                title: "Map & discovery",
+                description:
+                  "Find nearby users, networking hotspots, and events. See who&apos;s around and discover opportunities in your area.",
+              },
+              {
+                title: "Opportunities feed",
+                description:
+                  "Community feed for hiring, partnerships, and services. Post, like, comment—with clickable links and Pro badges.",
+              },
+              {
+                title: "Business card scanner",
+                description:
+                  "Scan business cards with your camera. OCR extracts name, title, and contact—save new connections instantly.",
+              },
+              {
+                title: "Pro badges & polish",
+                description:
+                  "Pro users get a verified badge and ring border. Comments show mini avatars; long threads expand and collapse.",
+              },
+            ].map((item, i) => (
+              <FadeInOnScroll key={item.title} delay={i * 80}>
+                <div className="rounded-2xl border border-accent/30 bg-surface p-5">
+                  <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
+                  <p className="mt-2 text-sm text-muted-light leading-relaxed">{item.description}</p>
+                </div>
+              </FadeInOnScroll>
+            ))}
+          </div>
+          <p className="mt-8 text-center text-sm text-muted-light">
+            Plus: personalized home greeting, profile tools (Links, Analytics, Settings), and keyboard-friendly modals.
+          </p>
+        </FadeInOnScroll>
+      </section>
+
       {/* 5. Features — Clean visual breakdown */}
       <section id="features" className="border-t border-border-light/50 py-24 px-6">
         <FadeInOnScroll className="mx-auto max-w-6xl">
