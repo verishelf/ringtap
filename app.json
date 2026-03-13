@@ -17,7 +17,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "me.ringtap.app",
-      "googleServicesFile": "./GoogleService-Info.plist",
       "buildNumber": "1",
       "associatedDomains": [
         "applinks:ringtap.me",
@@ -137,13 +136,10 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "17.0",
-            "useFrameworks": "static"
+            "deploymentTarget": "17.0"
           }
         }
       ],
-      "@react-native-firebase/app",
-      "@react-native-firebase/analytics",
       [
         "expo-contacts",
         {
