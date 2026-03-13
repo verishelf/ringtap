@@ -16,18 +16,22 @@ export async function generateMetadata({ params }: { params: Promise<{ uid: stri
     const name = profile.name || profile.username || "Profile";
     const title = `${name} | RingTap`;
     const description = profile.bio?.slice(0, 160) || `View ${name}'s digital business card on RingTap.`;
+    const profileUrl = `${SITE_URL}/profile/${uid}`;
     return {
       title,
       description,
       openGraph: {
         title,
         description,
-        url: `${SITE_URL}/profile/${uid}`,
+        url: profileUrl,
         type: "profile",
       },
       twitter: { card: "summary", title, description },
-      alternates: { canonical: `${SITE_URL}/profile/${uid}` },
+      alternates: { canonical: profileUrl },
       robots: { index: true, follow: true },
+      other: {
+        "apple-itunes-app": `app-id=6758565822, app-argument=${profileUrl}`,
+      },
     };
   } catch {
     return { title: "Profile | RingTap" };

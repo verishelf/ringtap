@@ -5,10 +5,10 @@
 
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import type { MapPresenceUser } from '@/lib/api';
+import { getSavedContacts, type MapPresenceUser } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   FlatList,
@@ -99,9 +99,17 @@ export function HotspotsMapView({
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const [selectedHotspot, setSelectedHotspot] = useState<{ center: { lat: number; lon: number }; users: MapPresenceUser[] } | null>(null);
+  const [sheetContactIds, setSheetContactIds] = useState<Set<string>>(new Set());
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
   const hotspots = useMemo(() => clusterUsers(users), [users]);
+
+  useEffect(() => {
+    if (!selectedHotspot) return;
+    getSavedContacts().then((contacts) => {
+      setSheetContactIds(new Set(contacts.map((c) => c.contactUserId)));
+    });
+  }, [selectedHotspot]);
 
   const openSheet = useCallback((hotspot: { center: { lat: number; lon: number }; users: MapPresenceUser[] }) => {
     setSelectedHotspot(hotspot);
@@ -272,6 +280,7 @@ export function HotspotsMapView({
                     <HotspotUserRow
                       user={item}
                       currentLocation={currentLocation}
+                      isConnected={sheetContactIds.has(item.userId) || savedContactUserIds.has(item.userId)}
                       onConnect={onConnect}
                       onViewProfile={onViewProfile}
                       onCloseSheet={closeSheet}
@@ -332,8 +341,8 @@ function HotspotUserRow({
       </View>
       <View style={styles.userRowActions}>
         {isConnected ? (
-          <View style={[styles.userActionBtn, { borderColor: colors.borderLight, backgroundColor: 'transparent' }]}>
-            <Ionicons name="checkmark-circle" size={18} color={colors.textSecondary} />
+          <View style={[styles.userActionBtn, { borderColor: '#22c55e33', backgroundColor: '#22c55e22' }]}>
+            <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
           </View>
         ) : (
           <Pressable

@@ -238,13 +238,7 @@ export function NetworkingMap({
       >
         <Animated.View
           pointerEvents="box-none"
-          style={[
-            styles.sheetOverlay,
-            {
-              opacity: sheetAnim,
-              paddingBottom: insets.bottom + Layout.tabBarHeight,
-            },
-          ]}
+          style={[styles.sheetOverlay, { opacity: sheetAnim }]}
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={closeSheet} />
           {selectedUser && (
@@ -266,7 +260,7 @@ export function NetworkingMap({
               ]}
             >
             <View style={[styles.sheetHandle, { backgroundColor: colors.borderLight }]} />
-            <View style={styles.sheetContent}>
+            <View style={[styles.sheetContent, { paddingBottom: Layout.screenPadding + insets.bottom + Layout.tabBarHeight }]}>
               <View style={styles.sheetHeader}>
                 {selectedUser.avatarUrl ? (
                   <Image
@@ -307,9 +301,9 @@ export function NetworkingMap({
               ) : null}
               <View style={styles.sheetActions}>
                 {savedContactUserIds.has(selectedUser.userId) ? (
-                  <View style={[styles.sheetButton, styles.sheetButtonSecondary, { borderColor: colors.borderLight, flex: 1 }]}>
-                    <Ionicons name="checkmark-circle" size={20} color={colors.textSecondary} />
-                    <Text style={[styles.sheetButtonText, { color: colors.textSecondary }]}>Connected</Text>
+                  <View style={[styles.sheetButton, styles.sheetButtonSecondary, { borderColor: colors.borderLight, backgroundColor: colors.surface }]}>
+                    <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                    <Text style={[styles.sheetButtonText, { color: colors.text }]}>Connected</Text>
                   </View>
                 ) : (
                   <Pressable
@@ -393,7 +387,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Layout.radiusXl,
     borderTopRightRadius: Layout.radiusXl,
     borderWidth: 1,
-    paddingBottom: 34,
   },
   sheetHandle: {
     width: 36,

@@ -214,6 +214,7 @@ export default function MapScreen() {
               currentLocation={currentLocation}
               users={users}
               loading={loading}
+              savedContactUserIds={savedContactUserIds}
               onConnect={handleConnect}
               onViewProfile={handleViewProfile}
               locationPermissionDenied={permissionDenied}
