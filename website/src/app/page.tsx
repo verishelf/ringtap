@@ -235,10 +235,10 @@ export default function Home() {
           </p>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { icon: Briefcase, role: "Sales & BD", desc: "Close leads faster. Tap your ring to share your LinkedIn and calendar—no typing." },
-              { icon: Rocket, role: "Founders & startups", desc: "Your profile is your pitch. One link for investors, partners, and customers." },
-              { icon: Palette, role: "Freelancers & creatives", desc: "Portfolio, socials, and contact in one tap. QR on your laptop, ring on your hand." },
-              { icon: Globe, role: "Event professionals", desc: "Conferences, trade shows, meetups. Share your whole presence without fumbling for cards." },
+              { icon: Briefcase, iconColor: "bg-blue-500/20 text-blue-500", role: "Sales & BD", desc: "Close leads faster. Tap your ring to share your LinkedIn and calendar—no typing." },
+              { icon: Rocket, iconColor: "bg-amber-500/20 text-amber-500", role: "Founders & startups", desc: "Your profile is your pitch. One link for investors, partners, and customers." },
+              { icon: Palette, iconColor: "bg-violet-500/20 text-violet-500", role: "Freelancers & creatives", desc: "Portfolio, socials, and contact in one tap. QR on your laptop, ring on your hand." },
+              { icon: Globe, iconColor: "bg-teal-500/20 text-teal-500", role: "Event professionals", desc: "Conferences, trade shows, meetups. Share your whole presence without fumbling for cards." },
             ].map((item, i) => (
               <FadeInOnScroll key={item.role} delay={i * 80}>
                 <div className="rounded-2xl border border-border-light bg-surface p-5">
