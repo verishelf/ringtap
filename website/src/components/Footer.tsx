@@ -39,6 +39,7 @@ const FOOTER_COLUMNS = [
   {
     title: "Resources",
     icon: BookOpen,
+    iconColor: "text-violet-500",
     links: [
       { href: "/blog", label: "Blog" },
       { href: "/demo", label: "NFC demo" },
@@ -59,6 +60,19 @@ export function Footer() {
             <p className="mt-2 text-xs text-muted">
               Your digital business card. One tap. ringtap.me
             </p>
+            <a
+              href="https://apps.apple.com/us/app/ringtap-me/id6758565822"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-block transition-opacity hover:opacity-90"
+              aria-label="Download on the App Store"
+            >
+              <img
+                src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&releaseDate=1277769600"
+                alt="Download on the App Store"
+                className="h-10 w-auto"
+              />
+            </a>
           </div>
           {FOOTER_COLUMNS.map((col) => {
             const Icon = col.icon;
