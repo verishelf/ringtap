@@ -1,8 +1,11 @@
+import { BookOpen, Info, Scale, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
 const FOOTER_COLUMNS = [
   {
     title: "Product",
+    icon: ShoppingBag,
+    iconColor: "text-orange-500",
     links: [
       { href: "/#features", label: "Features" },
       { href: "/#whats-new", label: "What's new" },
@@ -14,6 +17,8 @@ const FOOTER_COLUMNS = [
   },
   {
     title: "Company",
+    icon: Info,
+    iconColor: "text-blue-500",
     links: [
       { href: "/about", label: "About" },
       { href: "/#testimonials", label: "Testimonials" },
@@ -24,6 +29,8 @@ const FOOTER_COLUMNS = [
   },
   {
     title: "Legal",
+    icon: Scale,
+    iconColor: "text-amber-500",
     links: [
       { href: "/privacy", label: "Privacy Policy" },
       { href: "/terms", label: "Terms of Use" },
@@ -31,6 +38,7 @@ const FOOTER_COLUMNS = [
   },
   {
     title: "Resources",
+    icon: BookOpen,
     links: [
       { href: "/blog", label: "Blog" },
       { href: "/demo", label: "NFC demo" },
@@ -52,9 +60,12 @@ export function Footer() {
               Your digital business card. One tap. ringtap.me
             </p>
           </div>
-          {FOOTER_COLUMNS.map((col) => (
+          {FOOTER_COLUMNS.map((col) => {
+            const Icon = col.icon;
+            return (
             <div key={col.title} className="min-w-0">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-light">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-light flex items-center gap-2">
+                <Icon className={`h-3.5 w-3.5 ${col.iconColor}`} />
                 {col.title}
               </h3>
               <ul className="mt-4 space-y-2">
@@ -70,7 +81,8 @@ export function Footer() {
                 ))}
               </ul>
             </div>
-          ))}
+          );
+          })}
         </div>
         {/* Row 2: Copyright + legal links */}
         <div className="mt-10 pt-8 border-t border-border-light/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted">

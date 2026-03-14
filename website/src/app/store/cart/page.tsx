@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/Header";
 import { useStoreCart } from "@/contexts/StoreCartContext";
+import { CreditCard, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -66,7 +67,10 @@ function CartContent() {
               Thank you for your order. We’ll process it and send shipping details to your email.
             </div>
           )}
-          <h1 className="text-2xl font-bold text-foreground">Your cart</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <ShoppingCart className="h-7 w-7 text-orange-500" />
+            Your cart
+          </h1>
           <p className="mt-1 text-sm text-muted-light">
             {count === 0 ? "Your cart is empty." : `${count} item${count !== 1 ? "s" : ""}`}
           </p>
@@ -80,8 +84,9 @@ function CartContent() {
               <p className="text-muted-light">Add rings or cards from the store to checkout.</p>
               <Link
                 href="/store"
-                className="mt-6 inline-block rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-background hover:opacity-90"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-background hover:opacity-90"
               >
+                <ShoppingBag className="h-4 w-4 text-orange-500" />
                 Continue shopping
               </Link>
             </div>
@@ -156,15 +161,17 @@ function CartContent() {
                     type="button"
                     onClick={handleCheckout}
                     disabled={checkingOut}
-                    className="flex-1 rounded-xl bg-accent py-3 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-70"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-70"
                   >
+                    <CreditCard className="h-4 w-4" />
                     {checkingOut ? "Redirecting…" : "Proceed to checkout"}
                   </button>
                   <button
                     type="button"
                     onClick={clearCart}
-                    className="rounded-xl border border-border-light px-4 py-3 text-sm font-medium text-muted-light hover:bg-surface-elevated"
+                    className="inline-flex items-center gap-2 rounded-xl border border-border-light px-4 py-3 text-sm font-medium text-muted-light hover:bg-surface-elevated"
                   >
+                    <Trash2 className="h-4 w-4 text-rose-500" />
                     Clear cart
                   </button>
                 </div>

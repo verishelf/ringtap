@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { TrustBanner } from "@/components/TrustBanner";
 import { useStoreCart } from "@/contexts/StoreCartContext";
 import { PRODUCTS } from "@/data/products";
+import { Ruler, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -41,7 +42,8 @@ export default function StorePage() {
       {/* Store hero — centered with balanced padding */}
       <section className="border-b border-border-light/50 px-6 pt-20 pb-16 sm:pt-28 sm:pb-20">
         <div className="mx-auto max-w-4xl flex flex-col items-center justify-center text-center min-h-[180px]">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl flex items-center justify-center gap-3">
+            <ShoppingBag className="h-8 w-8 sm:h-10 sm:w-10 text-orange-500 shrink-0" />
             NFC rings & cards for RingTap
           </h1>
           <p className="mt-4 text-muted-light max-w-2xl">
@@ -54,7 +56,8 @@ export default function StorePage() {
       <section className="border-b border-border-light/50 py-8 px-6">
         <div className="mx-auto max-w-6xl">
           <details className="group rounded-xl border border-border-light bg-surface p-4">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-foreground flex items-center gap-2">
+              <Ruler className="h-4 w-4 text-amber-500" />
               How to find your ring size
             </summary>
             <div className="mt-4 space-y-2 text-sm text-muted-light">

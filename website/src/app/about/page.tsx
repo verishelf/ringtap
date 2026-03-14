@@ -1,4 +1,5 @@
 import { Header } from "@/components/Header";
+import { ArrowLeft, Briefcase, Info, Rocket, Scale, Target } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -79,9 +80,7 @@ export default function AboutPage() {
             href="/"
             className="inline-flex items-center gap-2 text-sm text-muted-light hover:text-foreground transition-colors mb-8"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
+            <ArrowLeft className="h-4 w-4" />
             Back to home
           </Link>
 
@@ -94,7 +93,8 @@ export default function AboutPage() {
 
           <article className="mt-12 space-y-10 text-foreground">
             <section aria-labelledby="what-we-do">
-              <h2 id="what-we-do" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
+              <h2 id="what-we-do" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2 flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-blue-500" />
                 What we do
               </h2>
               <p className="mt-4 text-muted-light leading-relaxed">
@@ -103,7 +103,8 @@ export default function AboutPage() {
             </section>
 
             <section aria-labelledby="how-it-works">
-              <h2 id="how-it-works" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
+              <h2 id="how-it-works" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2 flex items-center gap-2">
+                <Info className="h-5 w-5 text-sky-500" />
                 How it works
               </h2>
               <ul className="mt-4 space-y-3 text-muted-light leading-relaxed">
@@ -123,7 +124,8 @@ export default function AboutPage() {
             </section>
 
             <section aria-labelledby="our-mission">
-              <h2 id="our-mission" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
+              <h2 id="our-mission" className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2 flex items-center gap-2">
+                <Target className="h-5 w-5 text-emerald-500" />
                 Our mission
               </h2>
               <p className="mt-4 text-muted-light leading-relaxed">
@@ -132,7 +134,8 @@ export default function AboutPage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2">
+              <h2 className="text-xl font-semibold text-foreground border-b border-border-light/50 pb-2 flex items-center gap-2">
+                <Scale className="h-5 w-5 text-amber-500" />
                 Legal & attributions
               </h2>
               <div className="mt-4 space-y-4 text-muted-light leading-relaxed">
@@ -165,6 +168,7 @@ export default function AboutPage() {
                 href="/#download"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-background font-semibold hover:opacity-90 transition-opacity"
               >
+                <Rocket className="h-5 w-5" />
                 Get RingTap
               </Link>
             </div>

@@ -9,6 +9,25 @@ import { ShareSection } from "@/components/ShareSection";
 import { TrustBanner } from "@/components/TrustBanner";
 import { TypewriterHero } from "@/components/TypewriterHero";
 import { PRODUCTS } from "@/data/products";
+import {
+  BadgeCheck,
+  Briefcase,
+  Check,
+  Download,
+  Globe,
+  HelpCircle,
+  Link2,
+  Map,
+  Mail,
+  Palette,
+  RefreshCw,
+  Rocket,
+  Rss,
+  Scan,
+  ShoppingBag,
+  Smartphone,
+  Zap,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -99,12 +118,14 @@ export default function Home() {
               href="/signup?plan=free"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-background font-semibold hover:bg-muted-light transition-colors"
             >
+              <Rocket className="h-5 w-5" />
               Start Free
             </Link>
             <Link
               href="/store"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border-light px-6 text-foreground font-semibold hover:border-accent hover:bg-surface transition-colors"
             >
+              <Smartphone className="h-5 w-5" />
               Buy Your Ring
             </Link>
           </div>
@@ -166,16 +187,22 @@ export default function Home() {
           <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
+                icon: Zap,
+                iconColor: "bg-amber-500/20 text-amber-500",
                 title: "Instant first impression",
                 description:
                   "Your profile opens in their browser instantly. No app install. They see your name, photo, links, and contact—and can save you or follow you right away.",
               },
               {
+                icon: RefreshCw,
+                iconColor: "bg-blue-500/20 text-blue-500",
                 title: "Always up to date",
                 description:
                   "Change your bio, add a link, or change your title—your ringtap.me link stays the same. Everyone who taps you always gets your latest info.",
               },
               {
+                icon: Smartphone,
+                iconColor: "bg-emerald-500/20 text-emerald-500",
                 title: "Works everywhere",
                 description:
                   "NFC ring, QR code, or your link. Share at conferences, events, or over coffee. Recipients see your profile in their browser—no app required.",
@@ -183,8 +210,13 @@ export default function Home() {
             ].map((item, i) => (
               <FadeInOnScroll key={item.title} delay={i * 80}>
                 <div className="rounded-2xl border border-border-light bg-surface p-6">
-                  <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
-                  <p className="mt-2 text-sm text-muted-light leading-relaxed">{item.description}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`rounded-lg p-2 ${item.iconColor}`}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-light leading-relaxed">{item.description}</p>
                 </div>
               </FadeInOnScroll>
             ))}
@@ -203,15 +235,20 @@ export default function Home() {
           </p>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { role: "Sales & BD", desc: "Close leads faster. Tap your ring to share your LinkedIn and calendar—no typing." },
-              { role: "Founders & startups", desc: "Your profile is your pitch. One link for investors, partners, and customers." },
-              { role: "Freelancers & creatives", desc: "Portfolio, socials, and contact in one tap. QR on your laptop, ring on your hand." },
-              { role: "Event professionals", desc: "Conferences, trade shows, meetups. Share your whole presence without fumbling for cards." },
+              { icon: Briefcase, role: "Sales & BD", desc: "Close leads faster. Tap your ring to share your LinkedIn and calendar—no typing." },
+              { icon: Rocket, role: "Founders & startups", desc: "Your profile is your pitch. One link for investors, partners, and customers." },
+              { icon: Palette, role: "Freelancers & creatives", desc: "Portfolio, socials, and contact in one tap. QR on your laptop, ring on your hand." },
+              { icon: Globe, role: "Event professionals", desc: "Conferences, trade shows, meetups. Share your whole presence without fumbling for cards." },
             ].map((item, i) => (
               <FadeInOnScroll key={item.role} delay={i * 80}>
                 <div className="rounded-2xl border border-border-light bg-surface p-5">
-                  <h3 className="text-base font-semibold text-foreground">{item.role}</h3>
-                  <p className="mt-2 text-sm text-muted-light leading-relaxed">{item.desc}</p>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`rounded-lg p-2 ${item.iconColor}`}>
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground">{item.role}</h3>
+                  </div>
+                  <p className="text-sm text-muted-light leading-relaxed">{item.desc}</p>
               </div>
               </FadeInOnScroll>
             ))}
@@ -231,21 +268,29 @@ export default function Home() {
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
+                icon: Map,
+                iconColor: "bg-amber-500/20 text-amber-500",
                 title: "Map & discovery",
                 description:
                   "Find nearby users, networking hotspots, and events. See who&apos;s around and discover opportunities in your area.",
               },
               {
+                icon: Rss,
+                iconColor: "bg-orange-500/20 text-orange-500",
                 title: "Opportunities feed",
                 description:
                   "Community feed for hiring, partnerships, and services. Post, like, comment—with clickable links and Pro badges.",
               },
               {
+                icon: Scan,
+                iconColor: "bg-emerald-500/20 text-emerald-500",
                 title: "Business card scanner",
                 description:
                   "Scan business cards with your camera. OCR extracts name, title, and contact—save new connections instantly.",
               },
               {
+                icon: BadgeCheck,
+                iconColor: "bg-blue-500/20 text-blue-500",
                 title: "Pro badges & polish",
                 description:
                   "Pro users get a verified badge and ring border. Comments show mini avatars; long threads expand and collapse.",
@@ -253,8 +298,13 @@ export default function Home() {
             ].map((item, i) => (
               <FadeInOnScroll key={item.title} delay={i * 80}>
                 <div className="rounded-2xl border border-accent/30 bg-surface p-5">
-                  <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
-                  <p className="mt-2 text-sm text-muted-light leading-relaxed">{item.description}</p>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`rounded-lg p-2 ${item.iconColor}`}>
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-light leading-relaxed">{item.description}</p>
                 </div>
               </FadeInOnScroll>
             ))}
@@ -277,24 +327,35 @@ export default function Home() {
           <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
+                icon: Link2,
+                iconColor: "bg-blue-500/20 text-blue-500",
                 title: "One link, everything",
                 description:
                   "ringtap.me/you—name, photo, title, bio, social links, contact info, custom buttons. Recipients save you, follow you, or visit your site without opening the app.",
               },
               {
+                icon: Smartphone,
+                iconColor: "bg-emerald-500/20 text-emerald-500",
                 title: "NFC & QR",
                 description:
                   "Built-in NFC writer: link your profile to your ring or card in one tap. No other apps. Tap to share or show your QR. Pro: custom QR with your logo and colors.",
               },
               {
+                icon: Palette,
+                iconColor: "bg-violet-500/20 text-violet-500",
                 title: "Profile & theme",
                 description:
                   "12 typography fonts, accent color, button shape. Pro: border color, video intro, theme on ringtap.me, sync contacts to phone, analytics.",
               },
             ].map((f) => (
               <div key={f.title} className="rounded-2xl border border-border-light bg-surface p-6">
-                <h3 className="text-lg font-semibold text-foreground">{f.title}</h3>
-                <p className="mt-2 text-sm text-muted-light leading-relaxed">{f.description}</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`rounded-lg p-2 ${f.iconColor}`}>
+                    <f.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">{f.title}</h3>
+                </div>
+                <p className="text-sm text-muted-light leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
@@ -318,26 +379,27 @@ export default function Home() {
               <p className="mt-1 text-sm text-muted-light">/ forever</p>
               <ul className="mt-6 space-y-3 text-sm text-muted-light">
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   Profile & ringtap.me/you URL
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   Up to 2 links
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   NFC & QR sharing
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   Contacts & messages
                 </li>
               </ul>
               <Link
                 href="/signup?plan=free"
-                className="mt-8 block w-full rounded-xl border border-border-light py-3 text-center text-sm font-semibold text-foreground hover:border-accent hover:bg-surface-elevated transition-colors"
+                className="mt-8 flex items-center justify-center gap-2 w-full rounded-xl border border-border-light py-3 text-sm font-semibold text-foreground hover:border-accent hover:bg-surface-elevated transition-colors"
               >
+                <Rocket className="h-4 w-4" />
                 Start Free
               </Link>
             </div>
@@ -352,19 +414,19 @@ export default function Home() {
               <p className="mt-0.5 text-sm text-muted-light">or $99/year <span className="text-accent font-medium">(save yearly)</span></p>
               <ul className="mt-6 space-y-3 text-sm text-muted-light">
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   Unlimited links
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   Theme, 12 fonts, custom QR with logo
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   Sync contacts to phone, video intro
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-accent mt-0.5">✓</span>
+                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
                   Analytics (views, taps, clicks)
                 </li>
               </ul>
@@ -438,12 +500,14 @@ export default function Home() {
               href="/signup?plan=free"
               className="inline-flex h-14 items-center gap-3 rounded-xl bg-accent px-8 text-background font-semibold hover:bg-muted-light transition-colors"
             >
+              <Rocket className="h-5 w-5" />
               Start Free
             </Link>
             <Link
               href="/store"
               className="inline-flex h-14 items-center gap-3 rounded-xl border-2 border-accent px-8 text-foreground font-semibold hover:bg-accent hover:text-background transition-colors"
             >
+              <Smartphone className="h-5 w-5" />
               Buy Your Ring
             </Link>
           </div>
@@ -459,7 +523,8 @@ export default function Home() {
       {/* Download — App Store badges (linked from header) */}
       <section id="download" className="border-t border-border-light/50 py-24 px-6">
         <FadeInOnScroll className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold text-foreground md:text-4xl">
+          <h2 className="text-3xl font-bold text-foreground md:text-4xl flex items-center justify-center gap-3">
+            <Download className="h-10 w-10 text-emerald-500" />
             Download the app
           </h2>
           <p className="mt-4 text-muted-light">
@@ -488,8 +553,9 @@ export default function Home() {
       {/* FAQ */}
       <section id="faq" className="border-t border-border-light/50 py-24 px-6">
         <FadeInOnScroll className="mx-auto max-w-2xl">
-          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
-            Frequently asked questions
+          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl flex items-center justify-center gap-3 flex-wrap">
+            <HelpCircle className="h-10 w-10 text-blue-500 shrink-0" />
+            <span>Frequently asked questions</span>
           </h2>
           <dl className="mt-12 space-y-8">
             {FAQ_ITEMS.map((faq) => (
@@ -509,7 +575,8 @@ export default function Home() {
       {/* Store products — compact, for Buy Your Ring */}
       <section id="store" className="border-t border-border-light/50 py-24 px-6">
         <FadeInOnScroll className="mx-auto max-w-6xl">
-          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
+          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl flex items-center justify-center gap-3">
+            <ShoppingBag className="h-8 w-8 md:h-10 md:w-10 text-orange-500" />
             NFC rings & cards
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
@@ -547,8 +614,9 @@ export default function Home() {
           <div className="mt-10 text-center">
             <Link
               href="/store"
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-accent px-6 text-background font-semibold hover:bg-muted-light transition-colors"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-background font-semibold hover:bg-muted-light transition-colors"
             >
+              <ShoppingBag className="h-5 w-5" />
               View all products
             </Link>
           </div>
@@ -558,7 +626,8 @@ export default function Home() {
       {/* Stay updated */}
       <section className="border-t border-border-light/50 py-16 px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-xl font-bold text-foreground">
+          <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
+            <Mail className="h-6 w-6 text-rose-500" />
             Get tips & early access
           </h2>
           <p className="mt-2 text-sm text-muted-light">
