@@ -28,14 +28,22 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
+  LayoutAnimation,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
+  UIManager,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
@@ -49,7 +57,9 @@ export default function MapScreen() {
   const [locationLoading, setLocationLoading] = useState(true);
   const { locationEnabled } = useLocation();
   const [activeTab, setActiveTab] = useState<'users' | 'hotspots' | 'events'>('users');
+  const [eventsMapExpanded, setEventsMapExpanded] = useState(false);
   const stopPollingRef = useRef<(() => void) | null>(null);
+  const { height: screenHeight } = Dimensions.get('window');
 
   const {
     users,
@@ -237,11 +247,27 @@ export default function MapScreen() {
             />
           </View>
         );
-      case 'events':
+      case 'events': {
+        const mapHeight = eventsMapExpanded ? Math.min(screenHeight * 0.6, 400) : 200;
+        const toggleMap = () => {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setEventsMapExpanded((v) => !v);
+        };
         return (
           <View style={styles.eventsWrap}>
-            <View style={styles.eventsMapSection}>
+            <View style={[styles.eventsMapSection, { height: mapHeight }]}>
               <EventsMapView currentLocation={currentLocation} events={events} />
+              <TouchableOpacity
+                style={[styles.expandMapBtn, { backgroundColor: colors.surface }]}
+                onPress={toggleMap}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={eventsMapExpanded ? 'contract-outline' : 'expand-outline'}
+                  size={22}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
             </View>
             <View style={[styles.eventsListSection, { backgroundColor: colors.background }]}>
               <View style={[styles.eventsListHeader, { borderBottomColor: colors.borderLight }]}>
@@ -333,6 +359,7 @@ export default function MapScreen() {
             </View>
           </View>
         );
+      }
       default:
         return null;
     }
@@ -434,7 +461,22 @@ const styles = StyleSheet.create({
   tabSegmentText: { fontSize: 14, fontWeight: '600' },
   mapWrap: { flex: 1 },
   eventsWrap: { flex: 1, flexDirection: 'column' },
-  eventsMapSection: { height: 200 },
+  eventsMapSection: { position: 'relative', overflow: 'hidden' },
+  expandMapBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: Layout.screenPadding,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   eventsListSection: { flex: 1, minHeight: 0 },
   eventsListHeader: {
     flexDirection: 'row',

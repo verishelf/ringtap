@@ -6,11 +6,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -32,9 +35,16 @@ export type CardScannerProps = {
   focused?: boolean;
 };
 
+const FRAME_TOP_PCT = 0.25;
+const FRAME_HEIGHT = 220;
+const FRAME_HORIZONTAL = 24;
+
 export function CardScanner({ userId, onSaved, focused = true }: CardScannerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const frameTop = screenHeight * FRAME_TOP_PCT;
+  const frameBottom = frameTop + FRAME_HEIGHT;
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
@@ -45,10 +55,31 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
   const [saving, setSaving] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const scanLineAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!focused) setCameraReady(false);
   }, [focused]);
+
+  useEffect(() => {
+    if (!focused || capturedUri) return;
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanLineAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scanLineAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [focused, capturedUri, scanLineAnim]);
 
   const processImage = useCallback(async (uri: string) => {
     setCapturedUri(uri);
@@ -76,33 +107,38 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
       }
     }
     let uri: string | null = null;
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [3, 2],
-        quality: 0.9,
-      });
-      if (result.canceled) return;
-      uri = result.assets[0]?.uri ?? null;
-    } catch {
+    // Use in-app camera first (no system camera popup)
+    if (cameraRef.current && cameraReady) {
       try {
-        if (cameraRef.current && cameraReady) {
-          const photo = await cameraRef.current.takePictureAsync({
-            quality: 0.9,
-            skipProcessing: true,
-          });
-          uri = photo?.uri ?? null;
-        }
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.9,
+          skipProcessing: true,
+        });
+        uri = photo?.uri ?? null;
       } catch {
         uri = null;
       }
-      if (!uri) {
-        Alert.alert('Error', 'Could not open camera.');
-        return;
+    }
+    // Fallback to system camera only if in-app capture fails
+    if (!uri) {
+      try {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [3, 2],
+          quality: 0.9,
+        });
+        if (result.canceled) return;
+        uri = result.assets[0]?.uri ?? null;
+      } catch {
+        uri = null;
       }
     }
-    if (uri) await processImage(uri);
+    if (!uri) {
+      Alert.alert('Error', 'Could not capture photo.');
+      return;
+    }
+    await processImage(uri);
   }, [permission?.granted, requestPermission, cameraReady, processImage]);
 
   const handleSave = useCallback(async () => {
@@ -188,7 +224,40 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                 style={styles.camera}
                 onCameraReady={() => setCameraReady(true)}
               />
+              {/* Blur overlays around the frame */}
+              <View style={[StyleSheet.absoluteFill, { height: screenHeight }]} pointerEvents="none">
+                {Platform.OS === 'ios' ? (
+                  <>
+                    <BlurView intensity={60} tint="dark" style={[styles.blurPanel, { top: 0, left: 0, right: 0, height: frameTop }]} />
+                    <BlurView intensity={60} tint="dark" style={[styles.blurPanel, { top: frameBottom, left: 0, right: 0, height: Math.max(screenHeight - frameBottom, 0) }]} />
+                    <BlurView intensity={60} tint="dark" style={[styles.blurPanel, { top: frameTop, left: 0, width: FRAME_HORIZONTAL, height: FRAME_HEIGHT }]} />
+                    <BlurView intensity={60} tint="dark" style={[styles.blurPanel, { top: frameTop, right: 0, width: FRAME_HORIZONTAL, height: FRAME_HEIGHT }]} />
+                  </>
+                ) : (
+                  <>
+                    <View style={[styles.blurPanel, styles.blurPanelDark, { top: 0, left: 0, right: 0, height: frameTop }]} />
+                    <View style={[styles.blurPanel, styles.blurPanelDark, { top: frameBottom, left: 0, right: 0, height: Math.max(screenHeight - frameBottom, 0) }]} />
+                    <View style={[styles.blurPanel, styles.blurPanelDark, { top: frameTop, left: 0, width: FRAME_HORIZONTAL, height: FRAME_HEIGHT }]} />
+                    <View style={[styles.blurPanel, styles.blurPanelDark, { top: frameTop, right: 0, width: FRAME_HORIZONTAL, height: FRAME_HEIGHT }]} />
+                  </>
+                )}
+              </View>
               <View style={[styles.overlay, { borderColor: colors.accent }]}>
+                <Animated.View
+                  style={[
+                    styles.scanLine,
+                    {
+                      transform: [
+                        {
+                          translateY: scanLineAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 218],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
                 <Text style={[styles.overlayHint, { color: colors.textSecondary }]}>
                   Position card in frame, then tap to scan
                 </Text>
@@ -239,6 +308,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
               {
                 paddingTop: insets.top + Layout.screenPadding,
                 paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.sectionGap,
+                flexGrow: loading ? 1 : undefined,
               },
             ]}
             showsVerticalScrollIndicator={false}
@@ -246,7 +316,10 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
           >
             {loading ? (
               <View style={styles.loadingWrap}>
-                <ActivityIndicator size="large" color={colors.accent} />
+                <Image
+                  source={require('@/assets/images/loading.gif')}
+                  style={{ width: 64, height: 64 }}
+                />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Extracting text…</Text>
               </View>
             ) : editing ? (
@@ -373,16 +446,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cameraPlaceholderText: { fontSize: 15, marginTop: 12 },
+  blurPanel: {
+    position: 'absolute',
+  },
+  blurPanelDark: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
   overlay: {
     position: 'absolute',
-    left: 24,
-    right: 24,
-    top: '25%',
-    height: 220,
+    left: FRAME_HORIZONTAL,
+    right: FRAME_HORIZONTAL,
+    top: `${FRAME_TOP_PCT * 100}%`,
+    height: FRAME_HEIGHT,
     borderWidth: 2,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  scanLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 2,
+    backgroundColor: '#EF4444',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 4,
   },
   overlayHint: { fontSize: 14 },
   captureButton: {
@@ -419,7 +512,12 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: Layout.screenPadding },
-  loadingWrap: { alignItems: 'center', paddingVertical: 48 },
+  loadingWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 280,
+  },
   loadingText: { marginTop: 12, fontSize: 15 },
   cardPreview: {
     borderRadius: Layout.radiusLg,

@@ -8,7 +8,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { getSavedContacts, type MapPresenceUser } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   FlatList,
@@ -19,8 +19,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const mapDarkStyle = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a1d' }] },
@@ -179,7 +179,16 @@ export function HotspotsMapView({
   return (
     <View style={styles.container}>
       {!hasHotspots && !loading && (
-        <View style={[styles.emptyOverlay, { backgroundColor: colors.background + 'F0' }]} pointerEvents="none">
+        <View
+          style={[
+            styles.emptyOverlay,
+            {
+              backgroundColor: colors.background + 'F0',
+              bottom: insets.bottom + Layout.tabBarHeight + 25,
+            },
+          ]}
+          pointerEvents="none"
+        >
           <Ionicons name="location-outline" size={32} color={colors.textSecondary} />
           <Text style={[styles.emptyOverlayText, { color: colors.textSecondary }]}>
             No hotspots nearby yet. Switch to People to see individual users.

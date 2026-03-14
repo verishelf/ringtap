@@ -32,7 +32,7 @@ import { getDotsFontEnhancement, getProfileFontFamily, TYPOGRAPHY_OPTIONS } from
 import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 const SOCIAL_PLATFORMS: { key: SocialPlatform; label: string; placeholder: string }[] = [
   { key: 'instagram', label: 'Instagram', placeholder: 'instagram.com/username' },
