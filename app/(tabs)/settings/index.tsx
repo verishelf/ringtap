@@ -226,7 +226,7 @@ export default function SettingsScreen() {
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Pressable
               style={[styles.menuItem, styles.rowBorder, { borderBottomColor: colors.borderLight }]}
-              onPress={() => router.push('/(tabs)/settings/about')}
+              onPress={() => router.push(inProfileStack ? '/(tabs)/profile/about' : '/(tabs)/settings/about')}
             >
               <View style={styles.menuItemLeft}>
                 <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>

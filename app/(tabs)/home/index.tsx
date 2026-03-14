@@ -420,7 +420,7 @@ export default function HomeScreen() {
                 No scanned or saved contacts yet. Save a profile in the app or scan a card to see them here.
               </Text>
             ) : (
-              recentContacts.map((item) => {
+              recentContacts.slice(0, 5).map((item) => {
                 const isSaved = item.type === 'saved';
                 const id = item.data.id;
                 const contactUserId = isSaved ? (item.data as SavedContact).contactUserId : null;

@@ -3,31 +3,31 @@
  * Live camera scan, OCR + AI extraction, editable parsed results, save to contacts with card image.
  */
 
+import { Layout } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { saveScannedContact, sendInviteToRingTap } from '@/services/contactService';
+import { extractAndParseContact, type ParsedContact } from '@/services/ocrService';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Layout } from '@/constants/theme';
-import { useThemeColors } from '@/hooks/useThemeColors';
-import { extractAndParseContact, type ParsedContact } from '@/services/ocrService';
-import { saveScannedContact, sendInviteToRingTap } from '@/services/contactService';
 
 export type CardScannerProps = {
   userId: string;
@@ -262,6 +262,21 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                   Position card in frame, then tap to scan
                 </Text>
               </View>
+              <View
+                style={[
+                  styles.aiBadge,
+                  {
+                    top: frameBottom + 16,
+                    left: FRAME_HORIZONTAL,
+                    right: FRAME_HORIZONTAL,
+                  },
+                ]}
+                pointerEvents="none"
+              >
+                <Text style={[styles.aiBadgeText, { color: colors.textSecondary }]}>
+                  Integrated with AI
+                </Text>
+              </View>
               <Pressable
                 style={({ pressed }) => [
                   styles.captureButton,
@@ -324,6 +339,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
               </View>
             ) : editing ? (
               <>
+                <Text style={[styles.parsedHeader, { color: colors.text }]}>New contact</Text>
                 <View style={[styles.cardPreview, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Parsed contact</Text>
                   <TextInput
@@ -478,6 +494,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   overlayHint: { fontSize: 14 },
+  aiBadge: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiBadgeText: { fontSize: 13, fontWeight: '500', opacity: 0.9 },
   captureButton: {
     position: 'absolute',
     alignSelf: 'center',
@@ -519,6 +541,12 @@ const styles = StyleSheet.create({
     minHeight: 280,
   },
   loadingText: { marginTop: 12, fontSize: 15 },
+  parsedHeader: {
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   cardPreview: {
     borderRadius: Layout.radiusLg,
     borderWidth: 1,
