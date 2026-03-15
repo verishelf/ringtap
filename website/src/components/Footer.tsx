@@ -21,6 +21,7 @@ const FOOTER_COLUMNS = [
     iconColor: "text-blue-500",
     links: [
       { href: "/about", label: "About" },
+      { href: "/careers", label: "Careers" },
       { href: "/#testimonials", label: "Testimonials" },
       { href: "/#faq", label: "FAQ" },
       { href: "/#cta", label: "Get started" },
@@ -54,7 +55,8 @@ export function Footer() {
         {/* Row 1: Brand + link columns */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-12">
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="text-sm font-bold text-foreground">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-foreground">
+              <img src="/icon.png" alt="" className="h-6 w-6" aria-hidden />
               RingTap
             </Link>
             <p className="mt-2 text-xs text-muted">

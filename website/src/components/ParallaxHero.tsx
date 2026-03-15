@@ -54,6 +54,20 @@ export function ParallaxHero({ children }: { children: React.ReactNode }) {
       className="relative overflow-hidden pt-32 pb-24 px-6 md:pt-40 md:pb-32"
       aria-label="Introduction"
     >
+      {/* Background video splash — muted, loop */}
+      <div className="pointer-events-none absolute inset-0">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+          aria-hidden
+        >
+          <source src="/ringtap-splash.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <div className="pointer-events-none absolute inset-0 bg-background/60" aria-hidden />
       <div className="pointer-events-none absolute inset-0">
         <div
           className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-[0.07] blur-3xl will-change-transform"

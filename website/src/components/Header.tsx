@@ -91,9 +91,10 @@ export function Header({
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="text-xl font-bold tracking-tight text-foreground"
+          className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground"
           onClick={() => setMenuOpen(false)}
         >
+          <img src="/icon.png" alt="" className="h-8 w-8" aria-hidden />
           RingTap
         </Link>
 

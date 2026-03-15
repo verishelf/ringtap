@@ -572,6 +572,36 @@ export default function Home() {
         </FadeInOnScroll>
       </section>
 
+      {/* Products parallax — fixed background with overlay */}
+      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url(/products.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+          }}
+          aria-hidden
+        />
+        <div className="absolute inset-0 bg-background/75" aria-hidden />
+        <div className="relative z-10 mx-auto max-w-4xl px-6 py-24 text-center">
+          <h2 className="text-3xl font-bold text-foreground md:text-4xl">
+            NFC rings & cards
+          </h2>
+          <p className="mt-4 text-lg text-muted-light max-w-2xl mx-auto">
+            Tap to share your profile. Premium rings and cards that work with RingTap—one tap opens your link.
+          </p>
+          <Link
+            href="/store"
+            className="mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-background font-semibold hover:opacity-90 transition-opacity"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            Shop products
+          </Link>
+        </div>
+      </section>
+
       {/* Store products — compact, for Buy Your Ring */}
       <section id="store" className="border-t border-border-light/50 py-24 px-6">
         <FadeInOnScroll className="mx-auto max-w-6xl">
