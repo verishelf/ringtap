@@ -3,7 +3,6 @@ import { useSegments } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Modal,
@@ -269,7 +268,7 @@ export default function LinksScreen() {
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color={colors.text} size="small" />
+                  <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                 ) : (
                   <Text style={[styles.saveButtonText, { color: colors.text }]}>Save</Text>
                 )}

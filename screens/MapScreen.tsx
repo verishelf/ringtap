@@ -23,10 +23,10 @@ import {
   startLocationPolling,
 } from '@/services/locationService';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
@@ -150,7 +150,8 @@ export default function MapScreen() {
       const result = await saveContact(
         userId,
         profileToSave?.name ?? '',
-        profileToSave?.avatarUrl ?? undefined
+        profileToSave?.avatarUrl ?? undefined,
+        undefined
       );
       if (result.success) {
         setSavedContactUserIds((prev) => new Set([...prev, userId]));
@@ -287,7 +288,7 @@ export default function MapScreen() {
               </View>
               {eventsLoading && events.length === 0 ? (
                 <View style={styles.eventsListEmpty}>
-                  <ActivityIndicator size="small" color={colors.accent} />
+                  <Image source={require('@/assets/images/loading.gif')} style={{ width: 32, height: 32 }} />
                   <Text style={[styles.eventsListEmptyText, { color: colors.textSecondary }]}>Loading events…</Text>
                 </View>
               ) : events.length === 0 ? (

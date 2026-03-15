@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
     ListRenderItem,
@@ -162,8 +161,8 @@ export default function ChatScreen() {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Invalid conversation.</Text>
-        <Pressable onPress={() => router.back()} style={[styles.backBtn, { borderColor: colors.borderLight }]}>
-          <Text style={{ color: colors.text }}>Go back</Text>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
       </View>
     );
@@ -172,7 +171,7 @@ export default function ChatScreen() {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <Image source={require('@/assets/images/loading.gif')} style={{ width: 64, height: 64 }} />
       </View>
     );
   }
@@ -219,7 +218,7 @@ export default function ChatScreen() {
           ]}
         >
           {sending ? (
-            <ActivityIndicator size="small" color={colors.background} />
+            <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
             <Ionicons name="send" size={22} color={colors.background} />
           )}
@@ -285,5 +284,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: { textAlign: 'center', fontSize: 15 },
-  backBtn: { marginTop: 16, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderRadius: Layout.radiusMd },
+  backBtn: { width: 40, padding: 4, marginTop: 16 },
 });

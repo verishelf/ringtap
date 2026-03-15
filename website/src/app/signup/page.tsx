@@ -208,7 +208,7 @@ export default function SignupPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <img src="/loading.gif" alt="Loading" className="w-12 h-12" />
           <p className="mt-6 text-muted-light">Loading…</p>
         </div>
       }

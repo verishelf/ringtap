@@ -9,7 +9,8 @@
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { supabase } from '@/lib/supabase/supabaseClient';
@@ -138,7 +139,7 @@ export default function AuthCallbackScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ActivityIndicator size="large" color={colors.accent} />
+      <Image source={require('@/assets/images/loading.gif')} style={{ width: 64, height: 64 }} />
       <Text style={[styles.text, { color: colors.textSecondary }]}>Confirming your email…</Text>
     </View>
   );

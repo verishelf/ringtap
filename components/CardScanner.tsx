@@ -14,7 +14,6 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Animated,
     Dimensions,
@@ -340,6 +339,11 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
             ) : editing ? (
               <>
                 <Text style={[styles.parsedHeader, { color: colors.text }]}>New contact</Text>
+                {capturedUri ? (
+                  <View style={[styles.capturedPhotoWrap, { borderColor: colors.borderLight }]}>
+                    <Image source={{ uri: capturedUri }} style={styles.capturedPhoto} contentFit="contain" />
+                  </View>
+                ) : null}
                 <View style={[styles.cardPreview, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Parsed contact</Text>
                   <TextInput
@@ -406,7 +410,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                     disabled={saving}
                   >
                     {saving ? (
-                      <ActivityIndicator size="small" color="#0A0A0B" />
+                      <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                     ) : (
                       <Text style={[styles.primaryButtonText, { color: '#0A0A0B' }]}>Save contact</Text>
                     )}
@@ -424,7 +428,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                         disabled={inviting}
                       >
                         {inviting ? (
-                          <ActivityIndicator size="small" color={colors.accent} />
+                          <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                         ) : (
                           <>
                             <Ionicons name="mail-outline" size={20} color={colors.accent} />
@@ -546,6 +550,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 20,
+  },
+  capturedPhotoWrap: {
+    width: '100%',
+    maxHeight: 200,
+    borderRadius: Layout.radiusLg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 20,
+    backgroundColor: '#1a1a1a',
+  },
+  capturedPhoto: {
+    width: '100%',
+    height: 200,
   },
   cardPreview: {
     borderRadius: Layout.radiusLg,

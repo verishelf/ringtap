@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   ListRenderItem,
   StyleSheet,

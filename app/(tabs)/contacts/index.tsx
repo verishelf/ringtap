@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Linking,
@@ -35,6 +34,21 @@ import {
 import { syncContactsToPhone } from '@/utils/syncContactsToPhone';
 
 const ROW_GAP = 12;
+
+function formatMetAt(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
 
 export default function ContactsScreen() {
   const insets = useSafeAreaInsets();
@@ -224,12 +238,14 @@ export default function ContactsScreen() {
               >
                 {displayName}
               </Text>
-              {item.metAtLocation ? (
+              {(item.howMet || item.metAtLocation || item.metAt) ? (
                 <Text
                   style={[styles.metAt, { color: colors.textSecondary }]}
                   numberOfLines={1}
                 >
-                  Met at {item.metAtLocation}
+                  {[item.howMet, item.metAtLocation, item.metAt ? formatMetAt(item.metAt) : null]
+                    .filter(Boolean)
+                    .join(' • ')}
                 </Text>
               ) : null}
             </View>
@@ -348,7 +364,7 @@ export default function ContactsScreen() {
           disabled={syncing}
         >
           {syncing ? (
-            <ActivityIndicator size="small" color={colors.accent} />
+            <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
             <Ionicons name="phone-portrait-outline" size={18} color={colors.accent} />
           )}

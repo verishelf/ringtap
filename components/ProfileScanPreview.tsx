@@ -42,6 +42,15 @@ const SOCIAL_ICONS: Record<SocialPlatform, keyof typeof Ionicons.glyphMap> = {
   other: 'link',
 };
 
+function formatRelationshipDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return iso;
+  }
+}
+
 function openSocialUrl(url: string) {
   const u = url.trim();
   if (!u) return;
@@ -104,6 +113,8 @@ interface ProfileScanPreviewProps {
   showProRing?: boolean;
   /** When false, suppress the \"About Me\" section (bio) in the body to avoid repeating it. */
   showAboutSection?: boolean;
+  /** Relationship intelligence for saved contacts: how met, where, when, notes. */
+  relationshipInfo?: { howMet: string | null; metAtLocation: string | null; metAt: string | null; notes: string | null } | null;
 }
 
 const PRO_RING_COLOR = '#D4AF37';
@@ -118,6 +129,7 @@ export function ProfileScanPreview({
   showVerified,
   showProRing,
   showAboutSection = true,
+  relationshipInfo,
 }: ProfileScanPreviewProps) {
   const colors = useThemeColors();
   const accent = profile.theme?.accentColor ?? colors.accent;
@@ -143,7 +155,8 @@ export function ProfileScanPreview({
     profile.bio?.trim() ||
     hasContact ||
     socialWithUrls.length > 0 ||
-    links.length > 0;
+    links.length > 0 ||
+    (relationshipInfo && (relationshipInfo.howMet || relationshipInfo.metAtLocation || relationshipInfo.metAt || relationshipInfo.notes));
 
   const borderColor = (showProRing && (profile.theme?.profileBorderColor ?? PRO_RING_COLOR)) || colors.borderLight;
   const cardBorderColor = showProRing ? (profile.theme?.profileBorderColor ?? PRO_RING_COLOR) : colors.borderLight;
@@ -265,9 +278,44 @@ export function ProfileScanPreview({
                     </Pressable>
                   ) : null}
                 </View>
-                {(socialWithUrls.length > 0 || links.length > 0) ? (
+                {(socialWithUrls.length > 0 || links.length > 0 || relationshipInfo) ? (
                   <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
                 ) : null}
+              </>
+            )}
+
+            {relationshipInfo && (relationshipInfo.howMet || relationshipInfo.metAtLocation || relationshipInfo.metAt || relationshipInfo.notes) && (
+              <>
+                <Text style={[styles.sectionHeading, { color: colors.text, fontFamily, ...(dotsEnhance ?? {}) }]}>How you met</Text>
+                <View style={styles.relationshipInfo}>
+                  {relationshipInfo.howMet ? (
+                    <View style={styles.relationshipRow}>
+                      <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.relationshipText, { color: colors.textSecondary }]}>{relationshipInfo.howMet}</Text>
+                    </View>
+                  ) : null}
+                  {relationshipInfo.metAtLocation ? (
+                    <View style={styles.relationshipRow}>
+                      <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.relationshipText, { color: colors.textSecondary }]}>{relationshipInfo.metAtLocation}</Text>
+                    </View>
+                  ) : null}
+                  {relationshipInfo.metAt ? (
+                    <View style={styles.relationshipRow}>
+                      <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.relationshipText, { color: colors.textSecondary }]}>
+                        {formatRelationshipDate(relationshipInfo.metAt)}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {relationshipInfo.notes ? (
+                    <View style={styles.relationshipRow}>
+                      <Ionicons name="document-text-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.relationshipText, { color: colors.textSecondary }]}>{relationshipInfo.notes}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
               </>
             )}
 
@@ -428,6 +476,9 @@ const styles = StyleSheet.create({
   bio: { fontSize: Layout.bodySmall, lineHeight: 22, marginBottom: Layout.rowGap },
   contact: { marginBottom: Layout.rowGap },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: Layout.tightGap, marginBottom: 8 },
+  relationshipInfo: { marginBottom: Layout.rowGap },
+  relationshipRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Layout.tightGap, marginBottom: 8 },
+  relationshipText: { fontSize: Layout.bodySmall, flex: 1, lineHeight: 20 },
   contactText: { fontSize: Layout.bodySmall, flex: 1 },
   socialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Layout.tightGap, marginBottom: Layout.rowGap },
   socialChip: {

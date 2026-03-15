@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   StyleSheet,
@@ -49,8 +49,8 @@ export default function SetupRingByIdScreen() {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
         <Text style={[styles.message, { color: colors.textSecondary }]}>Invalid setup link.</Text>
-        <Pressable onPress={() => router.back()} style={[styles.btn, { borderColor: colors.borderLight }]}>
-          <Text style={{ color: colors.text }}>Go back</Text>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
       </View>
     );
@@ -83,7 +83,7 @@ export default function SetupRingByIdScreen() {
           style={[styles.primaryBtn, { backgroundColor: colors.accent, opacity: loading ? 0.7 : 1 }]}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
             <Text style={styles.primaryBtnText}>Assign ring</Text>
           )}
@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
   icon: { marginBottom: Layout.rowGap },
   title: { fontSize: 20, fontWeight: '700', marginBottom: 8 },
   message: { textAlign: 'center', marginBottom: Layout.rowGap * 1.5, fontSize: 15 },
+  backBtn: { width: 40, padding: 4, marginTop: 8 },
   btn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: Layout.radiusMd, borderWidth: 1 },
   primaryBtn: { width: '100%', paddingVertical: 14, borderRadius: Layout.radiusMd, alignItems: 'center', marginTop: 8 },
   primaryBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },

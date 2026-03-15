@@ -14,7 +14,8 @@ export default function ProfileLayout() {
         headerShadowVisible: false,
         headerTintColor: '#FAFAFA',
         headerTitleStyle: { fontSize: 17, fontWeight: '600' },
-        headerBackTitle: 'Back',
+        headerBackTitle: '',
+        headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: '#0A0A0B' },
       }}
     >

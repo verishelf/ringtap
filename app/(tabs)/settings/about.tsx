@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+
+import { HeaderBackButton } from '@/components/HeaderBackButton';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,7 +10,6 @@ import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function AboutScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
 
@@ -28,9 +28,7 @@ export default function AboutScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderLight, paddingTop: insets.top, paddingBottom: 12 }]}>
-        <Pressable onPress={() => router.back()} style={styles.headerBack} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </Pressable>
+        <HeaderBackButton tintColor={colors.text} canGoBack />
         <Text style={[styles.headerTitle, { color: colors.text }]}>About & attributions</Text>
         <View style={styles.headerBack} />
       </View>

@@ -5,7 +5,6 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Dimensions,
     Modal,
@@ -334,7 +333,7 @@ export default function ProfileEditorScreen() {
             <Text style={[styles.headerTitle, { color: colors.text }]}>Edit profile</Text>
             <Pressable onPress={saveEditing} style={[styles.headerButton, { minWidth: 72 }]} disabled={saving}>
               {saving ? (
-                <ActivityIndicator size="small" color={colors.accent} />
+                <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               ) : (
                 <Text style={[styles.headerButtonText, { color: colors.accent, fontWeight: '700' }]}>Save</Text>
               )}
@@ -377,7 +376,7 @@ export default function ProfileEditorScreen() {
                 )}
                 {uploadingImage && (
                   <View style={styles.avatarOverlay}>
-                    <ActivityIndicator color={colors.text} />
+                    <Image source={require('@/assets/images/loading.gif')} style={{ width: 32, height: 32 }} />
                   </View>
                 )}
               </Pressable>
@@ -398,7 +397,7 @@ export default function ProfileEditorScreen() {
                 )}
                 {uploadingBackground && (
                   <View style={styles.backgroundOverlay}>
-                    <ActivityIndicator color={colors.text} />
+                    <Image source={require('@/assets/images/loading.gif')} style={{ width: 32, height: 32 }} />
                   </View>
                 )}
               </Pressable>
@@ -406,9 +405,9 @@ export default function ProfileEditorScreen() {
             {isPro && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Video intro (Pro)</Text>
-                <Pressable onPress={pickVideo} disabled={uploadingVideo} style={[styles.videoButton, { borderColor: colors.accent }]}>
+                  <Pressable onPress={pickVideo} disabled={uploadingVideo} style={[styles.videoButton, { borderColor: colors.accent }]}>
                   {uploadingVideo ? (
-                    <ActivityIndicator color={colors.accent} />
+                    <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                   ) : (
                     <Text style={[styles.videoButtonText, { color: colors.accent }]}>
                       {editForm.videoIntroUrl ? 'Change video' : 'Add video (~20 sec)'}

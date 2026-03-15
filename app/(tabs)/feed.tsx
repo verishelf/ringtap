@@ -5,8 +5,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useSegments } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { Image } from 'expo-image';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -90,7 +90,7 @@ export default function FeedTab() {
       </View>
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <Image source={require('@/assets/images/loading.gif')} style={{ width: 64, height: 64 }} />
         </View>
       ) : (
         <FlatList

@@ -2,8 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
+
+import { HeaderBackButton } from '@/components/HeaderBackButton';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
@@ -122,9 +125,7 @@ export default function ManageSubscriptionScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderLight, paddingTop: insets.top, paddingBottom: 12 }]}>
-        <Pressable onPress={() => router.back()} style={styles.headerBack} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </Pressable>
+        <HeaderBackButton tintColor={colors.text} canGoBack />
         <Text style={[styles.headerTitle, { color: colors.text }]}>Manage subscription</Text>
         <View style={styles.headerBack} />
       </View>
@@ -146,7 +147,7 @@ export default function ManageSubscriptionScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color={colors.text} size="small" />
+            <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
             <>
               <Ionicons name="open-outline" size={22} color={colors.text} />

@@ -10,8 +10,8 @@ import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useState } from 'react';
 import { useSegments } from 'expo-router';
+import { Image } from 'expo-image';
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -253,7 +253,7 @@ export default function UpgradeScreen() {
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               {presentingPaywall ? (
-                <ActivityIndicator color={colors.text} size="small" />
+                <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               ) : (
                 <>
                   <Ionicons name="cart-outline" size={22} color={colors.text} />
@@ -302,7 +302,7 @@ export default function UpgradeScreen() {
             </Text>
             {loading ? (
               <View style={styles.loadingRow}>
-                <ActivityIndicator color={colors.accent} size="small" />
+                <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading subscription options…</Text>
               </View>
             ) : productsError ? (
@@ -325,7 +325,7 @@ export default function UpgradeScreen() {
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {purchasingProductId === '006' ? (
-                    <ActivityIndicator color={colors.text} size="small" />
+                    <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                   ) : (
                     <>
                       <Ionicons name="cart-outline" size={22} color={colors.text} />
@@ -342,7 +342,7 @@ export default function UpgradeScreen() {
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {purchasingProductId === '007' ? (
-                    <ActivityIndicator color={colors.text} size="small" />
+                    <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                   ) : (
                     <>
                       <Ionicons name="cart-outline" size={22} color={colors.text} />
@@ -359,7 +359,7 @@ export default function UpgradeScreen() {
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   {restoring ? (
-                    <ActivityIndicator color={colors.accent} size="small" />
+                    <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                   ) : (
                     <Text style={[styles.buttonText, { color: colors.accent }]}>Restore purchases</Text>
                   )}

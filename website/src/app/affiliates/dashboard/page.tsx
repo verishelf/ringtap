@@ -272,7 +272,7 @@ export default function AffiliateDashboardPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <img src="/loading.gif" alt="Loading" className="w-12 h-12" />
         </div>
       }
     >

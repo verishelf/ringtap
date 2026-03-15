@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized: missing token' }, { status: 401 });
     }
 
-    let body: { contact_user_id?: string; display_name?: string; avatar_url?: string };
+    let body: { contact_user_id?: string; display_name?: string; avatar_url?: string; met_at_location?: string; met_at?: string; how_met?: string; notes?: string };
     try {
       body = (await request.json()) as typeof body;
     } catch {
@@ -45,12 +45,20 @@ export async function POST(request: NextRequest) {
 
     const displayName = typeof body.display_name === 'string' ? body.display_name.trim() : '';
     const avatarUrl = typeof body.avatar_url === 'string' ? body.avatar_url.trim() || null : null;
+    const metAtLocation = typeof body.met_at_location === 'string' ? body.met_at_location.trim() || null : null;
+    const metAt = typeof body.met_at === 'string' && body.met_at.trim() ? body.met_at.trim() : null;
+    const howMet = typeof body.how_met === 'string' ? body.how_met.trim() || null : null;
+    const notes = typeof body.notes === 'string' ? body.notes.trim() || null : null;
 
     const { error: insertError } = await supabase.from('user_contacts').insert({
       owner_id: user.id,
       contact_user_id: contactUserId,
       display_name: displayName,
       avatar_url: avatarUrl,
+      met_at_location: metAtLocation,
+      met_at: metAt,
+      how_met: howMet,
+      notes: notes,
     });
 
     if (insertError) {

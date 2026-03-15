@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { ResizeMode, Video } from 'expo-av';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
@@ -143,7 +143,7 @@ export default function LoginScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={colors.text} size="small" />
+                <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               ) : (
                 <Text style={[styles.buttonText, { color: colors.text }]}>
                   {mode === 'password' ? 'Sign in' : 'Send magic link'}

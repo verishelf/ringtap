@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Pressable,
     ScrollView,
@@ -156,7 +155,7 @@ export default function ActivateScreen() {
                 disabled={writing}
               >
                 {writing ? (
-                  <ActivityIndicator size="small" color={colors.accent} />
+                  <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                 ) : (
                   <>
                     <Ionicons name="phone-portrait-outline" size={22} color={colors.accent} />
@@ -218,7 +217,7 @@ export default function ActivateScreen() {
           disabled={claiming}
         >
           {claiming ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
             <>
               <Ionicons name="link" size={22} color={colors.primary} />

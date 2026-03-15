@@ -3,10 +3,12 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+
+import { HeaderBackButton } from '@/components/HeaderBackButton';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -102,7 +104,7 @@ export default function EventDetailsScreen() {
   if (loading) {
     return (
       <View style={[styles.centered, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <Image source={require('@/assets/images/loading.gif')} style={{ width: 64, height: 64 }} />
       </View>
     );
   }
@@ -111,12 +113,7 @@ export default function EventDetailsScreen() {
     return (
       <View style={[styles.centered, { paddingTop: insets.top, backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>Event not found</Text>
-        <Pressable
-          style={[styles.backButton, { borderColor: colors.borderLight }]}
-          onPress={() => router.back()}
-        >
-          <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
-        </Pressable>
+        <HeaderBackButton tintColor={colors.text} canGoBack />
       </View>
     );
   }
@@ -132,13 +129,7 @@ export default function EventDetailsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
-          hitSlop={12}
-        >
-          <Ionicons name="chevron-back" size={28} color={colors.text} />
-        </Pressable>
+        <HeaderBackButton tintColor={colors.text} canGoBack />
         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
           Event
         </Text>
@@ -235,13 +226,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 16, marginBottom: 16 },
-  backButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  backButtonText: { fontSize: 16, fontWeight: '600' },
+  backBtn: { width: 40, padding: 4 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -251,7 +236,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backBtn: { width: 40, padding: 4 },
   headerTitle: { fontSize: 17, fontWeight: '600', flex: 1, textAlign: 'center' },
   deleteBtn: { width: 40, padding: 4, alignItems: 'flex-end' },
   scroll: { flex: 1 },

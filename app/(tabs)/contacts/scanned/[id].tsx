@@ -3,10 +3,10 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -173,7 +173,7 @@ export default function ScannedContactInfoScreen() {
   if (loading) {
     return (
       <View style={[styles.centered, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <ExpoImage source={require('@/assets/images/loading.gif')} style={{ width: 64, height: 64 }} />
       </View>
     );
   }
@@ -183,10 +183,11 @@ export default function ScannedContactInfoScreen() {
       <View style={[styles.centered, { paddingTop: insets.top, backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>Contact not found</Text>
         <Pressable
-          style={[styles.backButton, { borderColor: colors.borderLight }]}
           onPress={() => router.back()}
+          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+          hitSlop={12}
         >
-          <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
       </View>
     );
@@ -223,7 +224,7 @@ export default function ScannedContactInfoScreen() {
           style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
           hitSlop={12}
         >
-          <Ionicons name="chevron-back" size={28} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
           {editing ? 'Edit contact' : 'Business card'}
@@ -236,7 +237,7 @@ export default function ScannedContactInfoScreen() {
             hitSlop={12}
           >
             {saving ? (
-              <ActivityIndicator size="small" color={colors.accent} />
+              <ExpoImage source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
             ) : (
               <Text style={[styles.saveBtnText, { color: colors.accent }]}>Save</Text>
             )}
@@ -432,13 +433,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 16, marginBottom: 16 },
-  backButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  backButtonText: { fontSize: 16, fontWeight: '600' },
+  backBtn: { width: 40, padding: 4 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -448,7 +443,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backBtn: { padding: 4 },
   headerTitle: { fontSize: 17, fontWeight: '600', flex: 1, textAlign: 'center' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   editBtn: { padding: 4 },

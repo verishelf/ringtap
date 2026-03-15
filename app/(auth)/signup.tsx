@@ -1,8 +1,8 @@
+import { Image } from 'expo-image';
 import { ResizeMode, Video } from 'expo-av';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
@@ -115,7 +115,7 @@ export default function SignupScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={colors.text} size="small" />
+                <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               ) : (
                 <Text style={[styles.buttonText, { color: colors.text }]}>Sign up</Text>
               )}

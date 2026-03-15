@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+
+import { HeaderBackButton } from '@/components/HeaderBackButton';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -13,10 +15,10 @@ import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileScanPreview } from '@/components/ProfileScanPreview';
+import { SaveContactSheet } from '@/components/SaveContactSheet';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
-import { getMetAtLocation } from '@/lib/getMetAtLocation';
 import {
   getProfile,
   getLinks,
@@ -28,6 +30,7 @@ import {
   getProfilePlanFromApi,
   type UserProfile,
   type UserLink,
+  type RelationshipIntelligence,
 } from '@/lib/api';
 
 export default function ProfileByIdScreen() {
@@ -43,6 +46,8 @@ export default function ProfileByIdScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isAlreadySaved, setIsAlreadySaved] = useState(false);
   const [profileIsPro, setProfileIsPro] = useState(false);
+  const [saveSheetVisible, setSaveSheetVisible] = useState(false);
+  const [savedContact, setSavedContact] = useState<{ howMet: string | null; metAtLocation: string | null; metAt: string | null; notes: string | null } | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (!id) return;
@@ -71,7 +76,13 @@ export default function ProfileByIdScreen() {
     let cancelled = false;
     getSavedContacts().then((contacts) => {
       if (!cancelled) {
-        setIsAlreadySaved(contacts.some((c) => c.contactUserId === profile.userId));
+        const c = contacts.find((x) => x.contactUserId === profile.userId);
+        setIsAlreadySaved(!!c);
+        if (c && (c.howMet || c.metAtLocation || c.metAt || c.notes)) {
+          setSavedContact({ howMet: c.howMet, metAtLocation: c.metAtLocation, metAt: c.metAt, notes: c.notes });
+        } else {
+          setSavedContact(null);
+        }
       }
     });
     return () => {
@@ -90,35 +101,42 @@ export default function ProfileByIdScreen() {
     autoSaveAttempted.current = true;
     const doSave = exchange === '1'
       ? exchangeContact(profile.userId, profile.name, profile.avatarUrl ?? undefined)
-      : saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined);
+      : saveContact(profile.userId, profile.name, profile.avatarUrl ?? undefined, undefined);
     doSave.then((result) => {
       if (result.success) setIsAlreadySaved(true);
     }).catch(() => {});
   }, [save, exchange, user?.id, profile, isAlreadySaved]);
 
-  const handleSaveContact = useCallback(async () => {
+  const handleSaveContact = useCallback(() => {
     if (!user || !profile) return;
-    setSaving(true);
-    try {
-      const metAtLocation = await getMetAtLocation();
-      const result = await saveContact(
-        profile.userId,
-        profile.name,
-        profile.avatarUrl ?? undefined,
-        metAtLocation ?? undefined
-      );
-      if (result.success) {
-        setIsAlreadySaved(true);
-        Alert.alert('Contact saved!', undefined, [{ text: 'OK' }]);
-      } else {
-        Alert.alert('Could not save', result.error ?? 'Try again.');
-      }
-    } catch {
-      Alert.alert('Error', 'Could not save contact.');
-    } finally {
-      setSaving(false);
-    }
+    setSaveSheetVisible(true);
   }, [user, profile]);
+
+  const handleSaveFromSheet = useCallback(
+    async (relationship: RelationshipIntelligence) => {
+      if (!user || !profile) return;
+      setSaving(true);
+      try {
+        const result = await saveContact(
+          profile.userId,
+          profile.name,
+          profile.avatarUrl ?? undefined,
+          relationship
+        );
+        if (result.success) {
+          setIsAlreadySaved(true);
+          Alert.alert('Contact saved!', undefined, [{ text: 'OK' }]);
+        } else {
+          Alert.alert('Could not save', result.error ?? 'Try again.');
+        }
+      } catch {
+        Alert.alert('Error', 'Could not save contact.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [user, profile]
+  );
 
   const handleMessage = useCallback(async () => {
     if (!user || !profile || profile.userId === user.id) return;
@@ -157,8 +175,8 @@ export default function ProfileByIdScreen() {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error ?? 'Profile not found'}</Text>
-        <Pressable onPress={handleBack} style={[styles.backBtn, { borderColor: colors.borderLight }]}>
-          <Text style={{ color: colors.text }}>Go back</Text>
+        <Pressable onPress={handleBack} style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
       </View>
     );
@@ -167,9 +185,7 @@ export default function ProfileByIdScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.borderLight, paddingTop: insets.top, paddingBottom: 12 }]}>
-        <Pressable onPress={handleBack} style={styles.headerBack} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </Pressable>
+        <HeaderBackButton tintColor={colors.text} canGoBack />
         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
           Profile
         </Text>
@@ -189,8 +205,14 @@ export default function ProfileByIdScreen() {
           onMessage={user?.id !== profile.userId ? handleMessage : undefined}
           showProRing={profileIsPro}
           showVerified={profileIsPro}
+          relationshipInfo={savedContact}
         />
       </ScrollView>
+      <SaveContactSheet
+        visible={saveSheetVisible}
+        onClose={() => setSaveSheetVisible(false)}
+        onSave={handleSaveFromSheet}
+      />
     </View>
   );
 }
@@ -199,7 +221,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Layout.cardPadding },
   errorText: { marginBottom: Layout.rowGap },
-  backBtn: { paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderRadius: Layout.radiusMd },
+  backBtn: { width: 40, padding: 4 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

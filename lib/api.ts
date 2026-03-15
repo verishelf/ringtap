@@ -23,7 +23,17 @@ export type SavedContact = {
   displayName: string;
   avatarUrl: string | null;
   metAtLocation: string | null;
+  metAt: string | null;
+  howMet: string | null;
+  notes: string | null;
   createdAt: string;
+};
+
+export type RelationshipIntelligence = {
+  metAtLocation?: string | null;
+  metAt?: string | null;
+  howMet?: string | null;
+  notes?: string | null;
 };
 
 export type RingStatus = {
@@ -169,7 +179,7 @@ export async function getSavedContacts(): Promise<SavedContact[]> {
   if (!user) return [];
   const { data, error } = await supabase
     .from('user_contacts')
-    .select('id, contact_user_id, display_name, avatar_url, met_at_location, created_at')
+    .select('id, contact_user_id, display_name, avatar_url, met_at_location, met_at, how_met, notes, created_at')
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
   if (error) return [];
@@ -179,6 +189,9 @@ export async function getSavedContacts(): Promise<SavedContact[]> {
     displayName: (row.display_name as string) ?? '',
     avatarUrl: resolveStorageUrlIfPath((row.avatar_url as string) ?? null),
     metAtLocation: (row.met_at_location as string)?.trim() || null,
+    metAt: (row.met_at as string) ?? null,
+    howMet: (row.how_met as string)?.trim() || null,
+    notes: (row.notes as string)?.trim() || null,
     createdAt: row.created_at as string,
   }));
 }
@@ -192,7 +205,7 @@ export async function saveContact(
   contactUserId: string,
   displayName?: string,
   avatarUrl?: string,
-  metAtLocation?: string | null
+  relationship?: RelationshipIntelligence
 ): Promise<{ success: boolean; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Sign in to save contacts' };
@@ -203,13 +216,32 @@ export async function saveContact(
     contact_user_id: contactUserId,
     display_name: (displayName ?? '').trim(),
     avatar_url: resolved ?? raw,
-    met_at_location: (metAtLocation ?? '').trim() || null,
+    met_at_location: (relationship?.metAtLocation ?? '').trim() || null,
+    met_at: relationship?.metAt ?? null,
+    how_met: (relationship?.howMet ?? '').trim() || null,
+    notes: (relationship?.notes ?? '').trim() || null,
   });
   if (error) {
     if (error.code === '23505') return { success: true };
     return { success: false, error: error.message };
   }
   return { success: true };
+}
+
+export async function updateContactRelationship(
+  contactId: string,
+  relationship: RelationshipIntelligence
+): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Sign in to update' };
+  const update: Record<string, unknown> = {};
+  if (relationship.metAtLocation !== undefined) update.met_at_location = (relationship.metAtLocation ?? '').trim() || null;
+  if (relationship.metAt !== undefined) update.met_at = relationship.metAt ?? null;
+  if (relationship.howMet !== undefined) update.how_met = (relationship.howMet ?? '').trim() || null;
+  if (relationship.notes !== undefined) update.notes = (relationship.notes ?? '').trim() || null;
+  if (Object.keys(update).length === 0) return { success: true };
+  const { error } = await supabase.from('user_contacts').update(update).eq('id', contactId).eq('owner_id', user.id);
+  return { success: !error, error: error?.message };
 }
 
 /** Mutual exchange: both users get each other as contacts. Used when opening from web "Exchange contact". */

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, useSegments } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
@@ -216,7 +217,7 @@ export default function SettingsScreen() {
             </View>
             {deleting ? (
               <View style={styles.menuItemRight}>
-                <ActivityIndicator size="small" color={colors.destructive} />
+                <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               </View>
             ) : null}
           </Pressable>
