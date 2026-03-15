@@ -84,8 +84,12 @@ export default function StorePage() {
                 key={product.id}
                 className="rounded-2xl border border-border-light bg-surface p-6 flex flex-col"
               >
-                <div className="flex h-24 w-full items-center justify-center rounded-xl bg-surface-elevated text-4xl text-accent mb-4">
-                  {product.image}
+                <div className="flex h-40 w-full items-center justify-center rounded-xl bg-surface-elevated overflow-hidden mb-4">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover object-center"
+                  />
                 </div>
                 <h2 className="text-lg font-bold text-foreground">{product.name}</h2>
                 <p className="mt-2 text-sm text-muted-light leading-relaxed flex-1">

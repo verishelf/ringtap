@@ -486,9 +486,20 @@ export default function Home() {
         </FadeInOnScroll>
       </section>
 
-      {/* 8. CTA — Start Free or Buy Your Ring */}
-      <section id="cta" className="border-t border-border-light/50 py-24 px-6">
-        <FadeInOnScroll className="mx-auto max-w-3xl text-center">
+      {/* 8. CTA — Get started (users.jpg parallax background) */}
+      <section id="cta" className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url(/users.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+          }}
+          aria-hidden
+        />
+        <div className="absolute inset-0 bg-background/75" aria-hidden />
+        <FadeInOnScroll className="relative z-10 mx-auto max-w-3xl px-6 py-24 text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl">
             Get started
           </h2>
@@ -624,8 +635,12 @@ export default function Home() {
                       {product.id === "classic" ? "Bestseller" : "Popular"}
                     </span>
                   )}
-                  <div className="flex h-24 w-full items-center justify-center rounded-xl bg-surface-elevated text-4xl text-accent mb-4">
-                    {product.image}
+                  <div className="flex h-32 w-full items-center justify-center rounded-xl bg-surface-elevated overflow-hidden mb-4">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover object-center"
+                    />
                   </div>
                   <h3 className="text-lg font-bold text-foreground group-hover:text-accent transition-colors">
                     {product.name}

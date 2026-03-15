@@ -1,5 +1,6 @@
 "use client";
 
+import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -103,13 +104,17 @@ export function Header({
           {variant === "store" && (
             <Link
               href="/store/cart"
-              className="relative inline-flex items-center gap-1 text-sm font-medium text-muted-light hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-medium text-muted-light hover:text-foreground transition-colors"
               onClick={() => setMenuOpen(false)}
+              aria-label={`Cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`}
             >
-              Cart{cartCount > 0 ? ` (${cartCount})` : ""}
-              {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-1 h-2 w-2 rounded-full bg-red-500" aria-hidden />
-              )}
+              <span className="relative inline-flex">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden />
+                )}
+              </span>
+              <span>Cart{cartCount > 0 ? ` (${cartCount})` : ""}</span>
             </Link>
           )}
           {links.map((link) => (
@@ -157,13 +162,17 @@ export function Header({
             <div className="border-b border-border-light/30">
               <Link
                 href="/store/cart"
-                className="relative inline-flex items-center gap-2 block py-3 text-sm font-medium text-muted-light hover:text-foreground"
+                className="inline-flex items-center gap-2 block py-3 text-sm font-medium text-muted-light hover:text-foreground"
                 onClick={() => setMenuOpen(false)}
+                aria-label={`Cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`}
               >
-                Cart{cartCount > 0 ? ` (${cartCount})` : ""}
-                {cartCount > 0 && (
-                  <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" aria-hidden />
-                )}
+                <span className="relative inline-flex">
+                  <ShoppingCart className="h-5 w-5 shrink-0" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden />
+                  )}
+                </span>
+                <span>Cart{cartCount > 0 ? ` (${cartCount})` : ""}</span>
               </Link>
             </div>
           )}
