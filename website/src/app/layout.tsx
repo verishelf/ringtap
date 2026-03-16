@@ -1,7 +1,7 @@
+import { AffiliateRefProvider } from "@/components/AffiliateRefProvider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
-import { AffiliateRefProvider } from "@/components/AffiliateRefProvider";
 import "./globals.css";
 
 const GA_MEASUREMENT_ID = "G-K8VP2WCYEC";

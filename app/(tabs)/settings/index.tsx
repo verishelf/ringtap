@@ -143,6 +143,46 @@ export default function SettingsScreen() {
         </View>
 
         <View style={[styles.section, { marginTop: Layout.sectionGap }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Badges</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Pressable
+              style={[styles.menuItem, { borderBottomWidth: 0 }]}
+              onPress={() => router.push(inProfileStack ? '/(tabs)/profile/badges' : '/(tabs)/settings/badges')}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="ribbon-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Badges earned</Text>
+              </View>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Integrations</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Pressable
+              style={[styles.menuItem, { borderBottomWidth: 0 }]}
+              onPress={() => router.push('/(tabs)/settings/integrations')}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="link-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>CRM sync (HubSpot)</Text>
+              </View>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Ring</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Pressable

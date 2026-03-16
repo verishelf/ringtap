@@ -62,6 +62,47 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['analytics_events']['Insert']>;
       };
+      badges: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string;
+          icon: string;
+          color: string;
+          category: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['badges']['Row'], 'id' | 'created_at'> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['badges']['Insert']>;
+      };
+      user_badges: {
+        Row: {
+          id: string;
+          user_id: string;
+          badge_id: string;
+          earned_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_badges']['Row'], 'id'> & {
+          id?: string;
+        };
+        Update: Partial<Database['public']['Tables']['user_badges']['Insert']>;
+      };
+      user_app_opens: {
+        Row: {
+          id: string;
+          user_id: string;
+          opened_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_app_opens']['Row'], 'id'> & {
+          id?: string;
+        };
+        Update: Partial<Database['public']['Tables']['user_app_opens']['Insert']>;
+      };
       subscriptions: {
         Row: {
           id: string;

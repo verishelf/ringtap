@@ -772,6 +772,16 @@ export default function ProfileEditorScreen() {
                   <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
                 </Pressable>
                 <Pressable
+                  style={({ pressed }) => [styles.toolsRow, { borderBottomColor: colors.borderLight }, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/(tabs)/profile/badges')}
+                >
+                  <View style={[styles.toolsIconWrap, { backgroundColor: colors.accent + '22' }]}>
+                    <Ionicons name="ribbon" size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[styles.toolsLabel, { color: colors.text }]}>Badges</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+                <Pressable
                   style={({ pressed }) => [styles.toolsRow, styles.toolsRowLast, pressed && { opacity: 0.7 }]}
                   onPress={() => router.push('/(tabs)/profile/settings')}
                 >

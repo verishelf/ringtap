@@ -3,16 +3,14 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  Alert,
-  FlatList,
-  Linking,
-  ListRenderItem,
-  Platform,
-  Pressable,
-  SectionList,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    ListRenderItem,
+    Platform,
+    Pressable,
+    SectionList,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -22,14 +20,13 @@ import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { SavedContact, ScannedContact } from '@/lib/api';
-import { getScannedContactDisplayName } from '@/lib/api';
 import {
-  deleteSavedContact,
-  deleteScannedContact,
-  getProfile,
-  getSavedContacts,
-  getScannedContacts,
-  getSubscription,
+    deleteSavedContact,
+    deleteScannedContact,
+    getProfile,
+    getSavedContacts, getScannedContactDisplayName, getScannedContacts,
+    getSubscription,
+    syncToCrm
 } from '@/lib/api';
 import { syncContactsToPhone } from '@/utils/syncContactsToPhone';
 
@@ -60,6 +57,7 @@ export default function ContactsScreen() {
   const [scannedContacts, setScannedContacts] = useState<ScannedContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncingCrm, setSyncingCrm] = useState(false);
   const [avatarByUserId, setAvatarByUserId] = useState<Record<string, string | null>>({});
   const [nameByUserId, setNameByUserId] = useState<Record<string, string>>({});
   const [isProByUserId, setIsProByUserId] = useState<Record<string, boolean>>({});
@@ -169,6 +167,45 @@ export default function ContactsScreen() {
       setSyncing(false);
     }
   }, [contacts, scannedContacts.length, isPro, router]);
+
+  const handleSyncToCrm = useCallback(async () => {
+    if (!isPro) {
+      Alert.alert(
+        'Pro feature',
+        'Sync to CRM is a Pro feature. Upgrade to sync your contacts to HubSpot.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/settings/upgrade') },
+        ]
+      );
+      return;
+    }
+    if (contacts.length === 0 && scannedContacts.length === 0) {
+      Alert.alert('No contacts', 'Add contacts first, then sync to your CRM.');
+      return;
+    }
+    setSyncingCrm(true);
+    try {
+      const result = await syncToCrm();
+      if (result.error) {
+        Alert.alert('Sync failed', result.error);
+      } else if (result.created > 0 || result.skipped > 0) {
+        const msg =
+          result.failed > 0
+            ? `Added ${result.created} to HubSpot. ${result.skipped} already existed. ${result.failed} failed.`
+            : `Added ${result.created} contact${result.created !== 1 ? 's' : ''} to HubSpot. ${result.skipped} already existed.`;
+        Alert.alert('Synced', msg);
+      } else if (result.failed > 0) {
+        Alert.alert('Sync failed', 'Could not sync contacts. Make sure HubSpot is connected in Settings → Integrations.');
+      } else {
+        Alert.alert('No new contacts', 'All your contacts already exist in HubSpot.');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not sync to CRM.');
+    } finally {
+      setSyncingCrm(false);
+    }
+  }, [contacts.length, scannedContacts.length, isPro, router]);
 
   const handleDeleteScanned = useCallback((scanned: ScannedContact) => {
     Alert.alert(
@@ -350,33 +387,63 @@ export default function ContactsScreen() {
         />
       </Pressable>
 
-      {contacts.length > 0 && (
-        <Pressable
-          style={({ pressed }) => [
-            styles.syncButton,
-            {
-              backgroundColor: colors.surfaceElevated ?? colors.surface,
-              borderColor: colors.border,
-              opacity: pressed || syncing ? 0.9 : 1,
-            },
-          ]}
-          onPress={handleSyncToPhone}
-          disabled={syncing}
-        >
-          {syncing ? (
-            <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
-          ) : (
-            <Ionicons name="phone-portrait-outline" size={18} color={colors.accent} />
-          )}
-          <Text style={[styles.syncButtonText, { color: colors.text }]}>
-            {syncing ? 'Syncing…' : 'Sync to Phone'}
-          </Text>
-          {!isPro && (
-            <View style={[styles.proBadge, { backgroundColor: colors.accent + '33' }]}>
-              <Text style={[styles.proBadgeText, { color: colors.accent }]}>Pro</Text>
-            </View>
-          )}
-        </Pressable>
+      {(contacts.length > 0 || scannedContacts.length > 0) && (
+        <View style={styles.syncRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.syncButton,
+              styles.syncButtonHalf,
+              {
+                backgroundColor: colors.surfaceElevated ?? colors.surface,
+                borderColor: colors.border,
+                opacity: pressed || syncing ? 0.9 : 1,
+              },
+            ]}
+            onPress={handleSyncToPhone}
+            disabled={syncing}
+          >
+            {syncing ? (
+              <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
+            ) : (
+              <Ionicons name="phone-portrait-outline" size={18} color={colors.accent} />
+            )}
+            <Text style={[styles.syncButtonText, { color: colors.text }]} numberOfLines={1}>
+              {syncing ? 'Syncing…' : 'Sync to Phone'}
+            </Text>
+            {!isPro && (
+              <View style={[styles.proBadge, { backgroundColor: colors.accent + '33' }]}>
+                <Text style={[styles.proBadgeText, { color: colors.accent }]}>Pro</Text>
+              </View>
+            )}
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.syncButton,
+              styles.syncButtonHalf,
+              {
+                backgroundColor: colors.surfaceElevated ?? colors.surface,
+                borderColor: colors.border,
+                opacity: pressed || syncingCrm ? 0.9 : 1,
+              },
+            ]}
+            onPress={handleSyncToCrm}
+            disabled={syncingCrm}
+          >
+            {syncingCrm ? (
+              <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
+            ) : (
+              <Ionicons name="business-outline" size={18} color={colors.accent} />
+            )}
+            <Text style={[styles.syncButtonText, { color: colors.text }]} numberOfLines={1}>
+              {syncingCrm ? 'Syncing…' : 'Sync to CRM'}
+            </Text>
+            {!isPro && (
+              <View style={[styles.proBadge, { backgroundColor: colors.accent + '33' }]}>
+                <Text style={[styles.proBadgeText, { color: colors.accent }]}>Pro</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
       )}
 
       <SectionList
@@ -464,6 +531,12 @@ const styles = StyleSheet.create({
   messagesTextWrap: { flex: 1 },
   messagesLabel: { fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
   messagesSubtext: { fontSize: 12, marginTop: 1, opacity: 0.85 },
+  syncRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginHorizontal: Layout.screenPadding,
+    marginBottom: 12,
+  },
   syncButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -471,8 +544,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    marginHorizontal: Layout.screenPadding,
-    marginBottom: 12,
     borderRadius: Layout.radiusLg,
     borderWidth: StyleSheet.hairlineWidth,
     ...Platform.select({
@@ -484,6 +555,9 @@ const styles = StyleSheet.create({
       },
       android: { elevation: 2 },
     }),
+  },
+  syncButtonHalf: {
+    flex: 1,
   },
   syncButtonText: { fontSize: 15, fontWeight: '600' },
   proBadge: {

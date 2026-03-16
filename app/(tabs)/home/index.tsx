@@ -16,10 +16,12 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BadgeEarnedModal } from '@/components/BadgeEarnedModal';
 import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
+import { useBadges } from '@/hooks/useBadges';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -68,6 +70,8 @@ export default function HomeScreen() {
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [opportunityPosts, setOpportunityPosts] = useState<Post[]>([]);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const { newlyEarnedBadges, dismissNewBadgeModal } = useBadges();
 
   const { users: nearbyUsers } = useNearbyUsers({
     centerLat: currentLocation?.latitude ?? null,
@@ -206,6 +210,11 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+        <BadgeEarnedModal
+          visible={newlyEarnedBadges.length > 0}
+          badge={newlyEarnedBadges[0] ?? null}
+          onDismiss={dismissNewBadgeModal}
+        />
       <LinearGradient
         colors={gradientColors}
         locations={[0, 0.25, 0.5, 0.75, 1]}

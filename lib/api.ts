@@ -273,6 +273,103 @@ export async function exchangeContact(
   }
 }
 
+// --- CRM integrations ---
+export type CrmConnection = {
+  id: string;
+  provider: string;
+  lastSyncAt: string | null;
+  createdAt: string;
+};
+
+export type CrmSyncResult = {
+  success: boolean;
+  created: number;
+  skipped: number;
+  failed: number;
+  error?: string;
+};
+
+export async function getCrmConnections(): Promise<CrmConnection[]> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return [];
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/crm/connections`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = (await res.json()) as { connections?: CrmConnection[] };
+    return data.connections ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getCrmConnectUrl(provider: 'hubspot'): Promise<{ url: string; error?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { url: '', error: 'Sign in to connect' };
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/crm/connect`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+    const data = (await res.json()) as { url?: string; error?: string };
+    if (!res.ok) return { url: '', error: data.error ?? 'Failed to get connect URL' };
+    return { url: data.url ?? '', error: data.error };
+  } catch (e) {
+    return { url: '', error: e instanceof Error ? e.message : 'Failed to connect' };
+  }
+}
+
+export async function disconnectCrm(provider: string): Promise<{ success: boolean; error?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { success: false, error: 'Sign in to disconnect' };
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/crm/connections?provider=${encodeURIComponent(provider)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = (await res.json()) as { success?: boolean; error?: string };
+    if (!res.ok) return { success: false, error: data.error ?? 'Failed to disconnect' };
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to disconnect' };
+  }
+}
+
+export async function syncToCrm(): Promise<CrmSyncResult> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    return { success: false, created: 0, skipped: 0, failed: 0, error: 'Sign in to sync' };
+  }
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/crm/sync`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    const data = (await res.json()) as CrmSyncResult;
+    if (!res.ok) {
+      return {
+        success: false,
+        created: 0,
+        skipped: 0,
+        failed: 0,
+        error: data.error ?? 'Sync failed',
+      };
+    }
+    return data;
+  } catch (e) {
+    return {
+      success: false,
+      created: 0,
+      skipped: 0,
+      failed: 0,
+      error: e instanceof Error ? e.message : 'Sync failed',
+    };
+  }
+}
+
 // --- Map presence (Networking Map, Pro) ---
 export type MapPresenceUser = {
   userId: string;
