@@ -51,7 +51,7 @@ export default function ContactsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const colors = useThemeColors();
-  const { user } = useSession();
+  const { user, session } = useSession();
   const { isPro } = useSubscription();
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [scannedContacts, setScannedContacts] = useState<ScannedContact[]>([]);
@@ -186,7 +186,7 @@ export default function ContactsScreen() {
     }
     setSyncingCrm(true);
     try {
-      const result = await syncToCrm();
+      const result = await syncToCrm(session?.access_token);
       if (result.error) {
         Alert.alert('Sync failed', result.error);
       } else if (result.created > 0 || result.skipped > 0) {
@@ -205,7 +205,7 @@ export default function ContactsScreen() {
     } finally {
       setSyncingCrm(false);
     }
-  }, [contacts.length, scannedContacts.length, isPro, router]);
+  }, [contacts.length, scannedContacts.length, isPro, router, session?.access_token]);
 
   const handleDeleteScanned = useCallback((scanned: ScannedContact) => {
     Alert.alert(

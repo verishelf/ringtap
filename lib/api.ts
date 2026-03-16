@@ -14,7 +14,23 @@ import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
 export type { UserProfile, UserLink, ScannedContact };
 
 const PROFILE_URL_BASE = 'https://ringtap.me';
-const RING_API_BASE = 'https://www.ringtap.me';
+const RING_API_BASE = (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_RING_API_BASE?.trim()) || 'https://www.ringtap.me';
+
+async function parseJsonOrError<T>(res: Response): Promise<{ data: T | null; error: string }> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text();
+    if (res.status === 404) return { data: null, error: 'API not found. Deploy the website with CRM routes.' };
+    if (res.status >= 500) return { data: null, error: 'Server error. Try again later.' };
+    return { data: null, error: text?.slice(0, 100) || `Request failed (${res.status})` };
+  }
+  try {
+    const data = (await res.json()) as T;
+    return { data, error: '' };
+  } catch (e) {
+    return { data: null, error: e instanceof Error ? e.message : 'Invalid response' };
+  }
+}
 
 // --- Types ---
 export type SavedContact = {
@@ -296,7 +312,8 @@ export async function getCrmConnections(): Promise<CrmConnection[]> {
     const res = await fetch(`${RING_API_BASE}/api/crm/connections`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
-    const data = (await res.json()) as { connections?: CrmConnection[] };
+    const { data, error } = await parseJsonOrError<{ connections?: CrmConnection[] }>(res);
+    if (error || !data) return [];
     return data.connections ?? [];
   } catch {
     return [];
@@ -314,9 +331,10 @@ export async function getCrmConnectUrl(provider: 'hubspot'): Promise<{ url: stri
         Authorization: `Bearer ${session.access_token}`,
       },
     });
-    const data = (await res.json()) as { url?: string; error?: string };
-    if (!res.ok) return { url: '', error: data.error ?? 'Failed to get connect URL' };
-    return { url: data.url ?? '', error: data.error };
+    const { data, error } = await parseJsonOrError<{ url?: string; error?: string }>(res);
+    if (error) return { url: '', error };
+    if (!res.ok) return { url: '', error: data?.error ?? 'Failed to get connect URL' };
+    return { url: data?.url ?? '', error: data?.error };
   } catch (e) {
     return { url: '', error: e instanceof Error ? e.message : 'Failed to connect' };
   }
@@ -330,42 +348,58 @@ export async function disconnectCrm(provider: string): Promise<{ success: boolea
       method: 'DELETE',
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
-    const data = (await res.json()) as { success?: boolean; error?: string };
-    if (!res.ok) return { success: false, error: data.error ?? 'Failed to disconnect' };
+    const { data, error } = await parseJsonOrError<{ success?: boolean; error?: string }>(res);
+    if (error) return { success: false, error };
+    if (!res.ok) return { success: false, error: data?.error ?? 'Failed to disconnect' };
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Failed to disconnect' };
   }
 }
 
-export async function syncToCrm(): Promise<CrmSyncResult> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
+export async function syncToCrm(accessToken?: string): Promise<CrmSyncResult> {
+  let token = accessToken?.trim();
+  if (!token) {
+    const { data: { session } } = await supabase.auth.getSession();
+    token = session?.access_token?.trim();
+  }
+  if (!token) {
     return { success: false, created: 0, skipped: 0, failed: 0, error: 'Sign in to sync' };
   }
   try {
     const res = await fetch(`${RING_API_BASE}/api/crm/sync`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token.trim()}`,
+      },
     });
-    const data = (await res.json()) as CrmSyncResult;
+    const { data, error } = await parseJsonOrError<CrmSyncResult>(res);
+    if (error) {
+      return { success: false, created: 0, skipped: 0, failed: 0, error };
+    }
     if (!res.ok) {
       return {
         success: false,
         created: 0,
         skipped: 0,
         failed: 0,
-        error: data.error ?? 'Sync failed',
+        error: data?.error ?? 'Sync failed',
       };
     }
-    return data;
+    return data ?? { success: false, created: 0, skipped: 0, failed: 0, error: 'Invalid response' };
   } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Sync failed';
+    const friendly =
+      msg.toLowerCase().includes('network') || msg.toLowerCase().includes('failed')
+        ? 'Network error. Check your connection and try again.'
+        : msg;
     return {
       success: false,
       created: 0,
       skipped: 0,
       failed: 0,
-      error: e instanceof Error ? e.message : 'Sync failed',
+      error: friendly,
     };
   }
 }

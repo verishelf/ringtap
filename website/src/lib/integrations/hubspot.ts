@@ -1,11 +1,12 @@
 /**
  * HubSpot CRM integration client.
- * OAuth: https://app.hubspot.com/oauth/authorize
+ * OAuth: https://app.hubspot.com/oauth/authorize (or app-na2.hubspot.com for NA2 accounts)
  * Token: https://api.hubapi.com/oauth/v1/token
  * Contacts: https://api.hubapi.com/crm/v3/objects/contacts
  */
 
-const HUBSPOT_AUTH_URL = 'https://app.hubspot.com/oauth/authorize';
+const HUBSPOT_AUTH_URL =
+  process.env.HUBSPOT_AUTH_URL?.trim() || 'https://app.hubspot.com/oauth/authorize';
 const HUBSPOT_TOKEN_URL = 'https://api.hubapi.com/oauth/v1/token';
 const HUBSPOT_CONTACTS_URL = 'https://api.hubapi.com/crm/v3/objects/contacts';
 const HUBSPOT_SCOPES = 'crm.objects.contacts.read crm.objects.contacts.write';
