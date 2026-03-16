@@ -27,6 +27,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="manage" options={{ title: 'Manage Subscription', headerShown: false }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       <Stack.Screen name="badges" options={{ title: 'Badges', headerShown: false }} />
+      <Stack.Screen name="integrations" options={{ title: 'Integrations', headerShown: false }} />
       <Stack.Screen name="about" options={{ title: 'About', headerShown: false }} />
     </Stack>
   );

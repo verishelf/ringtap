@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { getAppUrl, getRedirectUri } from '@/lib/crmConfig';
 import { exchangeHubSpotCode } from '@/lib/integrations/hubspot';
 
 function getSupabase() {
@@ -14,13 +15,6 @@ function getSupabase() {
   return createClient(supabaseUrl, serviceKey);
 }
 
-function getAppUrl(): string {
-  const url = (process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000')
-    .replace(/^["'\s]+|["'\s]+$/g, '')
-    .trim();
-  return url.startsWith('http') ? url : `https://${url}`;
-}
-
 /**
  * HubSpot OAuth callback. HubSpot redirects here with ?code=...&state=...
  * We exchange the code for tokens, store in crm_connections, then redirect to app.
@@ -32,7 +26,7 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error');
 
   const appUrl = getAppUrl();
-  const redirectUri = `${appUrl}/api/crm/callback`;
+  const redirectUri = getRedirectUri();
   const appDeepLink = 'ringtap://settings/integrations';
 
   if (error) {

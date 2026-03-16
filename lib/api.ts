@@ -305,12 +305,12 @@ export type CrmSyncResult = {
   error?: string;
 };
 
-export async function getCrmConnections(): Promise<CrmConnection[]> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) return [];
+export async function getCrmConnections(accessToken?: string): Promise<CrmConnection[]> {
+  const token = accessToken?.trim() ?? (await supabase.auth.getSession()).data.session?.access_token?.trim();
+  if (!token) return [];
   try {
     const res = await fetch(`${RING_API_BASE}/api/crm/connections`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     const { data, error } = await parseJsonOrError<{ connections?: CrmConnection[] }>(res);
     if (error || !data) return [];
@@ -320,23 +320,36 @@ export async function getCrmConnections(): Promise<CrmConnection[]> {
   }
 }
 
-export async function getCrmConnectUrl(provider: 'hubspot'): Promise<{ url: string; error?: string }> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) return { url: '', error: 'Sign in to connect' };
+export async function getCrmConnectUrl(
+  provider: 'hubspot',
+  accessToken?: string
+): Promise<{ url: string; error?: string; redirect_uri?: string }> {
+  const token = accessToken?.trim() ?? (await supabase.auth.getSession()).data.session?.access_token?.trim();
+  if (!token) return { url: '', error: 'Sign in to connect' };
   try {
     const res = await fetch(`${RING_API_BASE}/api/crm/connect`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
-    const { data, error } = await parseJsonOrError<{ url?: string; error?: string }>(res);
+    const { data, error } = await parseJsonOrError<{ url?: string; error?: string; redirect_uri?: string }>(res);
     if (error) return { url: '', error };
     if (!res.ok) return { url: '', error: data?.error ?? 'Failed to get connect URL' };
-    return { url: data?.url ?? '', error: data?.error };
+    return { url: data?.url ?? '', error: data?.error, redirect_uri: data?.redirect_uri };
   } catch (e) {
     return { url: '', error: e instanceof Error ? e.message : 'Failed to connect' };
+  }
+}
+
+export async function getCrmConfig(): Promise<{ redirect_uri?: string }> {
+  try {
+    const res = await fetch(`${RING_API_BASE}/api/crm/config`);
+    const data = (await res.json()) as { redirect_uri?: string };
+    return data;
+  } catch {
+    return {};
   }
 }
 

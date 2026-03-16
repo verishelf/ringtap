@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +22,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import type { CrmConnection } from '@/lib/api';
 import {
   disconnectCrm,
+  getCrmConfig,
   getCrmConnectUrl,
   getCrmConnections,
 } from '@/lib/api';
@@ -33,7 +35,7 @@ export default function IntegrationsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const colors = useThemeColors();
-  const { user } = useSession();
+  const { user, session } = useSession();
   const { isPro } = useSubscription();
   const [connections, setConnections] = useState<CrmConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ export default function IntegrationsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, session?.access_token]);
 
   useFocusEffect(
     useCallback(() => {
@@ -76,9 +78,12 @@ export default function IntegrationsScreen() {
     }
     setConnecting(true);
     try {
-      const { url, error } = await getCrmConnectUrl('hubspot');
+      const { url, error, redirect_uri } = await getCrmConnectUrl('hubspot', session?.access_token);
       if (error || !url) {
-        Alert.alert('Error', error ?? 'Could not start HubSpot connection');
+        const msg = redirect_uri
+          ? `${error ?? 'Could not start HubSpot connection'}\n\nAdd this exact URL to HubSpot (Legacy app → Auth → Redirect URLs):\n${redirect_uri}`
+          : (error ?? 'Could not start HubSpot connection');
+        Alert.alert('Error', msg);
         return;
       }
       await Linking.openURL(url);
@@ -87,7 +92,17 @@ export default function IntegrationsScreen() {
     } finally {
       setConnecting(false);
     }
-  }, [isPro, router]);
+  }, [isPro, router, session?.access_token]);
+
+  const handleShowRedirectUri = useCallback(async () => {
+    const { redirect_uri } = await getCrmConfig();
+    Alert.alert(
+      'HubSpot redirect URI',
+      redirect_uri
+        ? `Add this exact URL to your HubSpot legacy app (Auth → Redirect URLs):\n\n${redirect_uri}`
+        : 'Could not load redirect URI. Check that the API is running.'
+    );
+  }, []);
 
   const handleDisconnect = useCallback(
     (provider: string) => {
@@ -140,7 +155,13 @@ export default function IntegrationsScreen() {
         </Text>
 
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <View style={[styles.row, styles.rowBorder, { borderBottomColor: colors.borderLight }]}>
+          <TouchableOpacity
+            style={[styles.row, styles.rowBorder, { borderBottomColor: colors.borderLight }]}
+            onPress={hasHubSpot ? undefined : handleConnectHubSpot}
+            disabled={hasHubSpot ? false : connecting}
+            activeOpacity={hasHubSpot ? 1 : 0.7}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+          >
             <View style={styles.menuItemLeft}>
               <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
                 <Ionicons name="logo-hubspot" size={MENU_ICON_SIZE} color="#ff7a59" />
@@ -156,14 +177,16 @@ export default function IntegrationsScreen() {
               <Pressable
                 onPress={() => handleDisconnect('hubspot')}
                 style={[styles.disconnectBtn, { borderColor: colors.destructive }]}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
                 <Text style={[styles.disconnectText, { color: colors.destructive }]}>Disconnect</Text>
               </Pressable>
             ) : (
               <Pressable
+                style={[styles.connectBtn, { backgroundColor: colors.accent }]}
                 onPress={handleConnectHubSpot}
                 disabled={connecting}
-                style={[styles.connectBtn, { backgroundColor: colors.accent }]}
+                hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
               >
                 {connecting ? (
                   <Image source={require('@/assets/images/loading.gif')} style={{ width: 20, height: 20 }} />
@@ -172,7 +195,7 @@ export default function IntegrationsScreen() {
                 )}
               </Pressable>
             )}
-          </View>
+          </TouchableOpacity>
         </View>
 
         {!isPro && (
@@ -183,6 +206,12 @@ export default function IntegrationsScreen() {
             </Text>
           </View>
         )}
+
+        <Pressable onPress={handleShowRedirectUri} style={{ marginTop: 16 }}>
+          <Text style={[styles.hint, { color: colors.accent }]}>
+            Having trouble? Verify redirect URI for HubSpot
+          </Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -213,6 +242,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: Layout.cardPadding,
     paddingHorizontal: Layout.cardPadding,
+    minHeight: 56,
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -223,6 +253,7 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
     minWidth: 0,
+    marginRight: 12,
   },
   iconBox: {
     justifyContent: 'center',
@@ -230,9 +261,12 @@ const styles = StyleSheet.create({
   },
   menuText: { fontSize: Layout.body, flexShrink: 1 },
   connectBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 8,
+    minWidth: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   connectText: { fontSize: 14, fontWeight: '600' },
   disconnectBtn: {

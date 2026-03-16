@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
+import { getRedirectUri } from '@/lib/crmConfig';
 import { getHubSpotAuthUrl } from '@/lib/integrations/hubspot';
 
 function getSupabase() {
@@ -13,13 +14,6 @@ function getSupabase() {
     throw new Error('Server missing Supabase config');
   }
   return createClient(supabaseUrl, serviceKey);
-}
-
-function getAppUrl(): string {
-  const url = (process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000')
-    .replace(/^["'\s]+|["'\s]+$/g, '')
-    .trim();
-  return url.startsWith('http') ? url : `https://${url}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -45,8 +39,7 @@ export async function POST(request: NextRequest) {
 
     const provider = 'hubspot';
     const state = randomUUID();
-    const appUrl = getAppUrl();
-    const redirectUri = `${appUrl}/api/crm/callback`;
+    const redirectUri = getRedirectUri();
 
     const supabase = getSupabase();
     await supabase.from('crm_oauth_state').insert({
@@ -56,7 +49,7 @@ export async function POST(request: NextRequest) {
     });
 
     const authUrl = getHubSpotAuthUrl(redirectUri, state);
-    return NextResponse.json({ url: authUrl, state });
+    return NextResponse.json({ url: authUrl, state, redirect_uri: redirectUri });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(

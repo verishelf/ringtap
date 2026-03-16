@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, useSegments } from 'expo-router';
 import { useState } from 'react';
 import { Image } from 'expo-image';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
@@ -165,9 +165,10 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Integrations</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Pressable
+            <TouchableOpacity
               style={[styles.menuItem, { borderBottomWidth: 0 }]}
-              onPress={() => router.push('/(tabs)/settings/integrations')}
+              onPress={() => router.navigate(inProfileStack ? '/(tabs)/profile/integrations' : '/(tabs)/settings/integrations')}
+              activeOpacity={0.7}
             >
               <View style={styles.menuItemLeft}>
                 <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
@@ -178,7 +179,7 @@ export default function SettingsScreen() {
               <View style={styles.menuItemRight} pointerEvents="none">
                 <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
               </View>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
 
