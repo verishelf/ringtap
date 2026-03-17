@@ -9,7 +9,7 @@ const HUBSPOT_AUTH_URL =
   process.env.HUBSPOT_AUTH_URL?.trim() || 'https://app.hubspot.com/oauth/authorize';
 const HUBSPOT_TOKEN_URL = 'https://api.hubapi.com/oauth/v1/token';
 const HUBSPOT_CONTACTS_URL = 'https://api.hubapi.com/crm/v3/objects/contacts';
-const HUBSPOT_SCOPES = 'crm.objects.contacts.read crm.objects.contacts.write';
+const HUBSPOT_SCOPES = 'oauth crm.objects.contacts.read crm.objects.contacts.write';
 
 export type HubSpotContactInput = {
   email?: string;
