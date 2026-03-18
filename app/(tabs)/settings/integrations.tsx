@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -40,6 +40,8 @@ export default function IntegrationsScreen() {
   const [connections, setConnections] = useState<CrmConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const params = useLocalSearchParams<{ connected?: string; error?: string }>();
+  const handledCallback = useRef(false);
 
   const loadConnections = useCallback(async () => {
     if (!user) {
@@ -62,6 +64,21 @@ export default function IntegrationsScreen() {
     useCallback(() => {
       loadConnections();
     }, [loadConnections])
+  );
+
+  // Handle OAuth callback deep link (ringtap://settings/integrations?connected=hubspot or ?error=...)
+  useFocusEffect(
+    useCallback(() => {
+      if (handledCallback.current) return;
+      if (params.connected === 'hubspot') {
+        handledCallback.current = true;
+        loadConnections();
+        Alert.alert('HubSpot connected', 'Your contacts can now sync to HubSpot. Go to Contacts → Sync to CRM.');
+      } else if (params.error) {
+        handledCallback.current = true;
+        Alert.alert('Connection failed', decodeURIComponent(params.error));
+      }
+    }, [params.connected, params.error, loadConnections])
   );
 
   const handleConnectHubSpot = useCallback(async () => {

@@ -11,7 +11,8 @@
       "ringtap://",
       "ringtap://auth/callback",
       "ringtap://activate",
-      "ringtap://profile"
+      "ringtap://profile",
+      "ringtap://settings/integrations"
     ],
     "newArchEnabled": true,
     "ios": {

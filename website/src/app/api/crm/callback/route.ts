@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import { getAppUrl, getRedirectUri } from '@/lib/crmConfig';
+import { getRedirectUri } from '@/lib/crmConfig';
 import { exchangeHubSpotCode } from '@/lib/integrations/hubspot';
 
 function getSupabase() {
@@ -30,13 +30,13 @@ async function handleCallback(request: NextRequest) {
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
-  const appUrl = getAppUrl();
   const redirectUri = getRedirectUri();
+  const appDeepLink = 'ringtap://settings/integrations';
 
   if (error) {
     const errDesc = searchParams.get('error_description') || error;
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent(errDesc)}`
+      `${appDeepLink}?error=${encodeURIComponent(errDesc)}`
     );
   }
 
@@ -44,7 +44,7 @@ async function handleCallback(request: NextRequest) {
     const hint =
       'No authorization code received. Ensure https://www.ringtap.me/api/crm/callback is in HubSpot Auth → Redirect URLs.';
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent('Missing code. ' + hint)}`
+      `${appDeepLink}?error=${encodeURIComponent('Missing code. ' + hint)}`
     );
   }
 
@@ -83,7 +83,7 @@ async function handleCallback(request: NextRequest) {
       ? 'Invalid or expired state. Try connecting again.'
       : 'HubSpot dropped the state (common when signing in with Google). Log into app-na2.hubspot.com first, then try again.';
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent('Could not complete connection. ' + hint)}`
+      `${appDeepLink}?error=${encodeURIComponent('Could not complete connection. ' + hint)}`
     );
   }
 
@@ -94,7 +94,7 @@ async function handleCallback(request: NextRequest) {
   const { user_id: userId, provider } = stateRow;
   if (provider !== 'hubspot') {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent('Unsupported provider')}`
+      `${appDeepLink}?error=${encodeURIComponent('Unsupported provider')}`
     );
   }
 
@@ -120,11 +120,11 @@ async function handleCallback(request: NextRequest) {
       throw new Error(upsertError.message);
     }
 
-    return NextResponse.redirect(`${appUrl}/settings/integrations?connected=hubspot`);
+    return NextResponse.redirect(`${appDeepLink}?connected=hubspot`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent(message)}`
+      `${appDeepLink}?error=${encodeURIComponent(message)}`
     );
   }
 }
