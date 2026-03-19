@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import { NextRequest, NextResponse } from 'next/server';
 import { getRedirectUri } from '@/lib/crmConfig';
 import { exchangeHubSpotCode } from '@/lib/integrations/hubspot';
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
 
 function getSupabase() {
   const rawUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '')

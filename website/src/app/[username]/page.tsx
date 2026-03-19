@@ -169,6 +169,7 @@ function ContactIcon({ type, className = 'w-4 h-4 shrink-0 text-muted' }: { type
 }
 
 const DEEP_LINK_SCHEME = 'ringtap://';
+const APP_STORE_URL = 'https://apps.apple.com/us/app/ringtap-me/id6758565822';
 
 type ProfileData = {
   id: string;
@@ -229,6 +230,31 @@ function buildVCard(profile: ProfileData, baseUrl: string): string {
   if (profile.bio?.trim()) lines.push('NOTE:' + escape(profile.bio.trim()));
   lines.push('END:VCARD');
   return lines.join('\r\n');
+}
+
+/** Try to open app via deep link; if app not installed, redirect to App Store after timeout */
+function openAppOrStore(appDeepLink: string, storeUrl: string = APP_STORE_URL): void {
+  const timeout = 2500;
+  const start = Date.now();
+
+  const cleanup = () => {
+    window.removeEventListener('visibilitychange', onVisibilityChange);
+    window.clearTimeout(timer);
+  };
+
+  const onVisibilityChange = () => {
+    if (document.hidden) cleanup();
+  };
+
+  const timer = window.setTimeout(() => {
+    cleanup();
+    if (!document.hidden && Date.now() - start >= timeout - 100) {
+      window.location.href = storeUrl;
+    }
+  }, timeout);
+
+  window.addEventListener('visibilitychange', onVisibilityChange);
+  window.location.href = appDeepLink;
 }
 
 function downloadVCard(profile: ProfileData): void {
@@ -349,16 +375,6 @@ export default function UsernameProfilePage() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
-
-  // Auto-open Connect modal when profile loads (lead capture)
-  useEffect(() => {
-    if (!loading && profile?.user_id && !isInApp) {
-      const timer = setTimeout(() => {
-        setConnectModalOpen(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, profile?.user_id, isInApp]);
 
   const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://www.ringtap.me';
 
@@ -677,8 +693,9 @@ export default function UsernameProfilePage() {
               Save contact
             </button>
             {userId && (
-              <a
-                href={`${DEEP_LINK_SCHEME}profile/${userId}?save=1&exchange=1`}
+              <button
+                type="button"
+                onClick={() => openAppOrStore(`${DEEP_LINK_SCHEME}profile/${userId}?save=1&exchange=1`)}
                 className={`block w-full ${btnClass} border border-border-light bg-surface-elevated px-4 py-3.5 text-center font-semibold text-sm text-foreground hover:bg-accent hover:text-background hover:border-accent transition-colors flex items-center justify-center gap-2`}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -688,7 +705,7 @@ export default function UsernameProfilePage() {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
                 Exchange contact
-              </a>
+              </button>
             )}
             <p className="text-xs text-muted-light mt-1.5 text-center">
               {profile.user_id ? 'Connect creates your RingTap account and adds you to their contacts. ' : ''}
