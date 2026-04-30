@@ -2,7 +2,7 @@
   "expo": {
     "name": "RingTap",
     "slug": "ringtap",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ringtap",
@@ -19,7 +19,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "me.ringtap.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "associatedDomains": [
         "applinks:ringtap.me",
         "applinks:www.ringtap.me"
@@ -49,7 +49,7 @@
     },
     "android": {
       "package": "me.ringtap.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "intentFilters": [
         {
           "action": "VIEW",
