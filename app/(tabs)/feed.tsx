@@ -84,8 +84,8 @@ export default function FeedTab() {
           style={[styles.createButton, { backgroundColor: colors.accent }]}
           onPress={() => setModalVisible(true)}
         >
-          <Ionicons name="add" size={22} color="#0A0A0B" />
-          <Text style={[styles.createButtonText, { color: '#0A0A0B' }]}>Post</Text>
+          <Ionicons name="add" size={22} color={colors.onAccent} />
+          <Text style={[styles.createButtonText, { color: colors.onAccent }]}>Post</Text>
         </Pressable>
       </View>
       {loading ? (
@@ -118,7 +118,7 @@ export default function FeedTab() {
                 <Ionicons name="alert-circle-outline" size={40} color={colors.textSecondary} />
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error}</Text>
                 <Pressable style={[styles.retryButton, { backgroundColor: colors.accent }]} onPress={loadPosts}>
-                  <Text style={[styles.retryButtonText, { color: '#0A0A0B' }]}>Retry</Text>
+                  <Text style={[styles.retryButtonText, { color: colors.onAccent }]}>Retry</Text>
                 </Pressable>
               </View>
             ) : (

@@ -2,6 +2,7 @@
 
 import { getAffiliateRef } from '@/components/AffiliateRefProvider';
 import { Header } from '@/components/Header';
+import { ProValueSection } from '@/components/ProValueSection';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useState } from 'react';
@@ -172,9 +173,12 @@ function SignupContent() {
             </div>
 
             {plan === 'pro' && (
-              <div className="rounded-xl border-2 border-accent bg-accent/5 px-4 py-3 text-sm text-foreground">
-                After confirming your email, you&apos;ll go to secure checkout to subscribe to Pro ($9/month or $99/year).
-              </div>
+              <>
+                <div className="rounded-xl border-2 border-accent bg-accent/5 px-4 py-3 text-sm text-foreground mb-4">
+                  After confirming your email, you&apos;ll go to secure checkout to subscribe to Pro ($9/month or $99/year).
+                </div>
+                <ProValueSection variant="compact" showTagline={false} className="mb-4" />
+              </>
             )}
 
             {error && (

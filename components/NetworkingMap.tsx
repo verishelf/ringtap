@@ -10,19 +10,18 @@ import { getProfile } from '@/lib/api';
 import type { UserProfile } from '@/lib/supabase/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
-    Dimensions,
     Modal,
     Platform,
     Pressable,
     StyleSheet,
     Text,
-    View,
+    View
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const INITIAL_DELTA = { latitudeDelta: 0.04, longitudeDelta: 0.04 };
 const MARKER_SIZE = 44;
@@ -310,8 +309,8 @@ export function NetworkingMap({
                     style={[styles.sheetButton, styles.sheetButtonPrimary, { backgroundColor: colors.accent }]}
                     onPress={() => { closeSheet(); onConnect(selectedUser.userId); }}
                   >
-                    <Ionicons name="person-add-outline" size={20} color="#0A0A0B" />
-                    <Text style={[styles.sheetButtonTextPrimary, { color: '#0A0A0B' }]}>Connect</Text>
+                    <Ionicons name="person-add-outline" size={20} color={colors.onAccent} />
+                    <Text style={[styles.sheetButtonTextPrimary, { color: colors.onAccent }]}>Connect</Text>
                   </Pressable>
                 )}
                 <Pressable

@@ -1,12 +1,30 @@
+import { BadgeEarnedModal } from '@/components/BadgeEarnedModal';
+import { LinkableText } from '@/components/LinkableText';
+import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
+import { Layout } from '@/constants/theme';
+import { useLocation } from '@/contexts/LocationContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useBadges } from '@/hooks/useBadges';
+import { useNearbyUsers } from '@/hooks/useNearbyUsers';
+import { useProfile } from '@/hooks/useProfile';
+import { useSession } from '@/hooks/useSession';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import type { ConversationWithPeer, SavedContact } from '@/lib/api';
+import { getAnalytics, getConversations, getProfile, getSavedContacts, getScannedContactDisplayName, getScannedContacts, getSubscription } from '@/lib/api';
+import type { ScannedContact } from '@/lib/supabase/types';
+import { getCurrentCoordinates } from '@/services/locationService';
+import type { Post } from '@/services/postService';
+import { getPosts } from '@/services/postService';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
-import { Link, useRouter, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
     Platform,
     Pressable,
@@ -16,23 +34,6 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BadgeEarnedModal } from '@/components/BadgeEarnedModal';
-import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
-import { Layout } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useNearbyUsers } from '@/hooks/useNearbyUsers';
-import { useBadges } from '@/hooks/useBadges';
-import { useProfile } from '@/hooks/useProfile';
-import { useSession } from '@/hooks/useSession';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useThemeColors } from '@/hooks/useThemeColors';
-import type { ConversationWithPeer, SavedContact } from '@/lib/api';
-import type { Post } from '@/services/postService';
-import { getPosts } from '@/services/postService';
-import { getAnalytics, getConversations, getProfile, getSavedContacts, getScannedContacts, getScannedContactDisplayName, getSubscription } from '@/lib/api';
-import { useLocation } from '@/contexts/LocationContext';
-import { getCurrentCoordinates } from '@/services/locationService';
-import type { ScannedContact } from '@/lib/supabase/types';
 
 dayjs.extend(relativeTime);
 
@@ -351,7 +352,7 @@ export default function HomeScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent messages</Text>
                 {recentMessages.some((c) => c.hasUnread) ? (
                   <View style={[styles.unreadBadge, { backgroundColor: colors.accent }]}>
-                    <Text style={[styles.unreadBadgeText, { color: colors.primary }]}>New</Text>
+                    <Text style={[styles.unreadBadgeText, { color: colors.onAccent }]}>New</Text>
                   </View>
                 ) : null}
               </View>
@@ -373,37 +374,39 @@ export default function HomeScreen() {
                 No messages yet. Message a saved contact to start.
               </Text>
             ) : (
-              recentMessages.map((conv) => (
-                <Link key={conv.id} href={`/messages/${conv.id}` as const} asChild>
-                  <Pressable style={[styles.recentRow, { borderBottomColor: colors.borderLight }]}>
-                    <ProAvatar
-                      avatarUrl={conv.peerAvatarUrl}
-                      isPro={conv.peerIsPro}
-                      size="small"
-                      placeholderLetter={conv.peerName || '?'}
-                      style={styles.recentAvatarWrap}
-                    />
-                    <View style={styles.recentInfo}>
-                      <View style={styles.recentNameRow}>
-                        {conv.hasUnread ? (
-                          <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
-                        ) : null}
-                        <NameWithVerified
-                          name={conv.peerName || 'Unknown'}
-                          isPro={conv.peerIsPro}
-                        />
-                        {conv.hasUnread ? (
-                          <Text style={[styles.recentNewLabel, { color: colors.accent }]}> · New</Text>
-                        ) : null}
+              <View style={styles.recentMessagesList}>
+                {recentMessages.map((conv) => (
+                  <Link key={conv.id} href={`/messages/${conv.id}` as const} asChild>
+                    <Pressable style={styles.recentMessageRow}>
+                      <ProAvatar
+                        avatarUrl={conv.peerAvatarUrl}
+                        isPro={conv.peerIsPro}
+                        size="small"
+                        placeholderLetter={conv.peerName || '?'}
+                        style={styles.recentAvatarWrap}
+                      />
+                      <View style={styles.recentInfo}>
+                        <View style={styles.recentNameRow}>
+                          {conv.hasUnread ? (
+                            <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
+                          ) : null}
+                          <NameWithVerified
+                            name={conv.peerName || 'Unknown'}
+                            isPro={conv.peerIsPro}
+                          />
+                          {conv.hasUnread ? (
+                            <Text style={[styles.recentNewLabel, { color: colors.accent }]}> · New</Text>
+                          ) : null}
+                        </View>
+                        <Text style={[styles.recentTime, { color: colors.textSecondary }]} numberOfLines={1}>
+                          {conv.lastMessageBody || 'No messages yet'}
+                          {conv.lastMessageAt ? ` · ${dayjs(conv.lastMessageAt).fromNow()}` : ''}
+                        </Text>
                       </View>
-                      <Text style={[styles.recentTime, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {conv.lastMessageBody || 'No messages yet'}
-                        {conv.lastMessageAt ? ` · ${dayjs(conv.lastMessageAt).fromNow()}` : ''}
-                      </Text>
-                    </View>
-                  </Pressable>
-                </Link>
-              ))
+                    </Pressable>
+                  </Link>
+                ))}
+              </View>
             )}
           </View>
 
@@ -512,9 +515,12 @@ export default function HomeScreen() {
                       <Text style={[styles.opportunityType, { color: colors.accent }]} numberOfLines={1}>
                         {typeLabel}
                       </Text>
-                      <Text style={[styles.opportunityPreview, { color: colors.text }]} numberOfLines={1}>
-                        {truncated || 'Opportunity'}
-                      </Text>
+                      <LinkableText
+                        content={truncated || 'Opportunity'}
+                        textStyle={[styles.opportunityPreview, { color: colors.text }]}
+                        linkColor={colors.accent}
+                        numberOfLines={1}
+                      />
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
                   </Pressable>
@@ -668,6 +674,14 @@ const styles = StyleSheet.create({
   recentNewLabel: { fontSize: 16, fontWeight: '600', flexShrink: 0 },
   seeAll: { fontSize: Layout.caption, fontWeight: '600' },
   recentEmpty: { fontSize: Layout.bodySmall, fontStyle: 'italic', paddingVertical: 8 },
+  recentMessagesList: { gap: Layout.rowGap },
+  recentMessageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    paddingVertical: 10,
+    direction: 'ltr',
+  },
   opportunityRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -20,6 +20,7 @@ export default function MessagesLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Messages', headerLeft: () => null }} />
+      <Stack.Screen name="support" options={{ title: 'Support', headerShown: false }} />
       <Stack.Screen name="[conversationId]" options={{ title: 'Chat' }} />
     </Stack>
   );

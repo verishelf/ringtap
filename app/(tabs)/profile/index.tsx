@@ -22,6 +22,7 @@ import { CashAppIcon } from '@/components/CashAppIcon';
 import { ProfileScanPreview } from '@/components/ProfileScanPreview';
 import { ThemedView } from '@/components/themed-view';
 import { Layout, Tokens } from '@/constants/theme';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -31,6 +32,7 @@ import { getDotsFontEnhancement, getProfileFontFamily, TYPOGRAPHY_OPTIONS } from
 import type { ProfileTheme, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
+import type { Href } from 'expo-router';
 import { useRouter } from 'expo-router';
 
 const SOCIAL_PLATFORMS: { key: SocialPlatform; label: string; placeholder: string }[] = [
@@ -108,6 +110,7 @@ export default function ProfileEditorScreen() {
   const { profile, loading: profileLoading, refresh, updateProfile } = useProfile();
   const { user } = useSession();
   const { isPro } = useSubscription();
+  const { presentPaywall } = usePresentRevenueCatPaywall('/(tabs)/profile/upgrade' as Href);
   const [isEditing, setIsEditing] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
@@ -763,7 +766,10 @@ export default function ProfileEditorScreen() {
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [styles.toolsRow, { borderBottomColor: colors.borderLight }, pressed && { opacity: 0.7 }]}
-                  onPress={() => router.push('/(tabs)/profile/upgrade')}
+                  onPress={() => {
+                    if (!isPro) void presentPaywall();
+                    else router.push('/(tabs)/profile/upgrade');
+                  }}
                 >
                   <View style={[styles.toolsIconWrap, { backgroundColor: colors.accent + '22' }]}>
                     <Ionicons name="diamond" size={20} color={colors.accent} />
@@ -803,8 +809,8 @@ export default function ProfileEditorScreen() {
               )}
               <View style={styles.row}>
                 <Pressable style={[styles.primaryButton, { backgroundColor: colors.accent }]} onPress={copyProfileLink}>
-                  <Ionicons name="copy-outline" size={20} color={colors.primary} />
-                  <Text style={[styles.primaryButtonText, { color: colors.primary }]}>Copy link</Text>
+                  <Ionicons name="copy-outline" size={20} color={colors.onAccent} />
+                  <Text style={[styles.primaryButtonText, { color: colors.onAccent }]}>Copy link</Text>
                 </Pressable>
                 <Pressable style={[styles.secondaryButton, { borderColor: colors.accent }]} onPress={shareProfile}>
                   <Ionicons name="share-outline" size={20} color={colors.accent} />

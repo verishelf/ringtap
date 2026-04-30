@@ -123,6 +123,56 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['subscriptions']['Insert']>;
       };
+      profile_lead_settings: {
+        Row: {
+          user_id: string;
+          enabled: boolean;
+          headline: string;
+          collect_company: boolean;
+          collect_phone: boolean;
+          collect_message: boolean;
+          webhook_url: string | null;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['profile_lead_settings']['Row'], 'updated_at'> & {
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['profile_lead_settings']['Insert']>;
+      };
+      profile_lead_submissions: {
+        Row: {
+          id: string;
+          profile_user_id: string;
+          name: string;
+          email: string;
+          phone: string | null;
+          company: string | null;
+          message: string | null;
+          source_path: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['profile_lead_submissions']['Row'], 'id' | 'created_at'> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['profile_lead_submissions']['Insert']>;
+      };
+      notification_settings: {
+        Row: {
+          user_id: string;
+          new_messages: boolean;
+          new_contacts: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          new_messages?: boolean;
+          new_contacts?: boolean;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['notification_settings']['Insert']>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

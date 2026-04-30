@@ -1,17 +1,18 @@
-import * as FileSystem from 'expo-file-system/legacy';
-import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase/supabaseClient';
 import type {
-  AnalyticsSummary,
-  ProfileTheme,
-  ScannedContact,
-  ScannedContactSource,
-  UserLink,
-  UserProfile,
+    AnalyticsSummary,
+    OnboardingAnswersV1,
+    ProfileTheme,
+    ScannedContact,
+    ScannedContactSource,
+    UserLink,
+    UserProfile,
 } from '@/lib/supabase/types';
 import { FREE_PLAN_MAX_LINKS } from '@/lib/supabase/types';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 
-export type { UserProfile, UserLink, ScannedContact };
+export type { OnboardingAnswersV1, ScannedContact, UserLink, UserProfile };
 
 const PROFILE_URL_BASE = 'https://ringtap.me';
 const RING_API_BASE = (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_RING_API_BASE?.trim()) || 'https://www.ringtap.me';
@@ -33,6 +34,8 @@ async function parseJsonOrError<T>(res: Response): Promise<{ data: T | null; err
 }
 
 // --- Types ---
+export type PipelineStage = 'none' | 'lead' | 'partner' | 'recruit' | 'other';
+
 export type SavedContact = {
   id: string;
   contactUserId: string;
@@ -42,6 +45,8 @@ export type SavedContact = {
   metAt: string | null;
   howMet: string | null;
   notes: string | null;
+  followUpAt: string | null;
+  pipelineStage: PipelineStage;
   createdAt: string;
 };
 
@@ -50,6 +55,18 @@ export type RelationshipIntelligence = {
   metAt?: string | null;
   howMet?: string | null;
   notes?: string | null;
+  followUpAt?: string | null;
+  pipelineStage?: PipelineStage | null;
+};
+
+export type ProfileLeadSettings = {
+  userId: string;
+  enabled: boolean;
+  headline: string;
+  collectCompany: boolean;
+  collectPhone: boolean;
+  collectMessage: boolean;
+  webhookUrl: string | null;
 };
 
 export type RingStatus = {
@@ -131,6 +148,8 @@ function mapProfileFromDb(row: Record<string, unknown>): UserProfile {
     socialLinks: (row.social_links as UserProfile['socialLinks']) ?? {},
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    onboardingCompletedAt: (row.onboarding_completed_at as string | null) ?? null,
+    onboardingAnswers: (row.onboarding_answers as OnboardingAnswersV1 | null) ?? null,
   };
 }
 
@@ -156,6 +175,49 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     .single();
   if (error || !data) return null;
   return mapProfileFromDb(data);
+}
+
+export async function getOnboardingStatus(userId: string): Promise<{ completed: boolean }> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('onboarding_completed_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error || !data) return { completed: false };
+  const row = data as { onboarding_completed_at?: string | null };
+  return { completed: !!row.onboarding_completed_at };
+}
+
+export async function completeOnboarding(
+  userId: string,
+  answers: Omit<OnboardingAnswersV1, 'version'>
+): Promise<{ success: boolean; error?: string }> {
+  const payload: OnboardingAnswersV1 = { ...answers, version: 1 };
+  const existing = await getProfile(userId);
+  if (!existing) {
+    const username = `u${userId.replace(/-/g, '')}`;
+    const created = await upsertProfile(userId, {
+      username,
+      name: '',
+      title: (payload.role ?? '').trim(),
+      bio: '',
+      email: '',
+      phone: '',
+      website: '',
+    });
+    if (!created) return { success: false, error: 'Could not create profile' };
+  } else if (!existing.title?.trim() && (payload.role ?? '').trim()) {
+    await upsertProfile(userId, { title: (payload.role ?? '').trim() });
+  }
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      onboarding_completed_at: new Date().toISOString(),
+      onboarding_answers: payload as unknown as Record<string, unknown>,
+    })
+    .eq('user_id', userId);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
 }
 
 export async function upsertProfile(
@@ -190,12 +252,20 @@ export async function upsertProfile(
 }
 
 // --- Saved contacts ---
+function normalizePipelineStage(raw: unknown): PipelineStage {
+  const s = typeof raw === 'string' ? raw : 'none';
+  if (s === 'lead' || s === 'partner' || s === 'recruit' || s === 'other') return s;
+  return 'none';
+}
+
 export async function getSavedContacts(): Promise<SavedContact[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
   const { data, error } = await supabase
     .from('user_contacts')
-    .select('id, contact_user_id, display_name, avatar_url, met_at_location, met_at, how_met, notes, created_at')
+    .select(
+      'id, contact_user_id, display_name, avatar_url, met_at_location, met_at, how_met, notes, follow_up_at, pipeline_stage, created_at'
+    )
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
   if (error) return [];
@@ -208,6 +278,8 @@ export async function getSavedContacts(): Promise<SavedContact[]> {
     metAt: (row.met_at as string) ?? null,
     howMet: (row.how_met as string)?.trim() || null,
     notes: (row.notes as string)?.trim() || null,
+    followUpAt: (row.follow_up_at as string) ?? null,
+    pipelineStage: normalizePipelineStage(row.pipeline_stage),
     createdAt: row.created_at as string,
   }));
 }
@@ -236,11 +308,14 @@ export async function saveContact(
     met_at: relationship?.metAt ?? null,
     how_met: (relationship?.howMet ?? '').trim() || null,
     notes: (relationship?.notes ?? '').trim() || null,
+    follow_up_at: relationship?.followUpAt ?? null,
+    pipeline_stage: relationship?.pipelineStage ? normalizePipelineStage(relationship.pipelineStage) : 'none',
   });
   if (error) {
     if (error.code === '23505') return { success: true };
     return { success: false, error: error.message };
   }
+  triggerPushForNewContact(contactUserId, user.id).catch(() => {});
   return { success: true };
 }
 
@@ -255,6 +330,9 @@ export async function updateContactRelationship(
   if (relationship.metAt !== undefined) update.met_at = relationship.metAt ?? null;
   if (relationship.howMet !== undefined) update.how_met = (relationship.howMet ?? '').trim() || null;
   if (relationship.notes !== undefined) update.notes = (relationship.notes ?? '').trim() || null;
+  if (relationship.followUpAt !== undefined) update.follow_up_at = relationship.followUpAt ?? null;
+  if (relationship.pipelineStage !== undefined)
+    update.pipeline_stage = normalizePipelineStage(relationship.pipelineStage);
   if (Object.keys(update).length === 0) return { success: true };
   const { error } = await supabase.from('user_contacts').update(update).eq('id', contactId).eq('owner_id', user.id);
   return { success: !error, error: error?.message };
@@ -287,6 +365,65 @@ export async function exchangeContact(
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Exchange failed' };
   }
+}
+
+const DEFAULT_PROFILE_LEAD_HEADLINE = 'Request an intro';
+
+export async function getProfileLeadSettings(): Promise<ProfileLeadSettings | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('profile_lead_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (error) return null;
+  if (!data) {
+    return {
+      userId: user.id,
+      enabled: false,
+      headline: DEFAULT_PROFILE_LEAD_HEADLINE,
+      collectCompany: true,
+      collectPhone: false,
+      collectMessage: true,
+      webhookUrl: null,
+    };
+  }
+  const row = data as Record<string, unknown>;
+  return {
+    userId: row.user_id as string,
+    enabled: !!row.enabled,
+    headline: ((row.headline as string) || '').trim() || DEFAULT_PROFILE_LEAD_HEADLINE,
+    collectCompany: row.collect_company !== false,
+    collectPhone: !!row.collect_phone,
+    collectMessage: row.collect_message !== false,
+    webhookUrl: ((row.webhook_url as string) ?? '').trim() || null,
+  };
+}
+
+export async function upsertProfileLeadSettingsFull(
+  s: ProfileLeadSettings
+): Promise<{ ok: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Sign in required' };
+  let webhook = (s.webhookUrl ?? '').trim().slice(0, 2048);
+  if (webhook && !/^https:\/\//i.test(webhook)) {
+    return { ok: false, error: 'Webhook URL must start with https://' };
+  }
+  const { error } = await supabase.from('profile_lead_settings').upsert(
+    {
+      user_id: user.id,
+      enabled: s.enabled,
+      headline: (s.headline || DEFAULT_PROFILE_LEAD_HEADLINE).trim().slice(0, 200),
+      collect_company: s.collectCompany,
+      collect_phone: s.collectPhone,
+      collect_message: s.collectMessage,
+      webhook_url: webhook || null,
+      updated_at: new Date().toISOString(),
+    } as never,
+    { onConflict: 'user_id' }
+  );
+  return { ok: !error, error: error?.message };
 }
 
 // --- CRM integrations ---
@@ -484,6 +621,7 @@ export type MapEvent = {
   userId: string;
   name: string;
   description: string;
+  imageUrl: string | null;
   latitude: number;
   longitude: number;
   eventDate: string;
@@ -502,6 +640,7 @@ export async function getMapEvent(id: string): Promise<MapEvent | null> {
     userId: data.user_id,
     name: (data.name as string) ?? '',
     description: (data.description as string) ?? '',
+    imageUrl: resolveStorageUrlIfPath((data.image_url as string) ?? '') || null,
     latitude: Number(data.latitude),
     longitude: Number(data.longitude),
     eventDate: data.event_date as string,
@@ -526,6 +665,7 @@ export async function getNearbyMapEvents(
     userId: row.user_id as string,
     name: (row.name as string) ?? '',
     description: (row.description as string) ?? '',
+    imageUrl: resolveStorageUrlIfPath((row.image_url as string) ?? '') || null,
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
     eventDate: row.event_date as string,
@@ -535,7 +675,7 @@ export async function getNearbyMapEvents(
 
 export async function createMapEvent(
   userId: string,
-  event: { name: string; description?: string; latitude: number; longitude: number; eventDate: string }
+  event: { name: string; description?: string; imageUrl?: string | null; latitude: number; longitude: number; eventDate: string }
 ): Promise<{ success: boolean; event?: MapEvent; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
@@ -545,6 +685,7 @@ export async function createMapEvent(
       user_id: userId,
       name: (event.name ?? '').trim(),
       description: (event.description ?? '').trim() || null,
+      image_url: (event.imageUrl ?? '').trim() || null,
       latitude: event.latitude,
       longitude: event.longitude,
       event_date: event.eventDate,
@@ -559,6 +700,7 @@ export async function createMapEvent(
       userId: data.user_id,
       name: data.name ?? '',
       description: data.description ?? '',
+      imageUrl: resolveStorageUrlIfPath((data.image_url as string) ?? '') || null,
       latitude: Number(data.latitude),
       longitude: Number(data.longitude),
       eventDate: data.event_date,
@@ -570,13 +712,14 @@ export async function createMapEvent(
 export async function updateMapEvent(
   userId: string,
   eventId: string,
-  updates: { name?: string; description?: string; latitude?: number; longitude?: number; eventDate?: string }
+  updates: { name?: string; description?: string; imageUrl?: string | null; latitude?: number; longitude?: number; eventDate?: string }
 ): Promise<{ success: boolean; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
   const payload: Record<string, unknown> = {};
   if (updates.name !== undefined) payload.name = (updates.name ?? '').trim();
   if (updates.description !== undefined) payload.description = (updates.description ?? '').trim() || null;
+  if (updates.imageUrl !== undefined) payload.image_url = (updates.imageUrl ?? '').trim() || null;
   if (updates.latitude !== undefined) payload.latitude = updates.latitude;
   if (updates.longitude !== undefined) payload.longitude = updates.longitude;
   if (updates.eventDate !== undefined) payload.event_date = updates.eventDate;
@@ -592,6 +735,77 @@ export async function deleteMapEvent(userId: string, eventId: string): Promise<{
   const { error } = await supabase.from('map_events').delete().eq('id', eventId).eq('user_id', userId);
   if (error) return { success: false, error: error.message };
   return { success: true };
+}
+
+export type EventAttendee = {
+  userId: string;
+  avatarUrl: string | null;
+  name: string;
+  attending: boolean;
+};
+
+export async function getEventAttendees(eventId: string): Promise<EventAttendee[]> {
+  const { data, error } = await supabase
+    .from('event_attendees')
+    .select('user_id')
+    .eq('event_id', eventId)
+    .eq('attending', true);
+  if (error || !data?.length) return [];
+  const profiles = await Promise.all(
+    (data as { user_id: string }[]).map((r) => getProfile(r.user_id))
+  );
+  return profiles
+    .filter((p): p is NonNullable<typeof p> => p != null)
+    .map((p) => ({
+      userId: p.userId,
+      avatarUrl: p.avatarUrl,
+      name: p.name?.trim() ?? '',
+      attending: true,
+    }));
+}
+
+export async function getMyEventAttending(eventId: string): Promise<boolean | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('event_attendees')
+    .select('attending')
+    .eq('event_id', eventId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.attending as boolean;
+}
+
+export async function setEventAttending(
+  userId: string,
+  eventId: string,
+  attending: boolean
+): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return { success: false, error: 'Unauthorized' };
+  const { error } = await supabase.from('event_attendees').upsert(
+    { event_id: eventId, user_id: userId, attending },
+    { onConflict: 'event_id,user_id' }
+  );
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function getEventAttendeeCounts(eventIds: string[]): Promise<Record<string, number>> {
+  if (eventIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('event_attendees')
+    .select('event_id')
+    .in('event_id', eventIds)
+    .eq('attending', true);
+  if (error) return {};
+  const counts: Record<string, number> = {};
+  for (const id of eventIds) counts[id] = 0;
+  for (const row of (data ?? []) as { event_id: string }[]) {
+    counts[row.event_id] = (counts[row.event_id] ?? 0) + 1;
+  }
+  return counts;
 }
 
 // --- Links ---
@@ -652,14 +866,19 @@ export async function deleteLink(linkId: string): Promise<boolean> {
 }
 
 // --- Profile URLs ---
+/** Lowercase + encode so QR/NFC/link URLs match public web routes and scan reliably. */
+function profilePublicPathSegment(username: string): string {
+  return encodeURIComponent(username.trim().toLowerCase());
+}
+
 export function getProfileUrl(username: string): string {
-  return `${PROFILE_URL_BASE}/${username}`;
+  return `${PROFILE_URL_BASE}/${profilePublicPathSegment(username)}`;
 }
 export function getProfileUrlNfc(username: string): string {
-  return `${PROFILE_URL_BASE}/nfc/${username}`;
+  return `${PROFILE_URL_BASE}/nfc/${profilePublicPathSegment(username)}`;
 }
 export function getProfileUrlQr(username: string): string {
-  return `${PROFILE_URL_BASE}/qr/${username}`;
+  return `${PROFILE_URL_BASE}/qr/${profilePublicPathSegment(username)}`;
 }
 
 // --- Ring (NFC) ---
@@ -744,7 +963,7 @@ export async function getProfilePlanFromApi(userId: string): Promise<'free' | 'p
 }
 
 // --- Analytics ---
-const ANALYTICS_TYPES = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan'] as const;
+const ANALYTICS_TYPES = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan', 'lead_form_submit'] as const;
 
 export async function getAnalytics(
   profileId: string,
@@ -764,6 +983,7 @@ export async function getAnalytics(
   const linkClicks = events.filter((e) => e.type === 'link_click').length;
   const nfcTaps = events.filter((e) => e.type === 'nfc_tap').length;
   const qrScans = events.filter((e) => e.type === 'qr_scan').length;
+  const leadCaptures = events.filter((e) => e.type === 'lead_form_submit').length;
   const byDay: Array<{ date: string; count: number; type: string }> = [];
   const dayTypeMap = new Map<string, number>();
   for (const e of events) {
@@ -783,6 +1003,7 @@ export async function getAnalytics(
     linkClicks,
     nfcTaps,
     qrScans,
+    leadCaptures,
     byDay,
   };
 }
@@ -1048,6 +1269,79 @@ export async function triggerPushForMessage(
   }
 }
 
+/** Notify `recipientUserId` that `fromUserId` added them (in-app contact save). */
+export async function triggerPushForNewContact(
+  recipientUserId: string,
+  fromUserId: string
+): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) return;
+  if (session.user.id !== fromUserId) return;
+  const res = await fetch(`${supabaseUrl}/functions/v1/send-contact-push`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      recipient_user_id: recipientUserId,
+      from_user_id: fromUserId,
+    }),
+  });
+  if (!res.ok) {
+    console.warn('[push] send-contact-push failed', res.status, await res.text());
+  }
+}
+
+export type NotificationSettingsRow = {
+  newMessages: boolean;
+  newContacts: boolean;
+};
+
+export async function fetchNotificationSettingsForUser(
+  userId: string
+): Promise<NotificationSettingsRow | null> {
+  const { data, error } = await supabase
+    .from('notification_settings')
+    .select('new_messages, new_contacts')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    newMessages: (data as { new_messages: boolean }).new_messages !== false,
+    newContacts: (data as { new_contacts: boolean }).new_contacts !== false,
+  };
+}
+
+export async function upsertNotificationSettings(next: {
+  newMessages: boolean;
+  newContacts: boolean;
+}): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const { error } = await supabase.from('notification_settings').upsert(
+    {
+      user_id: user.id,
+      new_messages: next.newMessages,
+      new_contacts: next.newContacts,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' }
+  );
+  if (error) {
+    console.warn('[notifications] upsert settings failed', error.message);
+  }
+}
+
+/** Remove all stored Expo push tokens for the current user (e.g. all notification toggles off). */
+export async function deleteAllPushTokensForUser(): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('push_tokens').delete().eq('user_id', user.id);
+}
+
 /** Delete the current user's account via Edge Function. Caller should sign out and redirect after. */
 export async function deleteAccount(): Promise<{ ok: boolean; error?: string }> {
   const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
@@ -1152,6 +1446,23 @@ export async function uploadBackgroundImage(userId: string, uri: string): Promis
 export async function uploadScannedCardImage(userId: string, uri: string): Promise<UploadResult> {
   const ext = uri.split('.').pop()?.split('?')[0] ?? 'jpg';
   const path = `scanned-cards/${userId}/${Date.now()}.${ext}`;
+  try {
+    const { data, mimeType } = await readFileAsArrayBuffer(uri);
+    const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {
+      contentType: mimeType,
+      upsert: true,
+    });
+    if (uploadError) return { url: null, error: uploadError.message };
+    const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
+    return { url: urlData?.publicUrl ?? null };
+  } catch (e) {
+    return { url: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function uploadEventImage(userId: string, uri: string): Promise<UploadResult> {
+  const ext = uri.split('.').pop()?.split('?')[0] ?? 'jpg';
+  const path = `events/${userId}/${Date.now()}.${ext}`;
   try {
     const { data, mimeType } = await readFileAsArrayBuffer(uri);
     const { error: uploadError } = await supabase.storage.from('profiles').upload(path, data, {

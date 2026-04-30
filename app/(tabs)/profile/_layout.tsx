@@ -1,22 +1,28 @@
 import { Stack } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Colors } from '@/constants/theme';
+import { useEffectiveColorScheme } from '@/contexts/AppearanceContext';
 
 export default function ProfileLayout() {
   const insets = useSafeAreaInsets();
+  const scheme = useEffectiveColorScheme();
+  const c = Colors[scheme];
+
   return (
     <Stack
       screenOptions={{
         headerShown: true,
         headerStatusBarHeight: insets.top,
-        headerBackground: () => <View style={{ flex: 1, backgroundColor: '#0A0A0B' }} />,
-        headerStyle: { backgroundColor: '#0A0A0B' },
+        headerBackground: () => <View style={{ flex: 1, backgroundColor: c.background }} />,
+        headerStyle: { backgroundColor: c.background },
         headerShadowVisible: false,
-        headerTintColor: '#FAFAFA',
-        headerTitleStyle: { fontSize: 17, fontWeight: '600' },
+        headerTintColor: c.text,
+        headerTitleStyle: { fontSize: 17, fontWeight: '600', color: c.text },
         headerBackTitle: '',
         headerBackButtonDisplayMode: 'minimal',
-        contentStyle: { backgroundColor: '#0A0A0B' },
+        contentStyle: { backgroundColor: c.background },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -28,6 +34,8 @@ export default function ProfileLayout() {
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       <Stack.Screen name="badges" options={{ title: 'Badges', headerShown: false }} />
       <Stack.Screen name="integrations" options={{ title: 'Integrations', headerShown: false }} />
+      <Stack.Screen name="lead-capture" options={{ title: 'Lead capture', headerShown: false }} />
+      <Stack.Screen name="help" options={{ title: 'Help', headerShown: false }} />
       <Stack.Screen name="about" options={{ title: 'About', headerShown: false }} />
     </Stack>
   );

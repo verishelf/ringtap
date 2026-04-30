@@ -150,8 +150,8 @@ export default function ManageSubscriptionScreen() {
             <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
             <>
-              <Ionicons name="open-outline" size={22} color={colors.text} />
-              <Text style={[styles.buttonText, { color: colors.text }]}>
+              <Ionicons name="open-outline" size={22} color={colors.onAccent} />
+              <Text style={[styles.buttonText, { color: colors.onAccent }]}>
                 {hasRevenueCatSubscription
                   ? 'Manage subscription'
                   : hasStripeSubscription

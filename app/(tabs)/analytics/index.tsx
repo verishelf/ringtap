@@ -1,14 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useSegments } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
 import { Image } from 'expo-image';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { Href } from 'expo-router';
+import { useSegments } from 'expo-router';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Alert, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ProGateAnimatedContent } from '@/components/ProGateAnimatedContent';
+import { ProGateFeatureList } from '@/components/ProGateFeatureList';
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -21,6 +26,7 @@ const EMPTY_ANALYTICS: AnalyticsSummary = {
   linkClicks: 0,
   nfcTaps: 0,
   qrScans: 0,
+  leadCaptures: 0,
   byDay: [],
 };
 
@@ -28,9 +34,13 @@ type Period = 7 | 30 | 90;
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const colorScheme = useColorScheme();
   const segments = useSegments();
   const inProfileStack = Array.isArray(segments) && segments.includes('profile') && segments[segments.length - 1] !== 'index';
   const topPadding = inProfileStack ? Layout.screenPadding : insets.top + Layout.screenPadding;
+  const upgradeHref = (inProfileStack ? '/(tabs)/profile/upgrade' : '/(tabs)/settings/upgrade') as Href;
+  const { presentPaywall, presentingPaywall } = usePresentRevenueCatPaywall(upgradeHref);
   const { profile, loading: profileLoading } = useProfile();
   const { isPro } = useSubscription();
   const { user, signOut } = useSession();
@@ -101,22 +111,61 @@ export default function AnalyticsScreen() {
     trackMeasured.current = false;
   }, [period, data]);
 
+  // Profile → Analytics uses a stack header; Map tab has none. Hide header for the Pro gate so layout matches Map.
+  useLayoutEffect(() => {
+    if (!inProfileStack) return;
+    navigation.setOptions({ headerShown: !!isPro });
+  }, [navigation, isPro, inProfileStack]);
+
   if (!isPro) {
+    const proGateOverlay =
+      colorScheme === 'light' ? 'rgba(250, 250, 250, 0.78)' : 'rgba(10, 10, 11, 0.78)';
     return (
-      <ThemedView style={[styles.container, { paddingTop: topPadding }]}>
-        <View style={styles.locked}>
-          <Ionicons name="lock-closed" size={64} color={colors.textSecondary} />
-          <Text style={[styles.lockedTitle, { color: colors.text }]}>Analytics is a Pro feature</Text>
-          <Text style={[styles.lockedSubtitle, { color: colors.textSecondary }]}>
-            Upgrade to Pro to see profile views, link clicks, NFC taps, and QR scans.
-          </Text>
-          <Link href="/(tabs)/settings/upgrade" asChild>
-            <Pressable style={[styles.upgradeButton, { backgroundColor: colors.accent }]}>
-              <Text style={[styles.upgradeButtonText, { color: colors.text }]}>Upgrade to Pro</Text>
+      <ImageBackground
+        source={require('@/assets/images/icon.png')}
+        style={[styles.proGate, { paddingTop: insets.top }]}
+        imageStyle={styles.proGateBgImage}
+      >
+        <View
+          style={[StyleSheet.absoluteFill, { backgroundColor: proGateOverlay }]}
+          pointerEvents="none"
+        />
+        <ScrollView
+          style={styles.proGateScroll}
+          contentContainerStyle={[
+            styles.proGateScrollContent,
+            {
+              paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.rowGap,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <ProGateAnimatedContent style={styles.proGateStack}>
+            <View style={styles.proGateHeader}>
+              <View style={[styles.proGateIconWrap, { backgroundColor: colors.surface }]}>
+                <Ionicons name="bar-chart-outline" size={40} color={colors.accent} />
+              </View>
+              <Text style={[styles.proGateTitle, { color: colors.text }]}>Analytics is a Pro feature</Text>
+              <Text style={[styles.proGateText, { color: colors.textSecondary }]}>
+                See profile views, link clicks, NFC taps, and QR scans over time — plus every other Pro benefit below.
+              </Text>
+            </View>
+            <ProGateFeatureList />
+            <Pressable
+              style={[
+                styles.proGateButton,
+                { backgroundColor: colors.accent },
+                presentingPaywall && { opacity: 0.7 },
+              ]}
+              onPress={() => void presentPaywall()}
+              disabled={presentingPaywall}
+            >
+              <Text style={[styles.proGateButtonText, { color: colors.onAccent }]}>Upgrade to Pro</Text>
             </Pressable>
-          </Link>
-        </View>
-      </ThemedView>
+          </ProGateAnimatedContent>
+        </ScrollView>
+      </ImageBackground>
     );
   }
 
@@ -207,11 +256,11 @@ export default function AnalyticsScreen() {
   ];
 
   // Build chart data by day (include today; last bar = today)
-  const dayMap = new Map<string, { profile_view: number; link_click: number; nfc_tap: number; qr_scan: number }>();
+  const dayMap = new Map<string, { profile_view: number; link_click: number; nfc_tap: number; qr_scan: number; lead_form_submit: number }>();
   const start = dayjs().subtract(period - 1, 'day');
   for (let i = 0; i < period; i++) {
     const d = start.add(i, 'day').format('YYYY-MM-DD');
-    dayMap.set(d, { profile_view: 0, link_click: 0, nfc_tap: 0, qr_scan: 0 });
+    dayMap.set(d, { profile_view: 0, link_click: 0, nfc_tap: 0, qr_scan: 0, lead_form_submit: 0 });
   }
   for (const item of data.byDay) {
     const entry = dayMap.get(item.date);
@@ -222,7 +271,12 @@ export default function AnalyticsScreen() {
   const chartData = Array.from(dayMap.entries())
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([date, counts]) => {
-      const total = counts.profile_view + counts.link_click + counts.nfc_tap + counts.qr_scan;
+      const total =
+        counts.profile_view +
+        counts.link_click +
+        counts.nfc_tap +
+        counts.qr_scan +
+        counts.lead_form_submit;
       return {
         date,
         label: dayjs(date).format('M/D'),
@@ -231,6 +285,7 @@ export default function AnalyticsScreen() {
         link_click: counts.link_click,
         nfc_tap: counts.nfc_tap,
         qr_scan: counts.qr_scan,
+        lead_form_submit: counts.lead_form_submit,
       };
     });
   const maxTotal = Math.max(1, ...chartData.map((d) => d.total));
@@ -240,8 +295,15 @@ export default function AnalyticsScreen() {
     link_click: '#e91e63',
     nfc_tap: '#4caf50',
     qr_scan: '#ff9800',
+    lead_form_submit: '#7c4dff',
   } as const;
-  const activityOrder: (keyof typeof ACTIVITY_COLORS)[] = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan'];
+  const activityOrder: (keyof typeof ACTIVITY_COLORS)[] = [
+    'profile_view',
+    'link_click',
+    'nfc_tap',
+    'qr_scan',
+    'lead_form_submit',
+  ];
 
   return (
     <ThemedView style={styles.container}>
@@ -284,6 +346,11 @@ export default function AnalyticsScreen() {
             <Ionicons name="qr-code-outline" size={28} color={colors.accent} />
             <Text style={[styles.statValue, { color: colors.text }]}>{data.qrScans}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>QR scans</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+            <Ionicons name="reader-outline" size={28} color={colors.accent} />
+            <Text style={[styles.statValue, { color: colors.text }]}>{data.leadCaptures}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Lead captures</Text>
           </View>
         </View>
 
@@ -355,6 +422,10 @@ export default function AnalyticsScreen() {
                 <View style={[styles.legendDot, { backgroundColor: ACTIVITY_COLORS.qr_scan }]} />
                 <Text style={[styles.legendText, { color: colors.textSecondary }]}>QR</Text>
               </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: ACTIVITY_COLORS.lead_form_submit }]} />
+                <Text style={[styles.legendText, { color: colors.textSecondary }]}>Leads</Text>
+              </View>
             </View>
           </View>
         )}
@@ -412,32 +483,35 @@ const styles = StyleSheet.create({
   legendText: { fontSize: Layout.caption },
   empty: { alignItems: 'center', padding: Layout.screenPaddingBottom },
   emptyText: { fontSize: Layout.body },
-  locked: {
-    flex: 1,
+  proGate: { flex: 1 },
+  proGateBgImage: { resizeMode: 'cover', width: '100%', height: '100%' },
+  proGateScroll: { flex: 1 },
+  proGateScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: Layout.screenPadding,
+    paddingVertical: Layout.sectionGap,
+  },
+  proGateStack: { width: '100%', alignItems: 'stretch' },
+  proGateHeader: { width: '100%', alignItems: 'center' },
+  proGateIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Layout.screenPadding,
-    paddingBottom: Layout.screenPaddingBottom,
+    marginBottom: 20,
   },
-  lockedTitle: { fontSize: 20, fontWeight: '600', marginTop: 20 },
-  lockedSubtitle: {
-    fontSize: Layout.bodySmall,
-    marginTop: Layout.rowGap,
-    marginBottom: Layout.sectionGap,
-    paddingHorizontal: Layout.screenPadding,
-    textAlign: 'center',
-  },
-  upgradeButton: {
-    marginTop: Layout.sectionGap,
-    marginHorizontal: Layout.screenPadding,
-    paddingVertical: 16,
-    paddingHorizontal: 28,
+  proGateTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  proGateText: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 8 },
+  proGateButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: Layout.radiusMd,
     alignSelf: 'stretch',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  upgradeButtonText: { fontSize: Layout.body, fontWeight: '600' },
+  proGateButtonText: { fontSize: 16, fontWeight: '600' },
   errorBlock: { padding: Layout.screenPadding },
   errorTitle: { fontSize: 18, fontWeight: '600', marginTop: 16, textAlign: 'center' },
   errorSubtitle: { fontSize: Layout.bodySmall, marginTop: Layout.tightGap, textAlign: 'center' },

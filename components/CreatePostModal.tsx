@@ -115,7 +115,7 @@ export function CreatePostModal({ visible, userId, onClose, onCreated, editingPo
                   <Text
                     style={[
                       styles.typeChipText,
-                      { color: type === t.value ? '#0A0A0B' : colors.text },
+                      { color: type === t.value ? colors.onAccent : colors.text },
                     ]}
                   >
                     {t.label}
@@ -141,7 +141,7 @@ export function CreatePostModal({ visible, userId, onClose, onCreated, editingPo
               onPress={handleSubmit}
               disabled={submitting || !content.trim()}
             >
-              <Text style={[styles.postButtonText, { color: '#0A0A0B' }]}>
+              <Text style={[styles.postButtonText, { color: colors.onAccent }]}>
                 {submitting ? (editingPost ? 'Saving…' : 'Posting…') : editingPost ? 'Save' : 'Post'}
               </Text>
             </Pressable>

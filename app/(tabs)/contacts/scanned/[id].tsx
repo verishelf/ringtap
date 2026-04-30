@@ -407,8 +407,8 @@ export default function ScannedContactInfoScreen() {
                     style={[styles.actionBtn, { backgroundColor: colors.accent }]}
                     onPress={() => Linking.openURL(`mailto:${email}`)}
                   >
-                    <Ionicons name="mail" size={20} color="#0A0A0B" />
-                    <Text style={styles.actionBtnText}>Email</Text>
+                    <Ionicons name="mail" size={20} color={colors.onAccent} />
+                    <Text style={[styles.actionBtnText, { color: colors.onAccent }]}>Email</Text>
                   </Pressable>
                 )}
                 {phone && (
@@ -416,8 +416,8 @@ export default function ScannedContactInfoScreen() {
                     style={[styles.actionBtn, { backgroundColor: colors.accent }]}
                     onPress={() => Linking.openURL(`tel:${phone}`)}
                   >
-                    <Ionicons name="call" size={20} color="#0A0A0B" />
-                    <Text style={styles.actionBtnText}>Call</Text>
+                    <Ionicons name="call" size={20} color={colors.onAccent} />
+                    <Text style={[styles.actionBtnText, { color: colors.onAccent }]}>Call</Text>
                   </Pressable>
                 )}
               </View>
@@ -520,5 +520,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: Layout.radiusMd,
   },
-  actionBtnText: { fontSize: 16, fontWeight: '600', color: '#0A0A0B' },
+  actionBtnText: { fontSize: 16, fontWeight: '600' },
 });

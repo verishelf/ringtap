@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -37,6 +38,11 @@ const HOW_MET_OPTIONS = [
   { value: 'event', label: 'Event' },
   { value: 'other', label: 'Other' },
 ];
+
+const WINDOW_H = Dimensions.get('window').height;
+/** Ensures the form scroll area has real height (flex:1 inside maxHeight-only sheet was collapsing). */
+const FORM_SCROLL_MAX = Math.min(520, Math.round(WINDOW_H * 0.58));
+const FORM_SCROLL_MIN = 280;
 
 export type SaveContactSheetProps = {
   visible: boolean;
@@ -80,44 +86,92 @@ export function SaveContactSheet({ visible, onClose, onSave }: SaveContactSheetP
     }
   }, []);
 
+  const saveWithFields = useCallback(
+    async (fields: RelationshipIntelligence) => {
+      setSaving(true);
+      try {
+        await onSave(fields);
+        onClose();
+      } catch {
+        // Parent shows error; keep sheet open
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onSave, onClose]
+  );
+
   const handleSave = useCallback(async () => {
-    setSaving(true);
-    try {
-      const resolvedHowMet = howMet === 'other' ? howMetCustom.trim() : HOW_MET_OPTIONS.find((o) => o.value === howMet)?.label ?? howMet.trim();
-      await onSave({
-        metAtLocation: metAtLocation.trim() || null,
-        metAt: metAt.toISOString(),
-        howMet: resolvedHowMet || null,
-        notes: notes.trim() || null,
-      });
-      onClose();
-    } finally {
-      setSaving(false);
-    }
-  }, [howMet, howMetCustom, metAtLocation, metAt, notes, onSave, onClose]);
+    const resolvedHowMet =
+      !howMet || howMet === ''
+        ? null
+        : howMet === 'other'
+          ? howMetCustom.trim() || null
+          : HOW_MET_OPTIONS.find((o) => o.value === howMet && o.value !== '')?.label ?? null;
+    await saveWithFields({
+      metAtLocation: metAtLocation.trim() || null,
+      metAt: metAt.toISOString(),
+      howMet: resolvedHowMet,
+      notes: notes.trim() || null,
+    });
+  }, [howMet, howMetCustom, metAtLocation, metAt, notes, saveWithFields]);
+
+  const handleSkip = useCallback(async () => {
+    await saveWithFields({
+      metAtLocation: null,
+      metAt: null,
+      howMet: null,
+      notes: null,
+    });
+  }, [saveWithFields]);
 
   const handleDateChange = useCallback((_ev: unknown, date?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
     if (date) setMetAt(date);
   }, []);
 
-  if (!visible) return null;
-
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 16 }]} onPress={(e) => e.stopPropagation()}>
-          <View style={[styles.handle, { backgroundColor: colors.borderLight }]} />
-          <Text style={[styles.title, { color: colors.text }]}>Add context</Text>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent
+      onRequestClose={onClose}
+      presentationStyle="overFullScreen"
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.backdrop}
+      >
+        <Pressable style={styles.backdropPress} onPress={onClose}>
+          <Pressable
+            style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 16 }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+          <Text style={[styles.title, { color: colors.text }]}>Optional details</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Optional: remember how and where you met
+            Add how you met, place, or notes—or save now without this info.
           </Text>
 
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.form}>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.formWrap}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+          >
+            <ScrollView
+              style={{ maxHeight: FORM_SCROLL_MAX, minHeight: FORM_SCROLL_MIN }}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
               {/* How we met */}
               <Text style={[styles.label, { color: colors.textSecondary }]}>How you met</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipRow}
+                contentContainerStyle={styles.chipRowContent}
+              >
                 {HOW_MET_OPTIONS.slice(1).map((opt) => (
                   <Pressable
                     key={opt.value}
@@ -201,10 +255,15 @@ export function SaveContactSheet({ visible, onClose, onSave }: SaveContactSheetP
 
               <View style={styles.actions}>
                 <Pressable
-                  onPress={onClose}
+                  onPress={handleSkip}
+                  disabled={saving}
                   style={[styles.btn, styles.btnSecondary, { borderColor: colors.borderLight }]}
                 >
-                  <Text style={[styles.btnText, { color: colors.textSecondary }]}>Skip</Text>
+                  {saving ? (
+                    <ActivityIndicator size="small" color={colors.textSecondary} />
+                  ) : (
+                    <Text style={[styles.btnText, { color: colors.textSecondary }]}>Save without details</Text>
+                  )}
                 </Pressable>
                 <Pressable
                   onPress={handleSave}
@@ -212,16 +271,17 @@ export function SaveContactSheet({ visible, onClose, onSave }: SaveContactSheetP
                   style={[styles.btn, styles.btnPrimary, { backgroundColor: colors.accent }]}
                 >
                   {saving ? (
-                    <ActivityIndicator size="small" color={colors.background} />
+                    <ActivityIndicator size="small" color={colors.onAccent} />
                   ) : (
-                    <Text style={[styles.btnText, { color: colors.background }]}>Save contact</Text>
+                    <Text style={[styles.btnText, { color: colors.onAccent }]}>Save with details</Text>
                   )}
                 </Pressable>
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -230,27 +290,40 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+  },
+  backdropPress: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: Layout.screenPadding,
   },
   sheet: {
-    borderTopLeftRadius: Layout.radiusXl,
-    borderTopRightRadius: Layout.radiusXl,
+    borderRadius: Layout.radiusXl,
     paddingHorizontal: Layout.screenPadding,
-    paddingTop: 12,
-    maxHeight: '90%',
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
+    paddingTop: 20,
+    maxHeight: '88%',
+    width: '100%',
+    maxWidth: 520,
     alignSelf: 'center',
-    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.35,
+        shadowRadius: 24,
+      },
+      android: { elevation: 12 },
+      default: {},
+    }),
   },
   title: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
   subtitle: { fontSize: 14, marginBottom: Layout.sectionGap },
-  form: { flex: 1, minHeight: 0 },
+  formWrap: { flexShrink: 1 },
+  scrollContent: { paddingBottom: 8, width: '100%' },
   label: { fontSize: 13, fontWeight: '600', marginBottom: Layout.tightGap },
-  chipRow: { marginBottom: Layout.tightGap },
+  chipRow: { marginBottom: Layout.tightGap, minHeight: 44 },
+  chipRowContent: { alignItems: 'center', paddingVertical: 2 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -291,15 +364,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Layout.rowGap,
     marginTop: Layout.sectionGap,
+    width: '100%',
+    alignSelf: 'center',
   },
   btn: {
     flex: 1,
-    height: Layout.buttonHeight,
+    minWidth: 0,
+    minHeight: Layout.buttonHeight,
     borderRadius: Layout.radiusMd,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 6,
   },
   btnSecondary: { borderWidth: StyleSheet.hairlineWidth },
   btnPrimary: {},
-  btnText: { fontSize: 16, fontWeight: '600' },
+  /** Ensures long labels (e.g. "Save without details") center in split buttons */
+  btnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    width: '100%',
+  },
 });

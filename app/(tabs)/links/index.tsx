@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { Href } from 'expo-router';
 import { useSegments } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,6 +19,7 @@ import { Image } from 'expo-image';
 
 import { ThemedView } from '@/components/themed-view';
 import { Layout } from '@/constants/theme';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -43,6 +45,8 @@ export default function LinksScreen() {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const inProfileStack = segments.includes('profile') && segments[segments.length - 1] !== 'index';
+  const upgradeHref = (inProfileStack ? '/(tabs)/profile/upgrade' : '/(tabs)/settings/upgrade') as Href;
+  const { presentPaywall } = usePresentRevenueCatPaywall(upgradeHref);
   const topPadding = inProfileStack ? Layout.screenPadding : insets.top + Layout.screenPadding;
   const { user } = useSession();
   const { plan, isPro } = useSubscription();
@@ -72,7 +76,11 @@ export default function LinksScreen() {
     if (!isPro && links.length >= FREE_PLAN_MAX_LINKS) {
       Alert.alert(
         'Limit reached',
-        `Free plan allows up to ${FREE_PLAN_MAX_LINKS} links. Upgrade to Pro for unlimited links.`
+        `Free plan allows up to ${FREE_PLAN_MAX_LINKS} links. Upgrade to Pro for unlimited links.`,
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Upgrade to Pro', onPress: () => void presentPaywall() },
+        ]
       );
       return;
     }
@@ -81,7 +89,7 @@ export default function LinksScreen() {
     setFormUrl('');
     setFormType('custom');
     setModalVisible(true);
-  }, [isPro, links.length]);
+  }, [isPro, links.length, presentPaywall]);
 
   const openEdit = useCallback((link: UserLink) => {
     setEditing(link);
@@ -106,8 +114,11 @@ export default function LinksScreen() {
         }
       } else {
         if (!canAddLink(plan, links.length)) {
-          Alert.alert('Limit reached', 'Upgrade to Pro for more links.');
           setSaving(false);
+          Alert.alert('Limit reached', 'Upgrade to Pro for more links.', [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Upgrade to Pro', onPress: () => void presentPaywall() },
+          ]);
           return;
         }
         const created = await createLink(user.id, {
@@ -124,7 +135,7 @@ export default function LinksScreen() {
     } finally {
       setSaving(false);
     }
-  }, [user?.id, editing, formTitle, formUrl, formType, plan, links.length]);
+  }, [user?.id, editing, formTitle, formUrl, formType, plan, links.length, presentPaywall]);
 
   const handleDelete = useCallback(
     (link: UserLink) => {
@@ -270,7 +281,7 @@ export default function LinksScreen() {
                 {saving ? (
                   <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                 ) : (
-                  <Text style={[styles.saveButtonText, { color: colors.text }]}>Save</Text>
+                  <Text style={[styles.saveButtonText, { color: colors.onAccent }]}>Save</Text>
                 )}
               </Pressable>
             </View>

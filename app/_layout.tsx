@@ -21,6 +21,7 @@ import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useActivation } from '@/hooks/useActivation';
+import { useAnalyticsScreenTracking } from '@/src/lib/analytics';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -52,6 +53,7 @@ const LuxuryLightTheme = {
 
 function RootLayoutNav() {
   useActivation();
+  useAnalyticsScreenTracking();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? LuxuryDarkTheme : LuxuryLightTheme;
 
@@ -101,6 +103,7 @@ function RootLayoutNav() {
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="auth/callback" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, InteractionManager, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { captureRef } from 'react-native-view-shot';
 
@@ -14,17 +14,23 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { getProfileUrlQr } from '@/lib/api';
 
 const QR_SIZE = 280;
-const LOGO_SIZE = 56; // ~20% of QR for good scan reliability
+/** Keep logo smaller than default 20% so modules stay recoverable with center image. */
+const LOGO_SIZE = 48;
 
 /** Use dark color for QR foreground so it scans reliably; fallback to black if too light. */
 function qrForegroundColor(hex: string | undefined): string {
   if (!hex || !hex.startsWith('#')) return '#000000';
-  const h = hex.slice(1);
+  let h = hex.slice(1);
+  if (h.length === 3) {
+    h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  }
+  if (h.length !== 6) return '#000000';
   const r = parseInt(h.slice(0, 2), 16) / 255;
   const g = parseInt(h.slice(2, 4), 16) / 255;
   const b = parseInt(h.slice(4, 6), 16) / 255;
+  if ([r, g, b].some((n) => Number.isNaN(n))) return '#000000';
   const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-  return luminance < 0.6 ? hex : '#000000';
+  return luminance < 0.6 ? `#${h}` : '#000000';
 }
 
 export default function QRShareScreen() {
@@ -42,6 +48,14 @@ export default function QRShareScreen() {
     }
     setSaving(true);
     try {
+      const hasLogo = !!(isPro && profile?.avatarUrl?.trim());
+      if (hasLogo) {
+        await new Promise<void>((resolve) => {
+          InteractionManager.runAfterInteractions(() => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          });
+        });
+      }
       const uri = await captureRef(qrRef, {
         format: 'png',
         quality: 1,
@@ -62,7 +76,7 @@ export default function QRShareScreen() {
     } finally {
       setSaving(false);
     }
-  }, [profileUrl]);
+  }, [profileUrl, isPro, profile?.avatarUrl]);
 
   if (!profileUrl) {
     return (
@@ -94,6 +108,8 @@ export default function QRShareScreen() {
               logoBackgroundColor="#FFFFFF"
               logoMargin={2}
               logoBorderRadius={LOGO_SIZE / 2}
+              quietZone={8}
+              ecl={isPro && profile?.avatarUrl?.trim() ? 'H' : 'Q'}
             />
           </View>
           <Text style={[styles.url, { color: colors.textSecondary }]} numberOfLines={2}>
@@ -106,8 +122,8 @@ export default function QRShareScreen() {
           onPress={saveQR}
           disabled={saving}
         >
-          <Ionicons name="share-outline" size={22} color={colors.text} />
-          <Text style={[styles.buttonText, { color: colors.text }]}>
+          <Ionicons name="share-outline" size={22} color={colors.onAccent} />
+          <Text style={[styles.buttonText, { color: colors.onAccent }]}>
             {saving ? 'Preparing…' : 'Save & share QR image'}
           </Text>
         </Pressable>

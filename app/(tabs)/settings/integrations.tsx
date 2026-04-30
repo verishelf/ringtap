@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -16,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HeaderBackButton } from '@/components/HeaderBackButton';
 import { Layout } from '@/constants/theme';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -34,6 +36,10 @@ const ICON_BOX_SIZE = 28;
 export default function IntegrationsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const segments = useSegments();
+  const inProfileStack = segments.includes('profile') && segments[segments.length - 1] !== 'index';
+  const upgradeHref = (inProfileStack ? '/(tabs)/profile/upgrade' : '/(tabs)/settings/upgrade') as Href;
+  const { presentPaywall } = usePresentRevenueCatPaywall(upgradeHref);
   const colors = useThemeColors();
   const { user, session } = useSession();
   const { isPro } = useSubscription();
@@ -88,7 +94,7 @@ export default function IntegrationsScreen() {
         'CRM sync is a Pro feature. Upgrade to connect HubSpot and sync your contacts.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/settings/upgrade') },
+          { text: 'Upgrade', onPress: () => void presentPaywall() },
         ]
       );
       return;
@@ -109,7 +115,7 @@ export default function IntegrationsScreen() {
     } finally {
       setConnecting(false);
     }
-  }, [isPro, router, session?.access_token]);
+  }, [isPro, presentPaywall, session?.access_token]);
 
   const handleShowRedirectUri = useCallback(async () => {
     const { redirect_uri } = await getCrmConfig();
@@ -208,7 +214,7 @@ export default function IntegrationsScreen() {
                 {connecting ? (
                   <Image source={require('@/assets/images/loading.gif')} style={{ width: 20, height: 20 }} />
                 ) : (
-                  <Text style={[styles.connectText, { color: '#fff' }]}>Connect</Text>
+                  <Text style={[styles.connectText, { color: colors.onAccent }]}>Connect</Text>
                 )}
               </Pressable>
             )}

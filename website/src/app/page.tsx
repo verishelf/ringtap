@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { MarketingMarquee } from "@/components/MarketingMarquee";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { ParallaxHero } from "@/components/ParallaxHero";
+import { ProValueSection } from "@/components/ProValueSection";
 import { SampleProfilePreview } from "@/components/SampleProfilePreview";
 import { ShareSection } from "@/components/ShareSection";
 import { TrustBanner } from "@/components/TrustBanner";
@@ -31,6 +32,8 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { PRO_PLAN_FEATURE_LABELS } from "../../../constants/proUpgradeFeatures";
+
 const SITE_URL = "https://www.ringtap.me";
 
 const FAQ_ITEMS = [
@@ -52,7 +55,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What's included in Pro?",
-    a: "Pro is $9/month or $99/year (save when you pay yearly). It includes unlimited links, profile themes (accent color, button shape, and Pro border color on your card and avatar), 12 typography fonts (Akronim, Fugaz One, Rubik Glitch, Rubik Puddles, Trade Winds, and more), custom QR code with your logo in the center and theme colors, sync contacts to your phone, your theme applied on ringtap.me so the web matches the app, a short video intro, and analytics (profile views, link clicks, NFC taps, QR scans—including taps and views this week on your dashboard). Billing is handled securely by Stripe; you can cancel anytime.",
+    a: "Pro is $9/month or $99/year (cancel anytime). It includes everything in Free plus: unlimited links; full profile themes (colors, gradients, shapes, 12 fonts); your theme on ringtap.me so the web matches the app; custom QR with your logo and colors; ~20 second video intro on your public profile; networking map with nearby people, hotspots, and events; full analytics (profile views, link clicks, NFC taps, QR scans, and lead-form submissions); inbound lead capture form on ringtap.me with an optional HTTPS webhook for Zapier, Make, or your stack; follow-up reminders and pipeline tags on saved contacts; sync contacts to your phone; and HubSpot CRM sync. Subscriptions are billed securely (Stripe on the web; App Store where applicable).",
   },
 ] as const;
 
@@ -369,7 +372,8 @@ export default function Home() {
             Simple pricing
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
-            Free forever for your profile and 2 links. Pro adds unlimited links, your theme on the web, and analytics.
+            Free for your profile and core sharing. Pro adds unlimited links, lead capture & webhooks, full analytics, map,
+            follow-ups, CRM sync, and more — workflow after the tap.
           </p>
           <div className="mt-16 grid gap-8 sm:grid-cols-2">
             <FadeInOnScroll delay={0}>
@@ -413,23 +417,19 @@ export default function Home() {
               <p className="mt-2 text-2xl font-bold text-accent">$9<span className="text-base font-normal text-muted-light">/month</span></p>
               <p className="mt-0.5 text-sm text-muted-light">or $99/year <span className="text-accent font-medium">(save yearly)</span></p>
               <ul className="mt-6 space-y-3 text-sm text-muted-light">
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
-                  Unlimited links
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
-                  Theme, 12 fonts, custom QR with logo
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
-                  Sync contacts to phone, video intro
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
-                  Analytics (views, taps, clicks)
-                </li>
+                {PRO_PLAN_FEATURE_LABELS.map((label) => (
+                  <li key={label} className="flex items-start gap-2">
+                    <Check className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
+                    {label}
+                  </li>
+                ))}
               </ul>
+              <Link
+                href="/pro"
+                className="mt-4 inline-block text-sm font-semibold text-accent hover:underline"
+              >
+                Full Pro breakdown →
+              </Link>
               <Link
                 href="/signup?plan=pro"
                 className="mt-8 block w-full rounded-xl bg-accent py-3 text-center text-sm font-semibold text-background hover:bg-muted-light transition-colors"
@@ -442,6 +442,37 @@ export default function Home() {
           <p className="mt-8 text-center text-xs text-muted">
             Monthly or yearly via Stripe. Cancel anytime. Free plan never expires.
           </p>
+        </FadeInOnScroll>
+      </section>
+
+      {/* RingTap Pro — full value story */}
+      <section id="ringtap-pro" className="border-t border-border-light/50 py-24 px-6">
+        <FadeInOnScroll className="mx-auto max-w-4xl">
+          <h2 className="text-center text-3xl font-bold text-foreground md:text-4xl">
+            RingTap Pro
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-muted-light">
+            Identity distribution is table stakes. Pro is for outcomes: leads you can route, metrics you can trust, and
+            contacts you won&apos;t forget after the conference.
+          </p>
+          <div className="mt-12">
+            <ProValueSection variant="full" showTagline />
+          </div>
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/signup?plan=pro"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-background font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Rocket className="h-5 w-5" />
+              Start Pro
+            </Link>
+            <Link
+              href="/pro"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border-light px-6 text-foreground font-semibold hover:border-accent transition-colors"
+            >
+              Dedicated Pro page
+            </Link>
+          </div>
         </FadeInOnScroll>
       </section>
 

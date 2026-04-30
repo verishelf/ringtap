@@ -10,14 +10,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
-  FlatList,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    FlatList,
+    Modal,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -361,7 +361,7 @@ function HotspotUserRow({
               onConnect(user.userId);
             }}
           >
-            <Ionicons name="person-add-outline" size={18} color="#0A0A0B" />
+            <Ionicons name="person-add-outline" size={18} color={colors.onAccent} />
           </Pressable>
         )}
         <Pressable

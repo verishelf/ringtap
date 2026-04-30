@@ -2,16 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { Link } from 'expo-router';
 import { useCallback } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
-import { Layout } from '@/constants/theme';
-import { useThemeColors } from '@/hooks/useThemeColors';
+import { Colors, Layout } from '@/constants/theme';
+import { useAppearance } from '@/contexts/AppearanceContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { getProfileUrl } from '@/lib/api';
 
 export default function NFCShareScreen() {
   const colors = useThemeColors();
+  const { isLight } = useAppearance();
   const { profile } = useProfile();
   const profileUrl = profile?.username ? getProfileUrl(profile.username) : null;
 
@@ -44,36 +46,78 @@ export default function NFCShareScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>How it works</Text>
           <View style={styles.step}>
-            <Text style={[styles.stepNum, { backgroundColor: colors.accent, color: colors.primary }]}>1</Text>
+            <Text style={[styles.stepNum, { backgroundColor: colors.accent, color: colors.onAccent }]}>1</Text>
             <Text style={[styles.stepText, { color: colors.text }]}>Make sure your NFC ring or card is set up with your profile URL.</Text>
           </View>
           <View style={styles.step}>
-            <Text style={[styles.stepNum, { backgroundColor: colors.accent, color: colors.primary }]}>2</Text>
+            <Text style={[styles.stepNum, { backgroundColor: colors.accent, color: colors.onAccent }]}>2</Text>
             <Text style={[styles.stepText, { color: colors.text }]}>Hold your ring or card close to the back of their phone.</Text>
           </View>
           <View style={styles.step}>
-            <Text style={[styles.stepNum, { backgroundColor: colors.accent, color: colors.primary }]}>3</Text>
+            <Text style={[styles.stepNum, { backgroundColor: colors.accent, color: colors.onAccent }]}>3</Text>
             <Text style={[styles.stepText, { color: colors.text }]}>Their phone will open your RingTap profile link.</Text>
           </View>
         </View>
 
-        {profileUrl && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Your profile link</Text>
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Your profile link</Text>
+          {profileUrl ? (
             <Text style={[styles.url, { color: colors.accent }]}>{profileUrl}</Text>
+          ) : (
+            <Text style={[styles.profileLinkPlaceholder, { color: colors.textSecondary }]}>
+              Add a username in Profile to get your ringtap.me link.
+            </Text>
+          )}
+          <View style={styles.linkRingWrap}>
             <Link href="/activate" asChild>
-              <Pressable style={[styles.linkRingButton, { backgroundColor: colors.accent }]}>
-                <Ionicons name="ellipse-outline" size={22} color={colors.text} />
-                <Text style={[styles.linkRingButtonText, { color: colors.text }]}>Link ring</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Link ring"
+                android_ripple={
+                  Platform.OS === 'android'
+                    ? {
+                        color: isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.25)',
+                        foreground: true,
+                      }
+                    : undefined
+                }
+                style={({ pressed }) => [
+                  styles.linkRingButton,
+                  isLight
+                    ? {
+                        backgroundColor: colors.surfaceElevated,
+                        borderWidth: 2,
+                        borderColor: Colors.light.text,
+                      }
+                    : {
+                        backgroundColor: Colors.dark.primary,
+                        borderWidth: 0,
+                      },
+                  pressed && styles.linkRingButtonPressed,
+                ]}
+              >
+                <Ionicons
+                  name="ellipse-outline"
+                  size={28}
+                  color={isLight ? Colors.light.text : Colors.dark.tint}
+                />
+                <Text
+                  style={[
+                    styles.linkRingButtonText,
+                    { color: isLight ? Colors.light.text : Colors.dark.tint },
+                  ]}
+                >
+                  Link ring
+                </Text>
               </Pressable>
             </Link>
           </View>
-        )}
+        </View>
 
         <View style={styles.section}>
           <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={testNFC}>
-            <Ionicons name="flash-outline" size={22} color={colors.text} />
-            <Text style={[styles.buttonText, { color: colors.text }]}>Test NFC (open link)</Text>
+            <Ionicons name="flash-outline" size={22} color={colors.onAccent} />
+            <Text style={[styles.buttonText, { color: colors.onAccent }]}>Test NFC (open link)</Text>
           </Pressable>
           <Text style={[styles.hint, { color: colors.textSecondary }]}>Simulates opening your profile link as if an NFC tap triggered it.</Text>
         </View>
@@ -118,17 +162,25 @@ const styles = StyleSheet.create({
   },
   stepText: { flex: 1, fontSize: Layout.bodySmall + 1, lineHeight: 22 },
   url: { fontSize: Layout.bodySmall, marginBottom: Layout.tightGap },
+  profileLinkPlaceholder: { fontSize: Layout.bodySmall, marginBottom: Layout.tightGap, lineHeight: 22 },
   hint: { fontSize: Layout.caption, marginTop: Layout.tightGap },
+  linkRingWrap: {
+    alignItems: 'center',
+    marginTop: Layout.tightGap,
+  },
   linkRingButton: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Layout.inputGap,
-    marginTop: Layout.tightGap,
-    height: Layout.buttonHeight,
+    gap: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    minWidth: 148,
+    minHeight: Layout.buttonHeight + 8,
     borderRadius: Layout.radiusMd,
   },
-  linkRingButtonText: { fontSize: Layout.body, fontWeight: '600' },
+  linkRingButtonPressed: { opacity: Platform.OS === 'ios' ? 0.92 : 1 },
+  linkRingButtonText: { fontSize: Layout.body, fontWeight: '600', textAlign: 'center' },
   button: {
     flexDirection: 'row',
     alignItems: 'center',

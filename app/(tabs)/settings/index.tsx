@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { Href } from 'expo-router';
 import { Link, useRouter, useSegments } from 'expo-router';
 import { useState } from 'react';
 import { Image } from 'expo-image';
@@ -10,6 +11,7 @@ import { Layout } from '@/constants/theme';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { useNotifications } from '@/contexts/NotificationsContext';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -23,6 +25,8 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const inProfileStack = segments.includes('profile') && segments[segments.length - 1] !== 'index';
+  const upgradeHref = (inProfileStack ? '/(tabs)/profile/upgrade' : '/(tabs)/settings/upgrade') as Href;
+  const { presentPaywall, presentingPaywall } = usePresentRevenueCatPaywall(upgradeHref);
   const topPadding = inProfileStack ? Layout.screenPadding : insets.top + Layout.screenPadding;
   const { user, signOut } = useSession();
   const { plan, isPro } = useSubscription();
@@ -33,10 +37,12 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
-  const handleNewMessagesToggle = async (on: boolean) => {
-    setNotifPrefs({ newMessages: on });
+  const handleNotificationsToggle = async (on: boolean) => {
+    setNotifPrefs({ newMessages: on, newContacts: on });
     if (on) await requestPermission();
   };
+
+  const notificationsEnabled = notifPrefs.newMessages || notifPrefs.newContacts;
 
   const handleSignOut = () => {
     Alert.alert('Sign out', 'Are you sure?', [
@@ -85,7 +91,7 @@ export default function SettingsScreen() {
                 value={isLight}
                 onValueChange={(on) => setTheme(on ? 'light' : 'dark')}
                 trackColor={{ false: colors.borderLight, true: colors.accent }}
-                thumbColor={colors.text}
+                thumbColor={isLight ? '#FFFFFF' : colors.text}
               />
             </View>
           </View>
@@ -100,7 +106,7 @@ export default function SettingsScreen() {
                 value={locationEnabled}
                 onValueChange={setLocationEnabled}
                 trackColor={{ false: colors.borderLight, true: colors.accent }}
-                thumbColor={colors.text}
+                thumbColor={isLight ? '#FFFFFF' : colors.text}
               />
             </View>
           </View>
@@ -109,19 +115,19 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <View style={[styles.row, styles.rowBorder, { borderBottomColor: colors.borderLight }]}>
-              <Text style={[styles.label, { color: colors.text }]}>New messages</Text>
+            <View style={[styles.row, { borderBottomWidth: 0 }]}>
+              <Text style={[styles.label, { color: colors.text }]}>Push notifications</Text>
               <Switch
-                value={notifPrefs.newMessages}
-                onValueChange={handleNewMessagesToggle}
+                value={notificationsEnabled}
+                onValueChange={handleNotificationsToggle}
                 trackColor={{ false: colors.borderLight, true: colors.accent }}
-                thumbColor={colors.text}
+                thumbColor={isLight ? '#FFFFFF' : colors.text}
               />
             </View>
-            {permissionStatus === 'denied' && notifPrefs.newMessages && (
+            {permissionStatus === 'denied' && notificationsEnabled && (
               <View style={styles.row}>
                 <Text style={[styles.hint, { color: colors.textSecondary, flex: 1 }]}>
-                  Notifications are off in system settings. Turn them on in Settings → RingTap to get alerts for new messages.
+                  Notifications are off in system settings. Turn them on in Settings → RingTap to get alerts.
                 </Text>
               </View>
             )}
@@ -165,6 +171,29 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Integrations</Text>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <TouchableOpacity
+              style={[styles.menuItem, { borderBottomColor: colors.borderLight }]}
+              onPress={() => router.navigate(inProfileStack ? '/(tabs)/profile/lead-capture' : '/(tabs)/settings/lead-capture')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="reader-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Lead capture & webhooks</Text>
+                  <Text style={[styles.menuSub, { color: colors.textSecondary }]} numberOfLines={2}>
+                    Form on ringtap.me + Zapier/Make
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                {!isPro ? (
+                  <Text style={[styles.proChip, { color: colors.accent }]}>Pro</Text>
+                ) : null}
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.menuItem, { borderBottomWidth: 0 }]}
               onPress={() => router.navigate(inProfileStack ? '/(tabs)/profile/integrations' : '/(tabs)/settings/integrations')}
@@ -221,19 +250,21 @@ export default function SettingsScreen() {
                 </Pressable>
               </Link>
             ) : (
-              <Link href={inProfileStack ? '/(tabs)/profile/upgrade' : '/(tabs)/settings/upgrade'} asChild>
-                <Pressable style={styles.menuItem}>
-                  <View style={styles.menuItemLeft}>
-                    <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
-                      <Ionicons name="rocket-outline" size={MENU_ICON_SIZE} color={colors.accent} />
-                    </View>
-                    <Text style={[styles.menuText, { color: colors.text }]}>Upgrade to Pro</Text>
+              <Pressable
+                style={[styles.menuItem, presentingPaywall && { opacity: 0.7 }]}
+                onPress={() => void presentPaywall()}
+                disabled={presentingPaywall}
+              >
+                <View style={styles.menuItemLeft}>
+                  <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                    <Ionicons name="rocket-outline" size={MENU_ICON_SIZE} color={colors.accent} />
                   </View>
-                  <View style={styles.menuItemRight}>
-                    <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
-                  </View>
-                </Pressable>
-              </Link>
+                  <Text style={[styles.menuText, { color: colors.text }]}>Upgrade to Pro</Text>
+                </View>
+                <View style={styles.menuItemRight}>
+                  <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+                </View>
+              </Pressable>
             )}
           </View>
         </View>
@@ -266,6 +297,20 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Pressable
+              style={[styles.menuItem, styles.rowBorder, { borderBottomColor: colors.borderLight }]}
+              onPress={() => router.push(inProfileStack ? '/(tabs)/profile/help' : '/(tabs)/settings/help')}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={[styles.iconBox, { width: ICON_BOX_SIZE, height: ICON_BOX_SIZE }]}>
+                  <Ionicons name="help-circle-outline" size={MENU_ICON_SIZE} color={colors.accent} />
+                </View>
+                <Text style={[styles.menuText, { color: colors.text }]} numberOfLines={1}>Help & feedback</Text>
+              </View>
+              <View style={styles.menuItemRight} pointerEvents="none">
+                <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+              </View>
+            </Pressable>
             <Pressable
               style={[styles.menuItem, styles.rowBorder, { borderBottomColor: colors.borderLight }]}
               onPress={() => router.push(inProfileStack ? '/(tabs)/profile/about' : '/(tabs)/settings/about')}
@@ -349,5 +394,7 @@ const styles = StyleSheet.create({
     minWidth: 24,
   },
   menuText: { fontSize: Layout.body, flexShrink: 1 },
+  menuSub: { fontSize: Layout.caption, marginTop: 2 },
+  proChip: { fontSize: 11, fontWeight: '700', marginRight: 8 },
   signOutText: {},
 });

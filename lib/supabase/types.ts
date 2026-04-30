@@ -45,6 +45,15 @@ export interface UserLink {
   createdAt: string;
 }
 
+/** Persisted in `profiles.onboarding_answers` (JSONB). */
+export type OnboardingAnswersV1 = {
+  goal: string;
+  shareMethod: string;
+  role: string;
+  familiarity: string;
+  version: 1;
+};
+
 export interface UserProfile {
   id: string;
   userId: string;
@@ -63,6 +72,8 @@ export interface UserProfile {
   socialLinks: Record<SocialPlatform, string>;
   createdAt: string;
   updatedAt: string;
+  onboardingCompletedAt?: string | null;
+  onboardingAnswers?: OnboardingAnswersV1 | null;
 }
 
 export interface AnalyticsEvent {
@@ -90,6 +101,7 @@ export interface AnalyticsSummary {
   linkClicks: number;
   nfcTaps: number;
   qrScans: number;
+  leadCaptures: number;
   byDay: Array<{ date: string; count: number; type: string }>;
 }
 

@@ -1,20 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ProGateAnimatedContent } from '@/components/ProGateAnimatedContent';
 import { ThemedView } from '@/components/themed-view';
+import { PRO_PLAN_FEATURE_LABELS } from '@/constants/proUpgradeFeatures';
 import { Layout } from '@/constants/theme';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function PricingScreen() {
   const { isPro } = useSubscription();
   const colors = useThemeColors();
-  const router = useRouter();
+  const { presentPaywall, presentingPaywall } = usePresentRevenueCatPaywall();
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
+        <ProGateAnimatedContent>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[styles.planName, { color: colors.text }]}>Free</Text>
           <Text style={[styles.price, { color: colors.text }]}>$0</Text>
@@ -27,7 +31,7 @@ export default function PricingScreen() {
           </View>
           {!isPro && (
             <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-              <Text style={[styles.badgeText, { color: colors.primary }]}>Current plan</Text>
+              <Text style={[styles.badgeText, { color: colors.onAccent }]}>Current plan</Text>
             </View>
           )}
         </View>
@@ -37,10 +41,9 @@ export default function PricingScreen() {
           <Text style={[styles.price, { color: colors.text }]}>$9</Text>
           <Text style={[styles.period, { color: colors.textSecondary }]}>/ month</Text>
           <View style={styles.features}>
-            <Feature text="Unlimited links" colors={colors} />
-            <Feature text="Profile themes (accent, gradient, shapes)" colors={colors} />
-            <Feature text="Analytics (views, clicks, NFC, QR)" colors={colors} />
-            <Feature text="Video intro on profile (~20 sec)" colors={colors} />
+            {PRO_PLAN_FEATURE_LABELS.map((label) => (
+              <Feature key={label} text={label} colors={colors} />
+            ))}
           </View>
           {isPro ? (
             <Link href="/(tabs)/settings/manage" asChild>
@@ -49,13 +52,16 @@ export default function PricingScreen() {
               </Pressable>
             </Link>
           ) : (
-            <Link href="/(tabs)/settings/upgrade" asChild>
-              <Pressable style={[styles.upgradeButton, { backgroundColor: colors.accent }]}>
-                <Text style={[styles.upgradeButtonText, { color: colors.text }]}>Upgrade to Pro</Text>
-              </Pressable>
-            </Link>
+            <Pressable
+              style={[styles.upgradeButton, { backgroundColor: colors.accent }, presentingPaywall && { opacity: 0.7 }]}
+              onPress={() => void presentPaywall()}
+              disabled={presentingPaywall}
+            >
+              <Text style={[styles.upgradeButtonText, { color: colors.onAccent }]}>Upgrade to Pro</Text>
+            </Pressable>
           )}
         </View>
+        </ProGateAnimatedContent>
       </ScrollView>
     </ThemedView>
   );

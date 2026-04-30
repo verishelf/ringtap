@@ -5,11 +5,11 @@ import * as Linking from 'expo-linking';
 import { useMemo, useState } from 'react';
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { getProfileFontFamily, getDotsFontEnhancement } from '@/lib/profileFonts';
-import { Layout } from '@/constants/theme';
 import { CashAppIcon } from '@/components/CashAppIcon';
-import { VenmoIcon, PayPalIcon, ZelleIcon } from '@/components/PaymentIcons';
+import { PayPalIcon, VenmoIcon, ZelleIcon } from '@/components/PaymentIcons';
+import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { getDotsFontEnhancement, getProfileFontFamily } from '@/lib/profileFonts';
 import type { ButtonShape, SocialPlatform, UserLink, UserProfile } from '@/lib/supabase/types';
 
 const SOCIAL_LABELS: Record<string, string> = {
@@ -113,8 +113,15 @@ interface ProfileScanPreviewProps {
   showProRing?: boolean;
   /** When false, suppress the \"About Me\" section (bio) in the body to avoid repeating it. */
   showAboutSection?: boolean;
-  /** Relationship intelligence for saved contacts: how met, where, when, notes. */
-  relationshipInfo?: { howMet: string | null; metAtLocation: string | null; metAt: string | null; notes: string | null } | null;
+  /** Relationship intelligence for saved contacts: how met, where, when, notes, follow-up, pipeline. */
+  relationshipInfo?: {
+    howMet: string | null;
+    metAtLocation: string | null;
+    metAt: string | null;
+    notes: string | null;
+    followUpAt: string | null;
+    pipelineStage: string | null;
+  } | null;
 }
 
 const PRO_RING_COLOR = '#D4AF37';
@@ -156,7 +163,13 @@ export function ProfileScanPreview({
     hasContact ||
     socialWithUrls.length > 0 ||
     links.length > 0 ||
-    (relationshipInfo && (relationshipInfo.howMet || relationshipInfo.metAtLocation || relationshipInfo.metAt || relationshipInfo.notes));
+    (relationshipInfo &&
+      (relationshipInfo.howMet ||
+        relationshipInfo.metAtLocation ||
+        relationshipInfo.metAt ||
+        relationshipInfo.notes ||
+        relationshipInfo.followUpAt ||
+        (relationshipInfo.pipelineStage && relationshipInfo.pipelineStage !== 'none')));
 
   const borderColor = (showProRing && (profile.theme?.profileBorderColor ?? PRO_RING_COLOR)) || colors.borderLight;
   const cardBorderColor = showProRing ? (profile.theme?.profileBorderColor ?? PRO_RING_COLOR) : colors.borderLight;
@@ -284,7 +297,13 @@ export function ProfileScanPreview({
               </>
             )}
 
-            {relationshipInfo && (relationshipInfo.howMet || relationshipInfo.metAtLocation || relationshipInfo.metAt || relationshipInfo.notes) && (
+            {relationshipInfo &&
+              (relationshipInfo.howMet ||
+                relationshipInfo.metAtLocation ||
+                relationshipInfo.metAt ||
+                relationshipInfo.notes ||
+                relationshipInfo.followUpAt ||
+                (relationshipInfo.pipelineStage && relationshipInfo.pipelineStage !== 'none')) && (
               <>
                 <Text style={[styles.sectionHeading, { color: colors.text, fontFamily, ...(dotsEnhance ?? {}) }]}>How you met</Text>
                 <View style={styles.relationshipInfo}>
@@ -312,6 +331,22 @@ export function ProfileScanPreview({
                     <View style={styles.relationshipRow}>
                       <Ionicons name="document-text-outline" size={16} color={colors.textSecondary} />
                       <Text style={[styles.relationshipText, { color: colors.textSecondary }]}>{relationshipInfo.notes}</Text>
+                    </View>
+                  ) : null}
+                  {relationshipInfo.pipelineStage && relationshipInfo.pipelineStage !== 'none' ? (
+                    <View style={styles.relationshipRow}>
+                      <Ionicons name="funnel-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.relationshipText, { color: colors.textSecondary }]}>
+                        Pipeline: {relationshipInfo.pipelineStage}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {relationshipInfo.followUpAt ? (
+                    <View style={styles.relationshipRow}>
+                      <Ionicons name="alarm-outline" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.relationshipText, { color: colors.textSecondary }]}>
+                        Follow up: {formatRelationshipDate(relationshipInfo.followUpAt)}
+                      </Text>
                     </View>
                   ) : null}
                 </View>

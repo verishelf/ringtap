@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog";
 
 const BASE = "https://www.ringtap.me";
-const RESERVED = new Set(["activate", "privacy", "store", "profile", "api", "setup", "upgrade", "nfc", "qr", "signup", "demo", "terms", "auth", "affiliates", "blog"]);
+const RESERVED = new Set(["activate", "privacy", "store", "profile", "api", "setup", "upgrade", "nfc", "qr", "signup", "demo", "terms", "auth", "affiliates", "blog", "pro"]);
 
 async function getProfileUsernames(): Promise<string[]> {
   const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "").replace(/^["'\s]+|["'\s]+$/g, "").trim();
@@ -67,6 +67,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    {
+      url: `${BASE}/pro`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
     {
       url: `${BASE}/demo`,

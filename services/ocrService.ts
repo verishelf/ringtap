@@ -7,8 +7,8 @@
  */
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as LegacyFileSystem from 'expo-file-system/legacy';
 
 // --- Types ---
 
@@ -57,11 +57,50 @@ async function preprocessImageForOcr(uri: string): Promise<string> {
 async function getFilePathForOcr(uri: string): Promise<string> {
   if (uri.startsWith('content://')) {
     const filename = `ocr_${Date.now()}.jpg`;
-    const dest = `${FileSystem.cacheDirectory}${filename}`;
-    await FileSystem.copyAsync({ from: uri, to: dest });
+    const cacheDir = LegacyFileSystem.cacheDirectory;
+    if (!cacheDir) return uri.replace(/^file:\/\//, '');
+    const dest = `${cacheDir}${filename}`;
+    await LegacyFileSystem.copyAsync({ from: uri, to: dest });
     return dest.replace(/^file:\/\//, '');
   }
   return uri.replace(/^file:\/\//, '');
+}
+
+const MIN_PREVIEW_CARD_CHARS = 10;
+
+/**
+ * Fast OCR pass on an already cropped preview image for live “card in frame” detection.
+ * Cropped region should match the scan guide; avoids heavy preprocessing used for full extraction.
+ */
+export async function previewCardTextDetected(imageUri: string): Promise<boolean> {
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    return false;
+  }
+  let recognizeText: (path: string) => Promise<{ text: string }>;
+  try {
+    const mlkit = require('@infinitered/react-native-mlkit-text-recognition');
+    recognizeText = mlkit.recognizeText;
+  } catch {
+    return false;
+  }
+  try {
+    const resized = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [{ resize: { width: 480 } }],
+      { compress: 0.55, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    const path = await getFilePathForOcr(resized.uri);
+    const { text } = await recognizeText(path);
+    return (text?.trim().length ?? 0) >= MIN_PREVIEW_CARD_CHARS;
+  } catch {
+    try {
+      const pathAlt = await getFilePathForOcr(imageUri);
+      const { text } = await recognizeText(pathAlt);
+      return (text?.trim().length ?? 0) >= MIN_PREVIEW_CARD_CHARS;
+    } catch {
+      return false;
+    }
+  }
 }
 
 /**

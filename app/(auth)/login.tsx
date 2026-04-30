@@ -16,6 +16,7 @@ import {
 
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { resolveAuthenticatedOnboardingRoute } from '@/lib/onboardingGate';
 import { supabase } from '@/lib/supabase/supabaseClient';
 
 export default function LoginScreen() {
@@ -55,7 +56,13 @@ export default function LoginScreen() {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         console.log('LOGIN PASSWORD:', data, error);
         if (error) throw error;
-        router.replace('/(tabs)/home');
+        const uid = data.user?.id;
+        if (!uid) {
+          router.replace('/(tabs)/home');
+        } else {
+          const dest = await resolveAuthenticatedOnboardingRoute(uid);
+          router.replace(dest);
+        }
       }
     } catch (e: unknown) {
       console.log('LOGIN CRASH:', e);
@@ -95,7 +102,7 @@ export default function LoginScreen() {
               style={[styles.button, { backgroundColor: colors.accent }]}
               onPress={() => { setMagicLinkSent(false); setEmail(''); }}
             >
-              <Text style={[styles.buttonText, { color: colors.text }]}>Use a different email</Text>
+              <Text style={[styles.buttonText, { color: colors.onAccent }]}>Use a different email</Text>
             </Pressable>
           </View>
         </View>
@@ -145,7 +152,7 @@ export default function LoginScreen() {
               {loading ? (
                 <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               ) : (
-                <Text style={[styles.buttonText, { color: colors.text }]}>
+                <Text style={[styles.buttonText, { color: colors.onAccent }]}>
                   {mode === 'password' ? 'Sign in' : 'Send magic link'}
                 </Text>
               )}

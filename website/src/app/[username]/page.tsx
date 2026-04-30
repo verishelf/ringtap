@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup', 'upgrade', 'nfc', 'qr']);
+const RESERVED = new Set(['activate', 'privacy', 'store', 'profile', 'api', 'setup', 'upgrade', 'nfc', 'qr', 'pro']);
 
 /** Send event to GA4 (matches app analytics: taps, scans, link clicks) */
 function sendGA4Event(eventName: string, params?: Record<string, string | number | undefined>) {
@@ -194,6 +194,12 @@ type ProfileData = {
     typography?: string;
     calendlyUrl?: string;
   };
+  lead_form?: {
+    headline: string;
+    collect_company: boolean;
+    collect_phone: boolean;
+    collect_message: boolean;
+  } | null;
 };
 
 function ensureUrl(url: string): string {
@@ -209,6 +215,152 @@ function buttonRadiusClass(shape?: 'rounded' | 'pill' | 'square'): string {
     case 'square': return 'rounded';
     default: return 'rounded-xl';
   }
+}
+
+/** Pro: configurable inbound lead form on public profile (stored in profile_lead_submissions + optional webhook). */
+function ProfileLeadCaptureSection({
+  username,
+  config,
+  accentColor,
+  profileFont,
+  dotsEnhance,
+  pathname,
+  btnClass,
+}: {
+  username: string;
+  config: NonNullable<ProfileData['lead_form']>;
+  accentColor?: string;
+  profileFont?: string;
+  dotsEnhance?: Record<string, string | number>;
+  pathname: string;
+  btnClass: string;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [company, setCompany] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setLoading(true);
+    try {
+      const body: Record<string, string> = { username, name, email };
+      if (config.collect_phone) body.phone = phone;
+      if (config.collect_company) body.company = company;
+      if (config.collect_message) body.message = message;
+      if (pathname) body.source_path = pathname;
+      const res = await fetch('/api/profile-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      let data: { error?: string } = {};
+      try {
+        data = (await res.json()) as { error?: string };
+      } catch {
+        /* ignore */
+      }
+      if (!res.ok) {
+        setFormError(typeof data.error === 'string' ? data.error : 'Could not send');
+        return;
+      }
+      setSent(true);
+      sendGA4Event('lead_form_submit', { profile_username: username });
+    } catch {
+      setFormError('Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className="rounded-xl border border-border-light bg-surface-elevated p-4">
+        <p className="text-sm font-semibold text-foreground">Thanks — they&apos;ll get your message.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={(e) => void submit(e)} className="rounded-xl border border-border-light bg-surface-elevated p-4 space-y-3">
+      <h2 className="text-foreground font-bold text-base" style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}) }}>
+        {config.headline}
+      </h2>
+      <div className="space-y-2">
+        <label className="block text-xs font-medium text-muted-light">
+          Name
+          <input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border-light bg-background px-3 py-2 text-sm text-foreground"
+            autoComplete="name"
+          />
+        </label>
+        <label className="block text-xs font-medium text-muted-light">
+          Email
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border-light bg-background px-3 py-2 text-sm text-foreground"
+            autoComplete="email"
+          />
+        </label>
+        {config.collect_phone ? (
+          <label className="block text-xs font-medium text-muted-light">
+            Phone
+            <input
+              required={config.collect_phone}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border-light bg-background px-3 py-2 text-sm text-foreground"
+              autoComplete="tel"
+            />
+          </label>
+        ) : null}
+        {config.collect_company ? (
+          <label className="block text-xs font-medium text-muted-light">
+            Company
+            <input
+              required={config.collect_company}
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border-light bg-background px-3 py-2 text-sm text-foreground"
+              autoComplete="organization"
+            />
+          </label>
+        ) : null}
+        {config.collect_message ? (
+          <label className="block text-xs font-medium text-muted-light">
+            Message
+            <textarea
+              required={config.collect_message}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={3}
+              className="mt-1 w-full rounded-lg border border-border-light bg-background px-3 py-2 text-sm text-foreground resize-y min-h-[80px]"
+            />
+          </label>
+        ) : null}
+      </div>
+      {formError ? <p className="text-xs text-destructive">{formError}</p> : null}
+      <button
+        type="submit"
+        disabled={loading}
+        className={`w-full ${btnClass} bg-accent text-background px-4 py-3 text-center font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-60`}
+        style={{ fontFamily: profileFont, ...(dotsEnhance ?? {}), ...(accentColor ? { backgroundColor: accentColor, color: '#0A0A0B' } : {}) }}
+      >
+        {loading ? 'Sending…' : 'Send'}
+      </button>
+    </form>
+  );
 }
 
 /** Build a vCard 3.0 string for Save contact (.vcf) */
@@ -651,6 +803,17 @@ export default function UsernameProfilePage() {
 
           {/* Connect (lead capture + signup) + Save contact — always shown */}
           <div className="border-t border-border-light px-6 py-4 space-y-3">
+            {profile.lead_form ? (
+              <ProfileLeadCaptureSection
+                username={profile.username}
+                config={profile.lead_form}
+                accentColor={accentColor}
+                profileFont={profileFont}
+                dotsEnhance={dotsEnhance ?? undefined}
+                pathname={pathname ?? ''}
+                btnClass={btnClass}
+              />
+            ) : null}
             {profile.user_id && (
               <button
                 type="button"

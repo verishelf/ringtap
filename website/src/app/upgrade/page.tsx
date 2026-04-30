@@ -1,6 +1,7 @@
 'use client';
 
 import { getAffiliateRef } from '@/components/AffiliateRefProvider';
+import { ProValueSection } from '@/components/ProValueSection';
 import { ArrowLeft, Calendar, CreditCard, Crown, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -59,19 +60,27 @@ function UpgradeContent() {
 
   if (!email.trim()) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-        <div className="max-w-md w-full text-center">
-          <p className="text-muted-light">Open this page from the RingTap app (Settings → Upgrade) or create an account to upgrade.</p>
-          <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup?plan=pro" className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-background font-semibold hover:opacity-90">
-              <Rocket className="h-5 w-5" />
-              Create account & go Pro
-            </Link>
-            <Link href="/" className="inline-flex items-center justify-center gap-2 text-accent font-semibold hover:underline">
-              <ArrowLeft className="h-4 w-4" />
-              Back to home
-            </Link>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12">
+        <div className="max-w-xl w-full">
+          <div className="text-center mb-8">
+            <p className="text-muted-light">
+              Open this page from the RingTap app (Settings → Upgrade) with your account email in the URL, or create an account to subscribe to Pro.
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/signup?plan=pro" className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-background font-semibold hover:opacity-90">
+                <Rocket className="h-5 w-5" />
+                Create account & go Pro
+              </Link>
+              <Link href="/pro" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border-light px-6 py-3 text-foreground font-semibold hover:border-accent transition-colors">
+                What&apos;s in Pro?
+              </Link>
+              <Link href="/" className="inline-flex items-center justify-center gap-2 text-accent font-semibold hover:underline sm:px-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to home
+              </Link>
+            </div>
           </div>
+          <ProValueSection variant="compact" showTagline />
         </div>
       </div>
     );
@@ -103,13 +112,17 @@ function UpgradeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12">
+      <div className="max-w-xl w-full">
         <h1 className="text-2xl font-bold text-foreground text-center mb-2 flex items-center justify-center gap-2">
           <Crown className="h-7 w-7 text-amber-500" />
           Upgrade to Pro
         </h1>
-        <p className="text-muted-light text-center text-sm mb-8">Unlimited links, themes, analytics, video intro. Cancel anytime.</p>
+        <p className="text-muted-light text-center text-sm mb-6">
+          $9/month or $99/year · Cancel anytime · Secure checkout with Stripe
+        </p>
+
+        <ProValueSection variant="compact" showTagline className="mb-8" />
 
         <div className="space-y-4">
           <button
@@ -144,7 +157,7 @@ function UpgradeContent() {
           </button>
         </div>
 
-        <p className="text-muted-light text-xs text-center mt-6">Secure checkout by Stripe. You can cancel or change plan anytime from Settings in the app.</p>
+        <p className="text-muted-light text-xs text-center mt-6">You can cancel or change plan anytime from Settings in the app.</p>
       </div>
     </div>
   );

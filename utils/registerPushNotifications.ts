@@ -11,13 +11,20 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 const ANDROID_CHANNEL_ID = 'default';
+const ANDROID_CONTACTS_CHANNEL_ID = 'contacts';
 
-/** Set up Android notification channel. Call before requesting permission or getting token. */
+/** Set up Android notification channels. Call before requesting permission or getting token. */
 export async function setupAndroidNotificationChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
     name: 'default',
     importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#FF231F7C',
+  });
+  await Notifications.setNotificationChannelAsync(ANDROID_CONTACTS_CHANNEL_ID, {
+    name: 'Contacts',
+    importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#FF231F7C',
   });

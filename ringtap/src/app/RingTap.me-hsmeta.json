@@ -1,0 +1,29 @@
+{
+  "config": {
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "https://www.ringtap.me/api/crm/callback"
+      ],
+      "optionalScopes": [],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.write",
+        "crm.objects.contacts.read"
+      ],
+      "conditionallyRequiredScopes": []
+    },
+    "logo": "/app/app-logo.jpg",
+    "name": "RingTap.me",
+    "description": "RingTap is your digital business card. One tap shares your name, photo, links, and contact—no typing, no paper, no lost cards. Your ringtap.me link works everywhere.",
+    "isUserLevel": false,
+    "distribution": "MARKETPLACE",
+    "permittedUrls": {
+      "img": [],
+      "fetch": [],
+      "iframe": []
+    }
+  },
+  "uid": "RingTap.me",
+  "type": "app"
+}

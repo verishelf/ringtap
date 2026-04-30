@@ -1,0 +1,14 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.0.6",
+    "info": {
+      "en-US": {
+        "title": "RingTap",
+        "privacyPolicyUrl": "https://ringtap.me/privacy",
+        "supportUrl": "https://ringtap.me",
+        "releaseNotes": "• Smoother onboarding and profile setup\n• Notification settings so you choose what you’re alerted about\n• Help and support from Profile and Settings\n• Performance improvements and bug fixes"
+      }
+    }
+  }
+}

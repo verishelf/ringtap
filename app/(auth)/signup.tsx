@@ -117,7 +117,7 @@ export default function SignupScreen() {
               {loading ? (
                 <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               ) : (
-                <Text style={[styles.buttonText, { color: colors.text }]}>Sign up</Text>
+                <Text style={[styles.buttonText, { color: colors.onAccent }]}>Sign up</Text>
               )}
             </Pressable>
 

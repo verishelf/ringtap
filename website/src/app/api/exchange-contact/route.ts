@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { sendInternalContactPush } from '@/lib/internalContactPush';
+
 /**
  * Mutual contact exchange: when user A adds user B, both get each other as contacts.
  * Requires Bearer token (user A). Uses service role to insert both rows (RLS blocks
@@ -96,6 +98,7 @@ export async function POST(request: NextRequest) {
       display_name: contactDisplayName,
       avatar_url: contactAvatarUrl,
     });
+    const inserted1 = !err1;
     if (err1 && err1.code !== '23505') {
       return NextResponse.json({ error: err1.message || 'Failed to save contact' }, { status: 400 });
     }
@@ -106,8 +109,26 @@ export async function POST(request: NextRequest) {
       display_name: requesterDisplayName,
       avatar_url: requesterAvatarUrl,
     });
+    const inserted2 = !err2;
     if (err2 && err2.code !== '23505') {
       return NextResponse.json({ error: err2.message || 'Failed to exchange contact' }, { status: 400 });
+    }
+
+    const whoLabelA = requesterDisplayName || 'Someone';
+    const whoLabelB = contactDisplayName || 'Someone';
+    if (inserted1) {
+      await sendInternalContactPush(supabaseUrl, contactUserId, {
+        title: 'New contact',
+        body: `${whoLabelA} added you to their contacts`,
+        data: { type: 'contact', kind: 'exchange', fromUserId: requesterId },
+      });
+    }
+    if (inserted2) {
+      await sendInternalContactPush(supabaseUrl, requesterId, {
+        title: 'New contact',
+        body: `${whoLabelB} added you to their contacts`,
+        data: { type: 'contact', kind: 'exchange', fromUserId: contactUserId },
+      });
     }
 
     return NextResponse.json({ success: true });

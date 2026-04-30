@@ -10,10 +10,13 @@ import { HeaderBackButton } from '@/components/HeaderBackButton';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  FlatList,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -27,7 +30,17 @@ import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { MapEvent } from '@/lib/api';
-import { deleteMapEvent, getMapEvent, getProfile, getSubscription } from '@/lib/api';
+import {
+  deleteMapEvent,
+  getEventAttendees,
+  getMapEvent,
+  getMyEventAttending,
+  getProfile,
+  getSavedContacts,
+  getSubscription,
+  setEventAttending,
+} from '@/lib/api';
+import type { SavedContact } from '@/lib/api';
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,6 +54,20 @@ export default function EventDetailsScreen() {
   const [organizerAvatar, setOrganizerAvatar] = useState<string | null>(null);
   const [organizerPro, setOrganizerPro] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [attendees, setAttendees] = useState<{ userId: string; avatarUrl: string | null; name: string }[]>([]);
+  const [myAttending, setMyAttending] = useState<boolean | null>(null);
+  const [attendingLoading, setAttendingLoading] = useState(false);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [inviteContacts, setInviteContacts] = useState<SavedContact[]>([]);
+
+  const fetchAttendees = useCallback(async (eventId: string) => {
+    const [list, mine] = await Promise.all([
+      getEventAttendees(eventId),
+      getMyEventAttending(eventId),
+    ]);
+    setAttendees(list);
+    setMyAttending(mine);
+  }, []);
 
   useEffect(() => {
     if (!id) {
@@ -52,6 +79,7 @@ export default function EventDetailsScreen() {
       .then(async (e) => {
         if (cancelled || !e) return;
         setEvent(e);
+        fetchAttendees(e.id).catch(() => {});
         try {
           const [profile, sub] = await Promise.all([getProfile(e.userId), getSubscription(e.userId)]);
           if (!cancelled) {
@@ -70,7 +98,7 @@ export default function EventDetailsScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id, router]);
+  }, [id, router, fetchAttendees]);
 
   const handleDelete = useCallback(() => {
     if (!event || event.userId !== user?.id) return;
@@ -100,6 +128,68 @@ export default function EventDetailsScreen() {
     });
     Linking.openURL(url);
   }, [event]);
+
+  const eventShareUrl = `https://www.ringtap.me/e/${event?.id ?? ''}`;
+  const eventShareMessage = event
+    ? `${event.name} – ${new Date(event.eventDate).toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}. Join me: ${eventShareUrl}`
+    : '';
+
+  const handleShare = useCallback(async () => {
+    if (!event) return;
+    try {
+      await Share.share({
+        message: eventShareMessage,
+        url: eventShareUrl,
+        title: event.name,
+      });
+    } catch {
+      // User cancelled
+    }
+  }, [event, eventShareMessage, eventShareUrl]);
+
+  const handleOpenInviteModal = useCallback(async () => {
+    const list = await getSavedContacts();
+    setInviteContacts(list);
+    setInviteModalVisible(true);
+  }, []);
+
+  const handleInviteContact = useCallback(
+    async (contact: SavedContact) => {
+      const name = contact.displayName?.trim() || 'there';
+      const message = `Hey ${name}! Join me at ${event?.name ?? 'this event'} – ${eventShareUrl}`;
+      try {
+        await Share.share({
+          message,
+          url: eventShareUrl,
+          title: `Invite to ${event?.name ?? 'event'}`,
+        });
+      } catch {
+        // User cancelled
+      }
+    },
+    [event?.name, eventShareUrl]
+  );
+
+  const handleAttending = useCallback(
+    async (attending: boolean) => {
+      if (!user?.id || !event || attendingLoading) return;
+      setAttendingLoading(true);
+      const result = await setEventAttending(user.id, event.id, attending);
+      if (result.success) {
+        setMyAttending(attending);
+        const list = await getEventAttendees(event.id);
+        setAttendees(list);
+      }
+      setAttendingLoading(false);
+    },
+    [user?.id, event, attendingLoading]
+  );
 
   if (loading) {
     return (
@@ -154,6 +244,13 @@ export default function EventDetailsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {event.imageUrl ? (
+          <Image
+            source={{ uri: event.imageUrl }}
+            style={styles.eventImage}
+            contentFit="cover"
+          />
+        ) : null}
         <View style={[styles.mapWrap, { borderRadius: Layout.radiusLg, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderLight }]}>
           <MapView
             style={styles.map}
@@ -188,15 +285,107 @@ export default function EventDetailsScreen() {
           {event.description ? (
             <Text style={[styles.eventDesc, { color: colors.textSecondary }]}>{event.description}</Text>
           ) : null}
+
+          {user && (
+            <>
+              <Text style={[styles.attendingLabel, { color: colors.textSecondary }]}>Are you attending?</Text>
+              <View style={styles.attendingButtons}>
+                <Pressable
+                  style={[
+                    styles.attendingBtn,
+                    { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                    myAttending === true && { backgroundColor: colors.accent, borderColor: colors.accent },
+                  ]}
+                  onPress={() => handleAttending(true)}
+                  disabled={attendingLoading}
+                >
+                  <Text
+                    style={[
+                      styles.attendingBtnText,
+                      { color: myAttending === true ? colors.onAccent : colors.text },
+                    ]}
+                  >
+                    Yes
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.attendingBtn,
+                    { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                    myAttending === false && { backgroundColor: colors.accent, borderColor: colors.accent },
+                  ]}
+                  onPress={() => handleAttending(false)}
+                  disabled={attendingLoading}
+                >
+                  <Text
+                    style={[
+                      styles.attendingBtnText,
+                      { color: myAttending === false ? colors.onAccent : colors.text },
+                    ]}
+                  >
+                    No
+                  </Text>
+                </Pressable>
+              </View>
+            </>
+          )}
+
+          {attendees.length > 0 && (
+            <View style={styles.attendeesRow}>
+              <View style={styles.attendeesAvatars}>
+                {attendees.slice(0, 6).map((a, i) => (
+                  <Pressable
+                    key={a.userId}
+                    style={[
+                      styles.attendeeAvatarWrap,
+                      { marginLeft: i === 0 ? 0 : -10, borderColor: colors.surface },
+                    ]}
+                    onPress={() => router.push(`/profile/${a.userId}` as const)}
+                  >
+                    <ProAvatar
+                      avatarUrl={a.avatarUrl}
+                      size="small"
+                      isPro={false}
+                      placeholderLetter={a.name.charAt(0) || '?'}
+                    />
+                  </Pressable>
+                ))}
+                {attendees.length > 6 && (
+                  <View style={[styles.attendeeMore, { marginLeft: -10, backgroundColor: colors.borderLight }]}>
+                    <Text style={[styles.attendeeMoreText, { color: colors.textSecondary }]}>
+                      +{attendees.length - 6} more
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
         </View>
 
         <Pressable
           style={[styles.directionsBtn, { backgroundColor: colors.accent }]}
           onPress={handleOpenMaps}
         >
-          <Ionicons name="navigate" size={20} color="#0A0A0B" />
-          <Text style={styles.directionsBtnText}>Get directions</Text>
+          <Ionicons name="navigate" size={20} color={colors.onAccent} />
+          <Text style={[styles.directionsBtnText, { color: colors.onAccent }]}>Get directions</Text>
         </Pressable>
+
+        <View style={styles.shareActions}>
+          <Pressable
+            style={[styles.shareBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+            onPress={handleShare}
+          >
+            <Ionicons name="share-outline" size={20} color={colors.accent} />
+            <Text style={[styles.shareBtnText, { color: colors.accent }]}>Share</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.shareBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+            onPress={handleOpenInviteModal}
+          >
+            <Ionicons name="people-outline" size={20} color={colors.accent} />
+            <Text style={[styles.shareBtnText, { color: colors.accent }]}>Invite contacts</Text>
+          </Pressable>
+        </View>
 
         <View style={[styles.organizerSection, { borderTopColor: colors.border }]}>
           <Text style={[styles.organizerLabel, { color: colors.textSecondary }]}>Organizer</Text>
@@ -218,6 +407,56 @@ export default function EventDetailsScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      <Modal visible={inviteModalVisible} transparent animationType="slide">
+        <Pressable style={styles.inviteOverlay} onPress={() => setInviteModalVisible(false)}>
+          <Pressable
+            style={[styles.inviteModal, { backgroundColor: colors.surface }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.inviteHeader, { borderBottomColor: colors.borderLight }]}>
+              <Text style={[styles.inviteTitle, { color: colors.text }]}>Invite contacts</Text>
+              <Pressable onPress={() => setInviteModalVisible(false)} hitSlop={12}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            {inviteContacts.length === 0 ? (
+              <View style={styles.inviteEmpty}>
+                <Ionicons name="people-outline" size={48} color={colors.textSecondary} />
+                <Text style={[styles.inviteEmptyText, { color: colors.textSecondary }]}>
+                  No saved contacts. Add contacts from profiles first.
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={inviteContacts}
+                keyExtractor={(c) => c.id}
+                style={styles.inviteList}
+                renderItem={({ item }) => (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.inviteRow,
+                      { backgroundColor: colors.background, opacity: pressed ? 0.8 : 1 },
+                    ]}
+                    onPress={() => handleInviteContact(item)}
+                  >
+                    <ProAvatar
+                      avatarUrl={item.avatarUrl}
+                      size="small"
+                      isPro={false}
+                      placeholderLetter={item.displayName?.charAt(0) || '?'}
+                    />
+                    <Text style={[styles.inviteRowName, { color: colors.text }]} numberOfLines={1}>
+                      {item.displayName?.trim() || 'Unknown'}
+                    </Text>
+                    <Ionicons name="send-outline" size={20} color={colors.accent} />
+                  </Pressable>
+                )}
+              />
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -240,6 +479,7 @@ const styles = StyleSheet.create({
   deleteBtn: { width: 40, padding: 4, alignItems: 'flex-end' },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: Layout.screenPadding, paddingTop: 20 },
+  eventImage: { width: '100%', height: 200, borderRadius: Layout.radiusLg, marginBottom: 20 },
   mapWrap: { height: 180, marginBottom: 20 },
   map: { flex: 1, width: '100%', height: '100%' },
   card: {
@@ -261,7 +501,49 @@ const styles = StyleSheet.create({
     borderRadius: Layout.radiusMd,
     marginBottom: 24,
   },
-  directionsBtnText: { fontSize: 16, fontWeight: '600', color: '#0A0A0B' },
+  directionsBtnText: { fontSize: 16, fontWeight: '600' },
+  shareActions: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  shareBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: Layout.buttonHeight,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+  },
+  shareBtnText: { fontSize: 15, fontWeight: '600' },
+  inviteOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  inviteModal: {
+    borderTopLeftRadius: Layout.radiusXl,
+    borderTopRightRadius: Layout.radiusXl,
+    maxHeight: '70%',
+  },
+  inviteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Layout.screenPadding,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  inviteTitle: { fontSize: 18, fontWeight: '700' },
+  inviteEmpty: { padding: 32, alignItems: 'center', gap: 12 },
+  inviteEmptyText: { fontSize: 15, textAlign: 'center' },
+  inviteList: { maxHeight: 300, padding: Layout.screenPadding },
+  inviteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: Layout.radiusMd,
+    marginBottom: 8,
+    gap: 12,
+  },
+  inviteRowName: { flex: 1, fontSize: 16 },
   organizerSection: {
     paddingTop: 20,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -277,4 +559,24 @@ const styles = StyleSheet.create({
   organizerInfo: { flex: 1, marginLeft: 14 },
   organizerName: { fontSize: 16, fontWeight: '600' },
   viewProfile: { fontSize: 14, marginTop: 2 },
+  attendingLabel: { fontSize: 14, fontWeight: '600', marginTop: 16, marginBottom: 8 },
+  attendingButtons: { flexDirection: 'row', gap: 12 },
+  attendingBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+  },
+  attendingBtnText: { fontSize: 15, fontWeight: '600' },
+  attendeesRow: { marginTop: 16 },
+  attendeesAvatars: { flexDirection: 'row', alignItems: 'center' },
+  attendeeAvatarWrap: { borderWidth: 2, borderColor: 'transparent', borderRadius: 20 },
+  attendeeMore: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attendeeMoreText: { fontSize: 11, fontWeight: '600' },
 });

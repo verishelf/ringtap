@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProAvatar } from '@/components/ProBadge';
 import { Layout } from '@/constants/theme';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -47,12 +48,25 @@ function formatMetAt(iso: string): string {
   }
 }
 
+function followUpNeedsAttention(iso: string | null): boolean {
+  if (!iso?.trim()) return false;
+  try {
+    const t = new Date(iso).getTime();
+    if (Number.isNaN(t)) return false;
+    const days = (t - Date.now()) / 86400000;
+    return days <= 7;
+  } catch {
+    return false;
+  }
+}
+
 export default function ContactsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const colors = useThemeColors();
   const { user, session } = useSession();
   const { isPro } = useSubscription();
+  const { presentPaywall } = usePresentRevenueCatPaywall();
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [scannedContacts, setScannedContacts] = useState<ScannedContact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +152,7 @@ export default function ContactsScreen() {
         'Sync to Phone is a Pro feature. Upgrade to sync your contacts to your phone.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/settings/upgrade') },
+          { text: 'Upgrade', onPress: () => void presentPaywall() },
         ]
       );
       return;
@@ -166,7 +180,7 @@ export default function ContactsScreen() {
     } finally {
       setSyncing(false);
     }
-  }, [contacts, scannedContacts.length, isPro, router]);
+  }, [contacts, scannedContacts.length, isPro, presentPaywall]);
 
   const handleSyncToCrm = useCallback(async () => {
     if (!isPro) {
@@ -175,7 +189,7 @@ export default function ContactsScreen() {
         'Sync to CRM is a Pro feature. Upgrade to sync your contacts to HubSpot.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/settings/upgrade') },
+          { text: 'Upgrade', onPress: () => void presentPaywall() },
         ]
       );
       return;
@@ -205,7 +219,7 @@ export default function ContactsScreen() {
     } finally {
       setSyncingCrm(false);
     }
-  }, [contacts.length, scannedContacts.length, isPro, router, session?.access_token]);
+  }, [contacts.length, scannedContacts.length, isPro, presentPaywall, session?.access_token]);
 
   const handleDeleteScanned = useCallback((scanned: ScannedContact) => {
     Alert.alert(
@@ -245,7 +259,7 @@ export default function ContactsScreen() {
 
   const renderContactItem: ListRenderItem<SavedContact> = useCallback(
     ({ item }) => {
-      const avatarUrl = avatarByUserId[item.contactUserId] ?? item.avatarUrl?.trim();
+      const avatarUrl = avatarByUserId[item.contactUserId] ?? item.avatarUrl?.trim() ?? null;
       const isPro = isProByUserId[item.contactUserId] ?? false;
       const displayName = nameByUserId[item.contactUserId] || item.displayName?.trim() || 'Unknown';
       return (
@@ -286,6 +300,9 @@ export default function ContactsScreen() {
                 </Text>
               ) : null}
             </View>
+            {followUpNeedsAttention(item.followUpAt) ? (
+              <Ionicons name="alarm-outline" size={22} color={colors.accent} style={{ marginRight: 4 }} />
+            ) : null}
             <Ionicons
               name="chevron-forward"
               size={20}

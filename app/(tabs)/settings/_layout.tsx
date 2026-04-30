@@ -9,9 +9,11 @@ export default function SettingsLayout() {
       <Stack.Screen name="pricing" options={{ title: 'Pricing' }} />
       <Stack.Screen name="upgrade" options={{ title: 'Upgrade to Pro' }} />
       <Stack.Screen name="manage" options={{ title: 'Manage Subscription' }} />
+      <Stack.Screen name="help" options={{ title: 'Help' }} />
       <Stack.Screen name="about" options={{ title: 'About' }} />
       <Stack.Screen name="badges" options={{ title: 'Badges' }} />
       <Stack.Screen name="integrations" options={{ title: 'Integrations' }} />
+      <Stack.Screen name="lead-capture" options={{ title: 'Lead capture' }} />
     </Stack>
   );
 }

@@ -1,21 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useSegments } from 'expo-router';
 import {
-  Icon,
-  Label,
-  NativeTabs,
+    Icon,
+    Label,
+    NativeTabs,
 } from 'expo-router/unstable-native-tabs';
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import * as Haptics from 'expo-haptics';
 import { NotificationListener } from '@/components/NotificationListener';
+import { PostLoginProUpsellModal } from '@/components/PostLoginProUpsellModal';
 import { Colors } from '@/constants/theme';
 import { useNotifications } from '@/contexts/NotificationsContext';
 import { useSession } from '@/hooks/useSession';
 import { savePushToken } from '@/lib/api';
 import { getExpoPushTokenAsync } from '@/utils/registerPushNotifications';
+import * as Haptics from 'expo-haptics';
 
 const TAB_BAR_HEIGHT = 49;
 
@@ -138,8 +139,10 @@ export default function TabLayout() {
   const { user } = useSession();
   const { prefs, permissionStatus } = useNotifications();
 
+  const wantsPush = prefs.newMessages || prefs.newContacts;
+
   useEffect(() => {
-    if (Platform.OS === 'web' || !user?.id || permissionStatus !== 'granted' || !prefs.newMessages) return;
+    if (Platform.OS === 'web' || !user?.id || permissionStatus !== 'granted' || !wantsPush) return;
     let cancelled = false;
     getExpoPushTokenAsync()
       .then((token) => {
@@ -149,12 +152,13 @@ export default function TabLayout() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, permissionStatus, prefs.newMessages]);
+  }, [user?.id, permissionStatus, wantsPush]);
 
   // iOS: native liquid glass tab bar
   if (Platform.OS === 'ios') {
     return (
       <>
+        <PostLoginProUpsellModal />
         <NotificationListener />
         <NativeTabHaptic />
         <NativeTabs
@@ -193,6 +197,7 @@ export default function TabLayout() {
 
   return (
     <>
+      <PostLoginProUpsellModal />
       <NotificationListener />
       <AndroidTabs />
     </>

@@ -7,37 +7,43 @@ import { AddEventModal } from '@/components/AddEventModal';
 import { EventsMapView } from '@/components/EventsMapView';
 import { HotspotsMapView } from '@/components/HotspotsMapView';
 import { NetworkingMap } from '@/components/NetworkingMap';
+import { ProGateAnimatedContent } from '@/components/ProGateAnimatedContent';
+import { ProGateFeatureList } from '@/components/ProGateFeatureList';
 import { Layout } from '@/constants/theme';
 import { useLocation } from '@/contexts/LocationContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNearbyEvents } from '@/hooks/useNearbyEvents';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useProfile } from '@/hooks/useProfile';
 import { useSession } from '@/hooks/useSession';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { deleteMapEvent, getSavedContacts, saveContact, type MapEvent } from '@/lib/api';
+import { deleteMapEvent, getEventAttendeeCounts, getSavedContacts, saveContact, type MapEvent } from '@/lib/api';
 import {
-  getCurrentCoordinates,
-  getLocationPermissionStatus,
-  requestLocationPermission,
-  startLocationPolling,
+    getCurrentCoordinates,
+    getLocationPermissionStatus,
+    requestLocationPermission,
+    startLocationPolling,
 } from '@/services/locationService';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  FlatList,
-  LayoutAnimation,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  UIManager,
-  View,
+    Alert,
+    Dimensions,
+    FlatList,
+    ImageBackground,
+    LayoutAnimation,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    UIManager,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -47,11 +53,13 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
   const colors = useThemeColors();
   const router = useRouter();
   const { user } = useSession();
   const { profile } = useProfile();
   const { isPro } = useSubscription();
+  const { presentPaywall, presentingPaywall } = usePresentRevenueCatPaywall();
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
@@ -84,6 +92,17 @@ export default function MapScreen() {
     centerLon: currentLocation?.longitude ?? null,
     enabled: !!currentLocation && isPro && activeTab === 'events' && locationEnabled,
   });
+  const [attendeeCounts, setAttendeeCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (events.length === 0) {
+      setAttendeeCounts({});
+      return;
+    }
+    getEventAttendeeCounts(events.map((e) => e.id))
+      .then(setAttendeeCounts)
+      .catch(() => setAttendeeCounts({}));
+  }, [events]);
 
   const initLocation = useCallback(async () => {
     if (!user?.id || !isPro || !locationEnabled) {
@@ -194,22 +213,50 @@ export default function MapScreen() {
   );
 
   if (!isPro) {
+    const proGateOverlay =
+      colorScheme === 'light' ? 'rgba(250, 250, 250, 0.78)' : 'rgba(10, 10, 11, 0.78)';
     return (
-      <View style={[styles.proGate, { paddingTop: insets.top + Layout.screenPadding, backgroundColor: colors.background }]}>
-        <View style={[styles.proGateIconWrap, { backgroundColor: colors.surface }]}>
-          <Ionicons name="map-outline" size={40} color={colors.accent} />
-        </View>
-        <Text style={[styles.proGateTitle, { color: colors.text }]}>Networking Map</Text>
-        <Text style={[styles.proGateText, { color: colors.textSecondary }]}>
-          See RingTap users nearby and connect in person. Upgrade to Pro to unlock.
-        </Text>
-        <Pressable
-          style={[styles.proGateButton, { backgroundColor: colors.accent }]}
-          onPress={() => router.push('/(tabs)/settings/upgrade')}
+      <ImageBackground
+        source={require('@/assets/images/map-pro-gate-bg.png')}
+        style={[styles.proGate, { paddingTop: insets.top }]}
+        imageStyle={styles.proGateBgImage}
+      >
+        <View
+          style={[StyleSheet.absoluteFill, { backgroundColor: proGateOverlay }]}
+          pointerEvents="none"
+        />
+        <ScrollView
+          style={styles.proGateScroll}
+          contentContainerStyle={[
+            styles.proGateScrollContent,
+            {
+              paddingBottom: insets.bottom + Layout.tabBarHeight + Layout.rowGap,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={[styles.proGateButtonText, { color: '#0A0A0B' }]}>Upgrade to Pro</Text>
-        </Pressable>
-      </View>
+          <ProGateAnimatedContent style={styles.proGateStack}>
+            <View style={styles.proGateHeader}>
+              <View style={[styles.proGateIconWrap, { backgroundColor: colors.surface }]}>
+                <Ionicons name="map-outline" size={40} color={colors.accent} />
+              </View>
+              <Text style={[styles.proGateTitle, { color: colors.text }]}>Networking Map</Text>
+              <Text style={[styles.proGateText, { color: colors.textSecondary }]}>
+                See who is nearby, browse hotspots and events, and connect in person — plus every other Pro benefit below.
+              </Text>
+            </View>
+            <ProGateFeatureList />
+            <Pressable
+              style={[styles.proGateButton, { backgroundColor: colors.accent }, presentingPaywall && { opacity: 0.7 }]}
+              onPress={() => void presentPaywall()}
+              disabled={presentingPaywall}
+            >
+              <Text style={[styles.proGateButtonText, { color: colors.onAccent }]}>Upgrade to Pro</Text>
+            </Pressable>
+          </ProGateAnimatedContent>
+        </ScrollView>
+      </ImageBackground>
     );
   }
 
@@ -281,8 +328,8 @@ export default function MapScreen() {
                   setAddEventVisible(true);
                 }}
                   >
-                    <Ionicons name="add" size={20} color="#0A0A0B" />
-                    <Text style={[styles.addEventBtnText, { color: '#0A0A0B' }]}>Add event</Text>
+                    <Ionicons name="add" size={20} color={colors.onAccent} />
+                    <Text style={[styles.addEventBtnText, { color: colors.onAccent }]}>Add event</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -310,9 +357,13 @@ export default function MapScreen() {
                       style={[styles.eventCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
                       onPress={() => router.push(`/(tabs)/map/event/${item.id}` as const)}
                     >
-                      <View style={styles.eventCardIcon}>
-                        <Ionicons name="calendar" size={18} color={colors.accent} />
-                      </View>
+                      {item.imageUrl ? (
+                        <Image source={{ uri: item.imageUrl }} style={styles.eventCardImage} contentFit="cover" />
+                      ) : (
+                        <View style={[styles.eventCardIconWrap, { backgroundColor: colors.background }]}>
+                          <Ionicons name="calendar" size={24} color={colors.accent} />
+                        </View>
+                      )}
                       <View style={styles.eventCardBody}>
                         <Text style={[styles.eventCardName, { color: colors.text }]} numberOfLines={1}>
                           {item.name}
@@ -331,6 +382,11 @@ export default function MapScreen() {
                             minute: '2-digit',
                           })}
                         </Text>
+                        {(attendeeCounts[item.id] ?? 0) > 0 && (
+                          <Text style={[styles.eventCardGoing, { color: colors.accent }]}>
+                            {attendeeCounts[item.id]} {attendeeCounts[item.id] === 1 ? 'person' : 'people'} going
+                          </Text>
+                        )}
                         {item.userId === user?.id && (
                           <View style={styles.eventCardActions}>
                             <TouchableOpacity
@@ -403,12 +459,12 @@ export default function MapScreen() {
                 <Ionicons
                   name={tab.icon as any}
                   size={18}
-                  color={isActive ? '#0A0A0B' : colors.textSecondary}
+                  color={isActive ? colors.onAccent : colors.textSecondary}
                 />
                 <Text
                   style={[
                     styles.tabSegmentText,
-                    { color: isActive ? '#0A0A0B' : colors.textSecondary },
+                    { color: isActive ? colors.onAccent : colors.textSecondary },
                   ]}
                 >
                   {tab.shortLabel}
@@ -507,6 +563,7 @@ const styles = StyleSheet.create({
   eventsListEmptyText: { fontSize: 15, marginTop: 12, textAlign: 'center' },
   eventCard: {
     flexDirection: 'row',
+    overflow: 'hidden',
     alignItems: 'flex-start',
     padding: Layout.cardPadding,
     borderRadius: Layout.radiusMd,
@@ -514,10 +571,13 @@ const styles = StyleSheet.create({
     marginBottom: Layout.rowGap,
   },
   eventCardIcon: { marginRight: 12 },
+  eventCardImage: { width: 72, height: 72, borderRadius: Layout.radiusMd, marginRight: 12 },
+  eventCardIconWrap: { width: 72, height: 72, borderRadius: Layout.radiusMd, marginRight: 12, alignItems: 'center', justifyContent: 'center' },
   eventCardBody: { flex: 1, minWidth: 0 },
   eventCardName: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   eventCardDesc: { fontSize: 14, lineHeight: 20, marginBottom: 4 },
   eventCardDate: { fontSize: 13 },
+  eventCardGoing: { fontSize: 13, fontWeight: '600', marginTop: 4 },
   eventCardActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
   eventCardActionBtn: {
     flexDirection: 'row',
@@ -541,21 +601,32 @@ const styles = StyleSheet.create({
   counter: { fontSize: 15, fontWeight: '600' },
   proGate: {
     flex: 1,
-    paddingHorizontal: Layout.screenPadding,
-    paddingVertical: Layout.screenPadding,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
+  proGateBgImage: {
+    resizeMode: 'cover',
+  },
+  proGateScroll: { flex: 1 },
+  proGateScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: Layout.screenPadding,
+    paddingVertical: Layout.sectionGap,
+  },
+  proGateStack: {
+    width: '100%',
+    alignItems: 'stretch',
+  },
+  proGateHeader: { width: '100%', alignItems: 'center' },
   proGateIconWrap: {
     width: 80,
     height: 80,
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   proGateTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  proGateText: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  proGateText: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 8 },
   proGateButton: {
     paddingVertical: 14,
     paddingHorizontal: 24,

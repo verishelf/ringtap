@@ -184,7 +184,7 @@ export default function ActivateScreen() {
       <ThemedView style={styles.container}>
         <Text style={[styles.errorText, { color: colors.text }]}>Could not load ring</Text>
         <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={load}>
-          <Text style={[styles.buttonText, { color: colors.primary }]}>Retry</Text>
+          <Text style={[styles.buttonText, { color: colors.onAccent }]}>Retry</Text>
         </Pressable>
       </ThemedView>
     );
@@ -195,7 +195,7 @@ export default function ActivateScreen() {
       <ThemedView style={styles.container}>
         <Text style={[styles.title, { color: colors.text }]}>This ring is already linked</Text>
         <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={() => router.replace('/(tabs)/home')}>
-          <Text style={[styles.buttonText, { color: colors.primary }]}>Go to Home</Text>
+          <Text style={[styles.buttonText, { color: colors.onAccent }]}>Go to Home</Text>
         </Pressable>
       </ThemedView>
     );
@@ -220,8 +220,8 @@ export default function ActivateScreen() {
             <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
             <>
-              <Ionicons name="link" size={22} color={colors.primary} />
-              <Text style={[styles.claimButtonText, { color: colors.primary }]}>Claim Ring</Text>
+              <Ionicons name="link" size={22} color={colors.onAccent} />
+              <Text style={[styles.claimButtonText, { color: colors.onAccent }]}>Claim Ring</Text>
             </>
           )}
         </Pressable>

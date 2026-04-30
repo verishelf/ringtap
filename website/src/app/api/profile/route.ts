@@ -129,6 +129,28 @@ export async function GET(request: NextRequest) {
     const videoIntroUrl = resolveStorageUrl(supabaseUrl, profile.video_intro_url ?? null);
     const backgroundImageUrl = resolveStorageUrl(supabaseUrl, (profile as { background_image_url?: string | null }).background_image_url ?? null);
 
+    let lead_form: {
+      headline: string;
+      collect_company: boolean;
+      collect_phone: boolean;
+      collect_message: boolean;
+    } | null = null;
+    if (plan === 'pro') {
+      const { data: ls } = await supabase
+        .from('profile_lead_settings')
+        .select('enabled, headline, collect_company, collect_phone, collect_message')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (ls?.enabled) {
+        lead_form = {
+          headline: typeof ls.headline === 'string' && ls.headline.trim() ? ls.headline.trim() : 'Request an intro',
+          collect_company: ls.collect_company !== false,
+          collect_phone: !!ls.collect_phone,
+          collect_message: ls.collect_message !== false,
+        };
+      }
+    }
+
     const theme = (profile as { theme?: { profileBorderColor?: string; accentColor?: string; buttonShape?: string; calendlyUrl?: string } }).theme ?? {};
     return NextResponse.json({
       id: profile.id,
@@ -147,6 +169,7 @@ export async function GET(request: NextRequest) {
       links,
       plan,
       theme,
+      lead_form,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

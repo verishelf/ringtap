@@ -21,6 +21,7 @@ const muted = '#52525B';
 
 /** Monochrome luxury tokens for use in StyleSheet (dark-first) */
 export const Tokens = {
+  pureWhite,
   primary: black,
   background: black,
   surface: surface,
@@ -69,36 +70,43 @@ export const Layout = {
   inputMarginBottom: 10,
 } as const;
 
-// Light theme: light backgrounds, dark text
+// Light theme: match onboarding (welcome / questionnaire) — #FAFAFA, crisp type, soft borders
 const lightBg = '#FAFAFA';
-const lightSurface = '#F4F4F5';
-const lightSurfaceElevated = '#E4E4E7';
-const lightBorder = '#D4D4D8';
-const lightBorderLight = '#A1A1AA';
-const darkText = '#18181B';
-const darkTextSecondary = '#3F3F46';
+const lightSurface = '#FFFFFF';
+const lightSurfaceElevated = '#F3F3F3';
+const lightBorder = '#E0E0E0';
+const lightBorderLight = '#E8E8E8';
+const lightText = '#111111';
+const lightTextSecondary = '#5C5C5C';
+/** Primary interactive / “on” controls (onboarding primary pill is this on #FAFAFA) */
+const lightAccent = '#111111';
+
+/** Text & icons on filled accent buttons */
+const lightOnAccent = '#FFFFFF';
+const darkOnAccent = '#0A0A0B';
 
 export const Colors = {
   light: {
-    text: darkText,
-    textSecondary: darkTextSecondary,
+    text: lightText,
+    textSecondary: lightTextSecondary,
     background: lightBg,
     surface: lightSurface,
     surfaceElevated: lightSurfaceElevated,
     border: lightBorder,
     borderLight: lightBorderLight,
-    tint: darkText,
+    tint: lightText,
     primary: black,
-    accent: zinc,
-    icon: darkTextSecondary,
-    tabIconDefault: zinc,
-    tabIconSelected: darkText,
+    accent: lightAccent,
+    onAccent: lightOnAccent,
+    icon: lightTextSecondary,
+    tabIconDefault: lightTextSecondary,
+    tabIconSelected: lightText,
     tabBarBackground: lightSurface,
-    tabBarBorder: lightBorder,
+    tabBarBorder: lightBorderLight,
     inputBackground: lightSurfaceElevated,
     inputBorder: lightBorderLight,
-    card: lightSurfaceElevated,
-    cardBorder: lightBorder,
+    card: lightSurface,
+    cardBorder: lightBorderLight,
     destructive: '#EF4444',
   },
   dark: {
@@ -112,6 +120,7 @@ export const Colors = {
     tint: pureWhite,
     primary: black,
     accent: silver,
+    onAccent: darkOnAccent,
     icon: zincLight,
     tabIconDefault: zincLight,
     tabIconSelected: pureWhite,

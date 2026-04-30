@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { sendInternalContactPush } from '@/lib/internalContactPush';
+
 /**
  * Connect flow: viewer (Sarah) signs up via profile page, gets added to profile owner's (Frank's) contacts.
  * Called from auth callback after signInWithOtp. Uses service role to insert into owner's contacts (RLS blocks user from inserting into another user's list).
@@ -88,6 +90,17 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const viewerLabel = displayName || 'Someone new';
+    await sendInternalContactPush(supabaseUrl, ownerId, {
+      title: 'New contact',
+      body: `${viewerLabel} connected from your profile`,
+      data: {
+        type: 'contact',
+        kind: 'profile_connect',
+        fromUserId: viewerId,
+      },
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {

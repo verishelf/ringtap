@@ -3,7 +3,6 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -18,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { NameWithVerified, ProAvatar, PRO_RING_COLOR } from '@/components/ProBadge';
+import { LinkableText } from '@/components/LinkableText';
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Post, PostComment } from '@/services/postService';
@@ -30,30 +30,6 @@ export type PostCardProps = {
   onEditRequested?: (post: Post) => void;
   onDeleted?: () => void;
 };
-
-const URL_REGEX = /(https?:\/\/[^\s]+)/g;
-
-function LinkableText({ content, textStyle, linkColor }: { content: string; textStyle: object; linkColor: string }) {
-  const parts = content.split(URL_REGEX);
-  return (
-    <Text style={textStyle}>
-      {parts.map((part, i) => {
-        const isUrl = /^https?:\/\//.test(part);
-        return isUrl ? (
-          <Text
-            key={i}
-            style={[textStyle, { color: linkColor, textDecorationLine: 'underline' }]}
-            onPress={() => Linking.openURL(part)}
-          >
-            {part}
-          </Text>
-        ) : (
-          <Text key={i} style={textStyle}>{part}</Text>
-        );
-      })}
-    </Text>
-  );
-}
 
 const TYPE_LABELS: Record<string, string> = {
   hiring: 'Hiring',
@@ -271,7 +247,7 @@ export function PostCard({ post, currentUserId, onLikeToggled, onEditRequested, 
                 onPress={handleAddComment}
                 disabled={!commentText.trim() || submitting}
               >
-                <Text style={[styles.sendText, { color: '#0A0A0B' }]}>Send</Text>
+                <Text style={[styles.sendText, { color: colors.onAccent }]}>Send</Text>
               </Pressable>
             </View>
           )}

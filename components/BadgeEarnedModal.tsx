@@ -188,7 +188,7 @@ export function BadgeEarnedModal({ visible, badge, onDismiss }: BadgeEarnedModal
             style={[styles.dismissBtn, { backgroundColor: colors.accent }]}
             onPress={onDismiss}
           >
-            <Text style={[styles.dismissText, { color: colors.background }]}>Awesome!</Text>
+            <Text style={[styles.dismissText, { color: colors.onAccent }]}>Awesome!</Text>
           </Pressable>
         </Pressable>
       </Pressable>

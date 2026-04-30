@@ -63,7 +63,7 @@ export default function SetupRingByIdScreen() {
           Sign in to link this ring to your account.
         </Text>
         <Pressable onPress={() => router.replace('/(auth)/login')} style={[styles.primaryBtn, { backgroundColor: colors.accent }]}>
-          <Text style={styles.primaryBtnText}>Sign in</Text>
+          <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>Sign in</Text>
         </Pressable>
       </View>
     );
@@ -85,7 +85,7 @@ export default function SetupRingByIdScreen() {
           {loading ? (
             <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
-            <Text style={styles.primaryBtnText}>Assign ring</Text>
+            <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>Assign ring</Text>
           )}
         </Pressable>
       </View>
@@ -109,5 +109,5 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, padding: 4, marginTop: 8 },
   btn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: Layout.radiusMd, borderWidth: 1 },
   primaryBtn: { width: '100%', paddingVertical: 14, borderRadius: Layout.radiusMd, alignItems: 'center', marginTop: 8 },
-  primaryBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  primaryBtnText: { fontWeight: '600', fontSize: 16 },
 });

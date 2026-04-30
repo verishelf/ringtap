@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 const SITE_URL = "https://www.ringtap.me";
 
-const RESERVED = new Set(["activate", "privacy", "store", "profile", "api"]);
+const RESERVED = new Set(["activate", "privacy", "store", "profile", "api", "pro"]);
 
 type Props = { params: Promise<{ username: string }>; children: React.ReactNode };
 

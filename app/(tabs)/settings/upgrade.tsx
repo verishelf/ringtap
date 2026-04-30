@@ -8,8 +8,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
+import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { useSegments } from 'expo-router';
 import { Image } from 'expo-image';
 import {
   Alert,
@@ -20,13 +20,15 @@ import {
   Text,
   View,
 } from 'react-native';
-import RevenueCatUI from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ProGateAnimatedContent } from '@/components/ProGateAnimatedContent';
 import { ThemedView } from '@/components/themed-view';
+import { PRO_UPGRADE_FEATURE_ITEMS } from '@/constants/proUpgradeFeatures';
 import { Layout } from '@/constants/theme';
+import { usePresentRevenueCatPaywall } from '@/hooks/usePresentRevenueCatPaywall';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useRouter } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSession } from '@/hooks/useSession';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
@@ -36,7 +38,6 @@ import {
   iapPurchase,
   iapRestore,
 } from '@/lib/iap';
-import { ENTITLEMENT_ID } from '@/lib/revenuecat';
 import { isStoreBuild } from '@/utils/isStoreBuild';
 import { fetchProducts, type IAPProduct } from '@/utils/fetchProducts';
 
@@ -67,34 +68,15 @@ export default function UpgradeScreen() {
   const colors = useThemeColors();
   const { user, session } = useSession();
   const { isPro, refresh } = useSubscription();
-  const { isAvailable: isRevenueCatAvailable, offering } = useRevenueCat();
+  const { isAvailable: isRevenueCatAvailable } = useRevenueCat();
   const [products, setProducts] = useState<IAPProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
-  const [presentingPaywall, setPresentingPaywall] = useState(false);
 
   const [productsError, setProductsError] = useState<string | null>(null);
 
-  const handlePresentRevenueCatPaywall = useCallback(async () => {
-    if (Platform.OS === 'web') return;
-    setPresentingPaywall(true);
-    try {
-      // Use presentPaywall to always show when user taps; presentPaywallIfNeeded can skip if already Pro
-      const result = await RevenueCatUI.presentPaywall({
-        offering: offering ?? undefined,
-        displayCloseButton: true,
-      });
-      if (result === RevenueCatUI.PAYWALL_RESULT.PURCHASED || result === RevenueCatUI.PAYWALL_RESULT.RESTORED) {
-        await refresh();
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Could not open paywall';
-      Alert.alert('Paywall error', msg);
-    } finally {
-      setPresentingPaywall(false);
-    }
-  }, [offering, refresh]);
+  const { presentPaywall: handlePresentRevenueCatPaywall, presentingPaywall } = usePresentRevenueCatPaywall();
 
   const loadProducts = useCallback(async () => {
     if (!isStoreBuild() || Platform.OS === 'web') return;
@@ -206,6 +188,7 @@ export default function UpgradeScreen() {
         showsHorizontalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        <ProGateAnimatedContent>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Ionicons name={isPro ? 'checkmark-circle' : 'rocket-outline'} size={48} color={colors.accent} />
           <Text style={[styles.title, { color: colors.text }]}>
@@ -213,10 +196,30 @@ export default function UpgradeScreen() {
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             {isPro
-              ? 'You have access to unlimited links, themes, analytics, and video intro.'
-              : 'Unlimited links, themes, analytics, and video intro.'}
+              ? 'You have access to unlimited links, themes, analytics, map tools, and video intro.'
+              : 'Everything you need to stand out when you network — in one subscription.'}
           </Text>
         </View>
+
+        {!isPro ? (
+          <View style={[styles.featuresCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.featuresHeading, { color: colors.text }]}>What you get with Pro</Text>
+            <View style={styles.featuresList}>
+              {PRO_UPGRADE_FEATURE_ITEMS.map((item) => (
+                <View key={item.text} style={styles.featureRow}>
+                  <View style={[styles.featureIconWrap, { backgroundColor: colors.background }]}>
+                    <Ionicons
+                      name={item.icon as ComponentProps<typeof Ionicons>['name']}
+                      size={20}
+                      color={colors.accent}
+                    />
+                  </View>
+                  <Text style={[styles.featureText, { color: colors.text }]}>{item.text}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {isPro ? (
           <Pressable
@@ -224,15 +227,15 @@ export default function UpgradeScreen() {
             onPress={() => router.push(inProfileStack ? '/(tabs)/profile/manage' : '/(tabs)/settings/manage')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Ionicons name="card-outline" size={22} color={colors.text} />
-            <Text style={[styles.buttonText, { color: colors.text }]}>Manage subscription</Text>
+            <Ionicons name="card-outline" size={22} color={colors.onAccent} />
+            <Text style={[styles.buttonText, { color: colors.onAccent }]}>Manage subscription</Text>
           </Pressable>
         ) : isWebOnly ? (
           <>
             <Text style={[styles.price, { color: colors.text }]}>$9.99/mo or $99.99/yr</Text>
             <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <Ionicons name="open-outline" size={22} color={colors.text} />
-              <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro</Text>
+              <Ionicons name="open-outline" size={22} color={colors.onAccent} />
+              <Text style={[styles.buttonText, { color: colors.onAccent }]}>Upgrade to Pro</Text>
             </Pressable>
             <LegalLinks colors={colors} />
             <Text style={[styles.note, { color: colors.textSecondary }]}>
@@ -256,8 +259,8 @@ export default function UpgradeScreen() {
                 <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
               ) : (
                 <>
-                  <Ionicons name="cart-outline" size={22} color={colors.text} />
-                  <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade to Pro</Text>
+                  <Ionicons name="cart-outline" size={22} color={colors.onAccent} />
+                  <Text style={[styles.buttonText, { color: colors.onAccent }]}>Upgrade to Pro</Text>
                 </>
               )}
             </Pressable>
@@ -283,8 +286,8 @@ export default function UpgradeScreen() {
               </Text>
             </View>
             <Pressable style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleExternalUpgrade} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <Ionicons name="open-outline" size={22} color={colors.text} />
-              <Text style={[styles.buttonText, { color: colors.text }]}>Upgrade via web</Text>
+              <Ionicons name="open-outline" size={22} color={colors.onAccent} />
+              <Text style={[styles.buttonText, { color: colors.onAccent }]}>Upgrade via web</Text>
             </Pressable>
             <LegalLinks colors={colors} />
             <Text style={[styles.note, { color: colors.textSecondary }]}>
@@ -328,8 +331,8 @@ export default function UpgradeScreen() {
                     <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                   ) : (
                     <>
-                      <Ionicons name="cart-outline" size={22} color={colors.text} />
-                      <Text style={[styles.buttonText, { color: colors.text }]}>
+                      <Ionicons name="cart-outline" size={22} color={colors.onAccent} />
+                      <Text style={[styles.buttonText, { color: colors.onAccent }]}>
                         Subscribe monthly — {monthlyProduct?.price ?? IAP_FALLBACK_PRICES.monthly}/mo
                       </Text>
                     </>
@@ -345,8 +348,8 @@ export default function UpgradeScreen() {
                     <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                   ) : (
                     <>
-                      <Ionicons name="cart-outline" size={22} color={colors.text} />
-                      <Text style={[styles.buttonText, { color: colors.text }]}>
+                      <Ionicons name="cart-outline" size={22} color={colors.onAccent} />
+                      <Text style={[styles.buttonText, { color: colors.onAccent }]}>
                         Subscribe yearly — {yearlyProduct?.price ?? IAP_FALLBACK_PRICES.yearly}/yr
                       </Text>
                     </>
@@ -372,6 +375,7 @@ export default function UpgradeScreen() {
             )}
           </>
         )}
+        </ProGateAnimatedContent>
       </ScrollView>
     </ThemedView>
   );
@@ -391,6 +395,22 @@ const styles = StyleSheet.create({
   price: { fontSize: 24, fontWeight: '800', marginTop: Layout.tightGap, marginBottom: 4 },
   subscriptionLength: { fontSize: Layout.caption, marginBottom: Layout.rowGap },
   subtitle: { fontSize: Layout.bodySmall + 1, marginTop: Layout.rowGap, textAlign: 'center' },
+  featuresCard: {
+    padding: Layout.cardPadding,
+    borderRadius: Layout.radiusLg,
+    marginBottom: Layout.sectionGap,
+  },
+  featuresHeading: { fontSize: Layout.body, fontWeight: '700', marginBottom: Layout.rowGap },
+  featuresList: { gap: Layout.rowGap },
+  featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  featureIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: Layout.radiusMd,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureText: { fontSize: Layout.bodySmall + 1, lineHeight: 22, flex: 1, minWidth: 0, paddingTop: 2 },
   button: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Animated,
-  ListRenderItem,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    ListRenderItem,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { FlatList, RectButton, Swipeable } from 'react-native-gesture-handler';
 
 import { NameWithVerified, ProAvatar } from '@/components/ProBadge';
@@ -16,6 +16,7 @@ import { Layout } from '@/constants/theme';
 import { useSession } from '@/hooks/useSession';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { deleteConversation, getConversations, type ConversationWithPeer } from '@/lib/api';
+import { getSupportUserId } from '@/lib/support';
 import { Pressable } from 'react-native';
 
 const CHEVRON_SIZE = 20;
@@ -142,13 +143,36 @@ export default function MessagesScreen() {
     );
   }
 
+  const supportId = getSupportUserId();
+  const showSupportEntry = !!(supportId && user?.id && user.id !== supportId);
+
+  const listHeader =
+    showSupportEntry ? (
+      <Pressable
+        style={[styles.supportCard, { backgroundColor: colors.surface, borderColor: colors.accent + '55' }]}
+        onPress={() => router.push('/messages/support')}
+      >
+        <View style={[styles.supportIconWrap, { backgroundColor: colors.accent + '22' }]}>
+          <Ionicons name="chatbubbles-outline" size={24} color={colors.accent} />
+        </View>
+        <View style={styles.supportTextWrap}>
+          <Text style={[styles.supportTitle, { color: colors.text }]}>Message RingTap</Text>
+          <Text style={[styles.supportSub, { color: colors.textSecondary }]} numberOfLines={2}>
+            Problems, billing questions, or feedback—we’ll reply here.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={CHEVRON_SIZE} color={colors.textSecondary} />
+      </Pressable>
+    ) : null;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={conversations}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={[styles.listContent, conversations.length === 0 && styles.listEmpty]}
+        ListHeaderComponent={listHeader}
+        contentContainerStyle={[styles.listContent, conversations.length === 0 && !listHeader && styles.listEmpty]}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
         ListEmptyComponent={
@@ -199,4 +223,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   swipeDeleteText: { color: '#fff', fontSize: 12, marginTop: 2 },
+  supportCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Layout.cardPadding,
+    marginBottom: 12,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+    gap: 12,
+  },
+  supportIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  supportTextWrap: { flex: 1, minWidth: 0 },
+  supportTitle: { fontSize: 16, fontWeight: '700' },
+  supportSub: { fontSize: 13, marginTop: 2, lineHeight: 18 },
 });

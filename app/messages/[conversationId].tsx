@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useNavigation } from '@react-navigation/native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     FlatList,
     KeyboardAvoidingView,
@@ -34,6 +35,7 @@ import {
 export default function ChatScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useSession();
@@ -42,6 +44,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [peerId, setPeerId] = useState<string | null>(null);
   const [peerAvatarUrl, setPeerAvatarUrl] = useState<string | null>(null);
+  const [peerDisplayName, setPeerDisplayName] = useState<string>('Chat');
   const [peerIsPro, setPeerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
@@ -49,6 +52,13 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   const myAvatarUrl = myProfile?.avatarUrl?.trim() || null;
+
+  useEffect(() => {
+    setPeerId(null);
+    setPeerAvatarUrl(null);
+    setPeerDisplayName('Chat');
+    setPeerIsPro(false);
+  }, [conversationId]);
 
   const loadMessages = useCallback(async () => {
     if (!conversationId || !user?.id) return;
@@ -68,6 +78,16 @@ export default function ChatScreen() {
         ]);
         setPeerAvatarUrl(peerProfile?.avatarUrl?.trim() || null);
         setPeerIsPro((peerSub?.plan as string) === 'pro');
+        const label =
+          peerProfile?.name?.trim() ||
+          peerProfile?.username?.trim() ||
+          'User';
+        setPeerDisplayName(label);
+      } else {
+        setPeerId(null);
+        setPeerAvatarUrl(null);
+        setPeerDisplayName('Chat');
+        setPeerIsPro(false);
       }
     } catch {
       setMessages([]);
@@ -79,6 +99,36 @@ export default function ChatScreen() {
   useEffect(() => {
     loadMessages();
   }, [loadMessages]);
+
+  useLayoutEffect(() => {
+    if (!peerId) {
+      navigation.setOptions({ headerTitle: 'Chat' });
+      return;
+    }
+    const letter = peerDisplayName.charAt(0).toUpperCase() || '?';
+    navigation.setOptions({
+      headerTitle: () => (
+        <Link href={`/profile/${peerId}` as const} asChild>
+          <Pressable
+            style={styles.headerPeerRow}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${peerDisplayName} profile`}
+          >
+            <ProAvatar
+              avatarUrl={peerAvatarUrl}
+              isPro={peerIsPro}
+              size="small"
+              placeholderLetter={letter}
+            />
+            <Text style={[styles.headerPeerName, { color: colors.text }]} numberOfLines={1}>
+              {peerDisplayName}
+            </Text>
+          </Pressable>
+        </Link>
+      ),
+    });
+  }, [navigation, peerId, peerDisplayName, peerAvatarUrl, peerIsPro, colors.text]);
 
   const handleSend = useCallback(async () => {
     const trimmed = input.trim();
@@ -144,7 +194,7 @@ export default function ChatScreen() {
                 isMe ? { backgroundColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.borderLight },
               ]}
             >
-              <Text style={[styles.bubbleText, { color: isMe ? colors.primary : colors.text }]}>{item.body}</Text>
+              <Text style={[styles.bubbleText, { color: isMe ? colors.onAccent : colors.text }]}>{item.body}</Text>
             </View>
             <Text style={[styles.bubbleTime, { color: colors.textSecondary }]}>
               {formatMessageTime(item.createdAt)}
@@ -220,7 +270,7 @@ export default function ChatScreen() {
           {sending ? (
             <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
           ) : (
-            <Ionicons name="send" size={22} color={colors.background} />
+            <Ionicons name="send" size={22} color={colors.onAccent} />
           )}
         </Pressable>
       </View>
@@ -230,6 +280,13 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerPeerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    maxWidth: 220,
+    gap: 10,
+  },
+  headerPeerName: { fontSize: 17, fontWeight: '600', flexShrink: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Layout.cardPadding },
   listContent: { padding: Layout.screenPadding, paddingTop: 12 },
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 16 },

@@ -61,6 +61,17 @@ export async function POST(req: Request) {
       });
     }
 
+    const { data: notif } = await supabase
+      .from('notification_settings')
+      .select('new_messages')
+      .eq('user_id', recipient_user_id)
+      .maybeSingle();
+    if (notif && notif.new_messages === false) {
+      return new Response(JSON.stringify({ ok: true, sent: 0, skipped: 'settings' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { data: rows } = await supabase.from('push_tokens').select('token').eq('user_id', recipient_user_id);
     const tokens = (rows ?? []).map((r) => r.token).filter(Boolean);
     if (tokens.length === 0) {
@@ -75,7 +86,7 @@ export async function POST(req: Request) {
       to: token,
       title,
       body: bodyTruncated,
-      data: { conversationId: conversation_id },
+      data: { type: 'message', conversationId: String(conversation_id) },
       sound: 'default',
     }));
 

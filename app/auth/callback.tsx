@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { resolveAuthenticatedOnboardingRoute } from '@/lib/onboardingGate';
 import { supabase } from '@/lib/supabase/supabaseClient';
 
 function parseHashParams(url: string): Record<string, string> {
@@ -55,14 +56,16 @@ export default function AuthCallbackScreen() {
 
       handledRef.current = true;
       try {
-        const { error } = await supabase.auth.setSession({
+        const { data: sessionData, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken ?? '',
         });
         if (error) throw error;
+        const uid = sessionData.session?.user?.id;
+        const dest = uid ? await resolveAuthenticatedOnboardingRoute(uid) : '/onboarding/questionnaire';
         if (mounted) {
           setStatus('success');
-          router.replace('/(tabs)/home');
+          router.replace(dest);
         }
       } catch (e) {
         handledRef.current = false;

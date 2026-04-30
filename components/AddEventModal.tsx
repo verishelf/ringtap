@@ -4,11 +4,14 @@
 
 import { Layout } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { createMapEvent, updateMapEvent, type MapEvent } from '@/lib/api';
+import { createMapEvent, updateMapEvent, uploadEventImage, type MapEvent } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useEffect, useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -51,17 +54,49 @@ export function AddEventModal({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const pickImage = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to photos to add an event cover.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+    if (result.canceled || !userId) return;
+    setUploadingImage(true);
+    try {
+      const { url, error: uploadErr } = await uploadEventImage(userId, result.assets[0].uri);
+      if (url) {
+        setImageUrl(url);
+      } else {
+        Alert.alert('Upload failed', uploadErr ?? 'Try again.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (visible) {
       if (editingEvent) {
         setName(editingEvent.name);
         setDescription(editingEvent.description || '');
+        setImageUrl(editingEvent.imageUrl || null);
         setEventLocation({ latitude: editingEvent.latitude, longitude: editingEvent.longitude });
         setEventDate(new Date(editingEvent.eventDate));
       } else {
         setName('');
         setDescription('');
+        setImageUrl(null);
         setEventLocation(currentLocation);
         setEventDate(() => {
           const d = new Date();
@@ -90,6 +125,7 @@ export function AddEventModal({
       const result = await updateMapEvent(userId, editingEvent.id, {
         name: name.trim(),
         description: description.trim() || undefined,
+        imageUrl: imageUrl || undefined,
         latitude: loc.latitude,
         longitude: loc.longitude,
         eventDate: eventDate.toISOString(),
@@ -104,6 +140,7 @@ export function AddEventModal({
       const result = await createMapEvent(userId, {
         name: name.trim(),
         description: description.trim() || undefined,
+        imageUrl: imageUrl || undefined,
         latitude: loc.latitude,
         longitude: loc.longitude,
         eventDate: eventDate.toISOString(),
@@ -148,6 +185,40 @@ export function AddEventModal({
               onChangeText={(t) => { setName(t); setError(null); }}
               autoCapitalize="words"
             />
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Event cover (optional)</Text>
+            {imageUrl ? (
+              <View style={styles.imagePreviewWrap}>
+                <Image source={{ uri: imageUrl }} style={styles.imagePreview} contentFit="cover" />
+                <View style={styles.imagePreviewActions}>
+                  <TouchableOpacity
+                    style={[styles.imagePreviewBtn, { backgroundColor: colors.background, borderColor: colors.borderLight }]}
+                    onPress={pickImage}
+                    disabled={uploadingImage}
+                  >
+                    <Ionicons name="camera" size={18} color={colors.accent} />
+                    <Text style={[styles.imagePreviewBtnText, { color: colors.accent }]}>Change</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.imagePreviewBtn, { backgroundColor: colors.background, borderColor: colors.borderLight }]}
+                    onPress={() => setImageUrl(null)}
+                  >
+                    <Ionicons name="trash-outline" size={18} color={colors.destructive} />
+                    <Text style={[styles.imagePreviewBtnText, { color: colors.destructive }]}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.addImageBtn, { backgroundColor: colors.background, borderColor: colors.borderLight }]}
+                onPress={pickImage}
+                disabled={uploadingImage}
+              >
+                <Ionicons name="image-outline" size={32} color={colors.textSecondary} />
+                <Text style={[styles.addImageText, { color: colors.textSecondary }]}>
+                  {uploadingImage ? 'Uploading…' : 'Add photo'}
+                </Text>
+              </TouchableOpacity>
+            )}
             <Text style={[styles.label, { color: colors.textSecondary }]}>Description (optional)</Text>
             <TextInput
               style={[styles.input, styles.textArea, { backgroundColor: colors.background, borderColor: colors.borderLight, color: colors.text }]}
@@ -202,8 +273,8 @@ export function AddEventModal({
                   }}
                   disabled={!currentLocation}
                 >
-                  <Ionicons name="locate" size={18} color="#0A0A0B" />
-                  <Text style={[styles.useLocationBtnText, { color: '#0A0A0B' }]}>Use my location</Text>
+                  <Ionicons name="locate" size={18} color={colors.onAccent} />
+                  <Text style={[styles.useLocationBtnText, { color: colors.onAccent }]}>Use my location</Text>
                 </TouchableOpacity>
                 <Text style={[styles.locationHint, { color: colors.textSecondary }]}>
                   Tap map to place pin, or drag to adjust
@@ -235,7 +306,7 @@ export function AddEventModal({
               onPress={handleSubmit}
               disabled={submitting}
             >
-              <Text style={[styles.submitText, { color: '#0A0A0B' }]}>
+              <Text style={[styles.submitText, { color: colors.onAccent }]}>
                 {submitting ? (editingEvent ? 'Updating…' : 'Creating…') : editingEvent ? 'Save changes' : 'Add event'}
               </Text>
             </Pressable>
@@ -311,6 +382,29 @@ const styles = StyleSheet.create({
   },
   useLocationBtnText: { fontSize: 15, fontWeight: '600' },
   locationHint: { fontSize: 12, marginTop: 6, textAlign: 'center' },
+  imagePreviewWrap: { marginBottom: Layout.inputMarginBottom },
+  imagePreview: { width: '100%', height: 140, borderRadius: Layout.radiusMd, marginBottom: 8 },
+  imagePreviewActions: { flexDirection: 'row', gap: 10 },
+  imagePreviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+  },
+  imagePreviewBtnText: { fontSize: 14, fontWeight: '600' },
+  addImageBtn: {
+    height: 100,
+    borderRadius: Layout.radiusMd,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Layout.inputMarginBottom,
+  },
+  addImageText: { fontSize: 14, marginTop: 8 },
   error: { fontSize: 14, marginBottom: 12 },
   submit: {
     height: Layout.buttonHeight,

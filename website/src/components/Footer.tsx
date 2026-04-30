@@ -10,6 +10,7 @@ const FOOTER_COLUMNS = [
       { href: "/#features", label: "Features" },
       { href: "/#whats-new", label: "What's new" },
       { href: "/#demo", label: "Demo" },
+      { href: "/pro", label: "RingTap Pro" },
       { href: "/#pricing", label: "Pricing" },
       { href: "/#store", label: "Products" },
       { href: "/store", label: "Store" },

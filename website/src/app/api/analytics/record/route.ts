@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const VALID_TYPES = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan'] as const;
+const VALID_TYPES = ['profile_view', 'link_click', 'nfc_tap', 'qr_scan', 'lead_form_submit'] as const;
 
 export async function POST(request: NextRequest) {
   try {

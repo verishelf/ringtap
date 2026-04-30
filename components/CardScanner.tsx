@@ -4,14 +4,23 @@
  */
 
 import { Layout } from '@/constants/theme';
+import {
+  barcodeGuideOverlapRatio,
+  cropImageUriToGuideFrame,
+  guideFrameRectInView,
+  SCAN_FRAME_HEIGHT_PX as FRAME_HEIGHT,
+  SCAN_FRAME_HORIZONTAL_PX as FRAME_HORIZONTAL,
+  SCAN_FRAME_TOP_PCT as FRAME_TOP_PCT,
+} from '@/lib/scanFrameCrop';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { saveScannedContact, sendInviteToRingTap } from '@/services/contactService';
-import { extractAndParseContact, type ParsedContact } from '@/services/ocrService';
+import { extractAndParseContact, previewCardTextDetected, type ParsedContact } from '@/services/ocrService';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import * as FileSystem from 'expo-file-system';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Alert,
@@ -34,9 +43,27 @@ export type CardScannerProps = {
   focused?: boolean;
 };
 
-const FRAME_TOP_PCT = 0.25;
-const FRAME_HEIGHT = 220;
-const FRAME_HORIZONTAL = 24;
+const CARD_GUIDE_GREEN = '#22C55E';
+const SCAN_LINE_ACTIVE = '#EF4444';
+const BARCODE_OVERLAP_THRESHOLD = 0.35;
+const OCR_POLL_MS = 1100;
+const OCR_STREAK_TO_LOCK = 2;
+
+const BARCODE_TYPES = [
+  'qr',
+  'code128',
+  'code39',
+  'pdf417',
+  'datamatrix',
+  'aztec',
+  'ean13',
+  'ean8',
+  'code93',
+  'itf14',
+  'codabar',
+  'upc_a',
+  'upc_e',
+] as const;
 
 export function CardScanner({ userId, onSaved, focused = true }: CardScannerProps) {
   const colors = useThemeColors();
@@ -47,7 +74,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
-  const [parsed, setParsed] = useState<ParsedContact | null>(null);
+  const [, setParsed] = useState<ParsedContact | null>(null);
   const [editing, setEditing] = useState<ParsedContact | null>(null);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -55,10 +82,32 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
   const [inviting, setInviting] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const scanLineAnim = useRef(new Animated.Value(0)).current;
+  const [barcodeInGuide, setBarcodeInGuide] = useState(false);
+  const [ocrInGuide, setOcrInGuide] = useState(false);
+  const cardInFrame = barcodeInGuide || ocrInGuide;
+  const captureBusyRef = useRef(false);
+  const pollInFlightRef = useRef(false);
+  const ocrStreakRef = useRef(0);
+  const prevCardLockedRef = useRef(false);
 
   useEffect(() => {
     if (!focused) setCameraReady(false);
   }, [focused]);
+
+  useEffect(() => {
+    if (!focused || capturedUri) {
+      setBarcodeInGuide(false);
+      setOcrInGuide(false);
+      ocrStreakRef.current = 0;
+    }
+  }, [focused, capturedUri]);
+
+  useEffect(() => {
+    if (cardInFrame && !prevCardLockedRef.current) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
+    prevCardLockedRef.current = cardInFrame;
+  }, [cardInFrame]);
 
   useEffect(() => {
     if (!focused || capturedUri) return;
@@ -79,6 +128,77 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
     anim.start();
     return () => anim.stop();
   }, [focused, capturedUri, scanLineAnim]);
+
+  const onBarcodeScanned = useCallback(
+    (result: BarcodeScanningResult) => {
+      if (capturedUri || !focused) return;
+      const w = result.bounds?.size?.width ?? 0;
+      const h = result.bounds?.size?.height ?? 0;
+      if (w <= 0 || h <= 0) {
+        setBarcodeInGuide(false);
+        return;
+      }
+      const guide = guideFrameRectInView(screenWidth, screenHeight);
+      const ratio = barcodeGuideOverlapRatio(
+        {
+          origin: result.bounds.origin,
+          size: result.bounds.size,
+        },
+        guide
+      );
+      setBarcodeInGuide(ratio >= BARCODE_OVERLAP_THRESHOLD);
+    },
+    [capturedUri, focused, screenWidth, screenHeight]
+  );
+
+  useEffect(() => {
+    if (!focused || capturedUri || !cameraReady || !permission?.granted) return;
+
+    const tick = async () => {
+      if (captureBusyRef.current || pollInFlightRef.current || !cameraRef.current) return;
+      pollInFlightRef.current = true;
+      const { width: vw, height: vh } = Dimensions.get('window');
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.18,
+          skipProcessing: true,
+          shutterSound: false,
+        });
+        const uri = photo?.uri;
+        const pw = photo?.width ?? 0;
+        const ph = photo?.height ?? 0;
+        if (!uri || pw <= 0 || ph <= 0) return;
+
+        let croppedUri = uri;
+        try {
+          croppedUri = await cropImageUriToGuideFrame(uri, pw, ph, vw, vh);
+        } catch {
+          croppedUri = uri;
+        }
+
+        const detected = await previewCardTextDetected(croppedUri);
+        if (detected) {
+          ocrStreakRef.current += 1;
+          if (ocrStreakRef.current >= OCR_STREAK_TO_LOCK) setOcrInGuide(true);
+        } else {
+          ocrStreakRef.current = 0;
+          setOcrInGuide(false);
+        }
+
+        void FileSystem.deleteAsync(croppedUri, { idempotent: true }).catch(() => {});
+        if (croppedUri !== uri) {
+          void FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+        }
+      } catch {
+        // Camera busy or poll skipped
+      } finally {
+        pollInFlightRef.current = false;
+      }
+    };
+
+    const id = setInterval(tick, OCR_POLL_MS);
+    return () => clearInterval(id);
+  }, [focused, capturedUri, cameraReady, permission?.granted]);
 
   const processImage = useCallback(async (uri: string) => {
     setCapturedUri(uri);
@@ -105,39 +225,52 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
         return;
       }
     }
-    let uri: string | null = null;
-    // Use in-app camera first (no system camera popup)
-    if (cameraRef.current && cameraReady) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.9,
-          skipProcessing: true,
-        });
-        uri = photo?.uri ?? null;
-      } catch {
-        uri = null;
-      }
-    }
-    // Fallback to system camera only if in-app capture fails
-    if (!uri) {
-      try {
-        const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [3, 2],
-          quality: 0.9,
-        });
-        if (result.canceled) return;
-        uri = result.assets[0]?.uri ?? null;
-      } catch {
-        uri = null;
-      }
-    }
-    if (!uri) {
-      Alert.alert('Error', 'Could not capture photo.');
+    captureBusyRef.current = true;
+    const { width: vw, height: vh } = Dimensions.get('window');
+
+    if (!cameraRef.current) {
+      captureBusyRef.current = false;
+      Alert.alert('Camera', 'Camera is not available. Try leaving Scan and opening it again.');
       return;
     }
-    await processImage(uri);
+    if (!cameraReady) {
+      captureBusyRef.current = false;
+      Alert.alert('Camera starting', 'Wait a moment for the preview to load, then tap again.');
+      return;
+    }
+
+    let uri: string | null = null;
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.9,
+        skipProcessing: true,
+      });
+      let nextUri = photo?.uri ?? null;
+      const pw = photo?.width ?? 0;
+      const ph = photo?.height ?? 0;
+      if (nextUri && pw > 0 && ph > 0) {
+        try {
+          nextUri = await cropImageUriToGuideFrame(nextUri, pw, ph, vw, vh);
+          void FileSystem.deleteAsync(photo.uri, { idempotent: true }).catch(() => {});
+        } catch {
+          // keep full frame if crop fails
+        }
+      }
+      uri = nextUri;
+    } catch {
+      uri = null;
+    }
+
+    if (!uri) {
+      captureBusyRef.current = false;
+      Alert.alert('Could not capture', 'Try again in a moment. Stay on this screen — the in-app camera must finish taking the photo.');
+      return;
+    }
+    try {
+      await processImage(uri);
+    } finally {
+      captureBusyRef.current = false;
+    }
   }, [permission?.granted, requestPermission, cameraReady, processImage]);
 
   const handleSave = useCallback(async () => {
@@ -206,7 +339,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
           style={[styles.primaryButton, { backgroundColor: colors.accent }]}
           onPress={requestPermission}
         >
-          <Text style={[styles.primaryButtonText, { color: '#0A0A0B' }]}>Allow camera</Text>
+          <Text style={[styles.primaryButtonText, { color: colors.onAccent }]}>Allow camera</Text>
         </Pressable>
       </View>
     );
@@ -222,6 +355,8 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                 ref={cameraRef}
                 style={styles.camera}
                 onCameraReady={() => setCameraReady(true)}
+                barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
+                onBarcodeScanned={onBarcodeScanned}
               />
               {/* Blur overlays around the frame */}
               <View style={[StyleSheet.absoluteFill, { height: screenHeight }]} pointerEvents="none">
@@ -241,16 +376,22 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                   </>
                 )}
               </View>
-              <View style={[styles.overlay, { borderColor: colors.accent }]}>
+              <View
+                style={[
+                  styles.overlay,
+                  { borderColor: cardInFrame ? CARD_GUIDE_GREEN : colors.accent },
+                ]}
+              >
                 <Animated.View
                   style={[
                     styles.scanLine,
+                    cardInFrame ? styles.scanLineLocked : styles.scanLineSearch,
                     {
                       transform: [
                         {
                           translateY: scanLineAnim.interpolate({
                             inputRange: [0, 1],
-                            outputRange: [0, 218],
+                            outputRange: [0, FRAME_HEIGHT - 4],
                           }),
                         },
                       ],
@@ -291,13 +432,13 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                   {Platform.OS === 'ios' ? (
                     <BlurView intensity={70} tint="dark" style={styles.captureButtonBlur}>
                       <View style={[styles.captureButtonAccent, { backgroundColor: colors.accent }]}>
-                        <Ionicons name="camera" size={38} color="#0A0A0B" />
+                        <Ionicons name="camera" size={38} color={colors.onAccent} />
                       </View>
                     </BlurView>
                   ) : (
                     <View style={[styles.captureButtonBlur, { backgroundColor: 'rgba(30,30,35,0.85)' }]}>
                       <View style={[styles.captureButtonAccent, { backgroundColor: colors.accent }]}>
-                        <Ionicons name="camera" size={38} color="#0A0A0B" />
+                        <Ionicons name="camera" size={38} color={colors.onAccent} />
                       </View>
                     </View>
                   )}
@@ -412,7 +553,7 @@ export function CardScanner({ userId, onSaved, focused = true }: CardScannerProp
                     {saving ? (
                       <Image source={require('@/assets/images/loading.gif')} style={{ width: 24, height: 24 }} />
                     ) : (
-                      <Text style={[styles.primaryButtonText, { color: '#0A0A0B' }]}>Save contact</Text>
+                      <Text style={[styles.primaryButtonText, { color: colors.onAccent }]}>Save contact</Text>
                     )}
                   </Pressable>
                 ) : (
@@ -490,12 +631,18 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     height: 2,
-    backgroundColor: '#EF4444',
-    shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 4,
     elevation: 4,
+  },
+  scanLineSearch: {
+    backgroundColor: SCAN_LINE_ACTIVE,
+    shadowColor: SCAN_LINE_ACTIVE,
+  },
+  scanLineLocked: {
+    backgroundColor: CARD_GUIDE_GREEN,
+    shadowColor: CARD_GUIDE_GREEN,
   },
   overlayHint: { fontSize: 14 },
   aiBadge: {
