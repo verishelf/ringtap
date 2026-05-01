@@ -22,7 +22,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Layout } from '@/constants/theme';
-import { getMetAtLocation } from '@/lib/getMetAtLocation';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { RelationshipIntelligence } from '@/lib/api';
 
@@ -51,6 +51,7 @@ export type SaveContactSheetProps = {
 };
 
 export function SaveContactSheet({ visible, onClose, onSave }: SaveContactSheetProps) {
+  const colorScheme = useColorScheme();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [howMet, setHowMet] = useState('');
@@ -232,13 +233,21 @@ export function SaveContactSheet({ visible, onClose, onSave }: SaveContactSheetP
                 </Text>
               </Pressable>
               {showDatePicker && (
-                <DateTimePicker
-                  value={metAt}
-                  mode="datetime"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={handleDateChange}
-                  onTouchCancel={() => setShowDatePicker(false)}
-                />
+                <View
+                  style={[
+                    styles.datePickerChrome,
+                    { backgroundColor: colorScheme === 'dark' ? '#ffffff' : colors.surface },
+                  ]}
+                >
+                  <DateTimePicker
+                    value={metAt}
+                    mode="datetime"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleDateChange}
+                    onTouchCancel={() => setShowDatePicker(false)}
+                    themeVariant={colorScheme === 'dark' ? 'light' : 'dark'}
+                  />
+                </View>
               )}
 
               {/* Notes */}
@@ -359,6 +368,11 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   dateText: { fontSize: 16 },
+  datePickerChrome: {
+    borderRadius: Layout.radiusMd,
+    overflow: 'hidden',
+    marginBottom: Layout.tightGap,
+  },
   notesInput: { minHeight: 80, textAlignVertical: 'top' },
   actions: {
     flexDirection: 'row',
