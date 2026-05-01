@@ -7,7 +7,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { PRO_UPGRADE_FEATURE_ITEMS } from '@/constants/proUpgradeFeatures';
 import {
   ActivityIndicator,
-  InteractionManager,
   Modal,
   Platform,
   Pressable,
@@ -44,6 +43,9 @@ export function PostLoginProUpsellModal() {
 
   const [visible, setVisible] = useState(false);
   const sessionDoneRef = useRef(false);
+  /** Present RevenueCat only after this sheet’s Modal has fully dismissed (avoids native modal conflict / freeze). */
+  const presentPaywallAfterDismissRef = useRef(false);
+  const androidPaywallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!user?.id) {
@@ -52,7 +54,14 @@ export function PostLoginProUpsellModal() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (isPro) setVisible(false);
+    if (isPro) {
+      presentPaywallAfterDismissRef.current = false;
+      if (androidPaywallTimerRef.current) {
+        clearTimeout(androidPaywallTimerRef.current);
+        androidPaywallTimerRef.current = null;
+      }
+      setVisible(false);
+    }
   }, [isPro]);
 
   useEffect(() => {
@@ -66,14 +75,37 @@ export function PostLoginProUpsellModal() {
   }, [user?.id, subLoading, isPro]);
 
   const close = useCallback(() => {
+    presentPaywallAfterDismissRef.current = false;
+    if (androidPaywallTimerRef.current) {
+      clearTimeout(androidPaywallTimerRef.current);
+      androidPaywallTimerRef.current = null;
+    }
     setVisible(false);
   }, []);
 
   const handleViewPlans = useCallback(() => {
+    if (androidPaywallTimerRef.current) {
+      clearTimeout(androidPaywallTimerRef.current);
+      androidPaywallTimerRef.current = null;
+    }
+    presentPaywallAfterDismissRef.current = true;
     setVisible(false);
-    // Dismiss this Modal first, then show RevenueCat’s paywall. Presenting back-to-back modals
-    // on iOS can fail; wait until interactions/animation settle (same pattern as other sheets).
-    InteractionManager.runAfterInteractions(() => {
+    // Android RN Modal has no onDismiss; delay until the sheet is gone before presenting paywall.
+    if (Platform.OS === 'android') {
+      const ANDROID_PAYWALL_DELAY_MS = 480;
+      androidPaywallTimerRef.current = setTimeout(() => {
+        androidPaywallTimerRef.current = null;
+        if (!presentPaywallAfterDismissRef.current) return;
+        presentPaywallAfterDismissRef.current = false;
+        void presentPaywall();
+      }, ANDROID_PAYWALL_DELAY_MS);
+    }
+  }, [presentPaywall]);
+
+  const handleUpsellModalDismissed = useCallback(() => {
+    if (Platform.OS !== 'ios' || !presentPaywallAfterDismissRef.current) return;
+    presentPaywallAfterDismissRef.current = false;
+    requestAnimationFrame(() => {
       void presentPaywall();
     });
   }, [presentPaywall]);
@@ -91,6 +123,7 @@ export function PostLoginProUpsellModal() {
       animationType="fade"
       transparent
       onRequestClose={close}
+      onDismiss={handleUpsellModalDismissed}
     >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel="Close" />

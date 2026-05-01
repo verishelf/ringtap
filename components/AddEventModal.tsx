@@ -3,6 +3,7 @@
  */
 
 import { Layout } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { createMapEvent, updateMapEvent, uploadEventImage, type MapEvent } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,6 +43,7 @@ export function AddEventModal({
   onClose,
   onCreated,
 }: AddEventModalProps) {
+  const colorScheme = useColorScheme();
   const colors = useThemeColors();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -292,13 +294,21 @@ export function AddEventModal({
               </Text>
             </Pressable>
             {showDatePicker && (
-              <DateTimePicker
-                value={eventDate}
-                mode="datetime"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={onDateChange}
-                minimumDate={new Date()}
-              />
+              <View
+                style={[
+                  styles.datePickerChrome,
+                  { backgroundColor: colorScheme === 'dark' ? '#ffffff' : colors.surface },
+                ]}
+              >
+                <DateTimePicker
+                  value={eventDate}
+                  mode="datetime"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={onDateChange}
+                  minimumDate={new Date()}
+                  themeVariant={colorScheme === 'dark' ? 'light' : 'dark'}
+                />
+              </View>
             )}
             {error ? <Text style={[styles.error, { color: colors.destructive }]}>{error}</Text> : null}
             <Pressable
@@ -363,6 +373,12 @@ const styles = StyleSheet.create({
     marginBottom: Layout.inputMarginBottom,
   },
   dateText: { fontSize: 16 },
+  /** Contrasting chrome so iOS spinner / Android dialog isn’t black-on-black inside dark modals */
+  datePickerChrome: {
+    borderRadius: Layout.radiusMd,
+    overflow: 'hidden',
+    marginBottom: Layout.inputMarginBottom,
+  },
   locationSection: {
     borderRadius: Layout.radiusMd,
     borderWidth: 1,
