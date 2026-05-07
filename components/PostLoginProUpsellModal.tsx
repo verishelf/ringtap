@@ -44,6 +44,8 @@ export function PostLoginProUpsellModal() {
 
   const [visible, setVisible] = useState(false);
   const sessionDoneRef = useRef(false);
+  /** Wait until RN Modal has finished dismissing before presenting RevenueCat (avoids iOS modal conflict / freeze). */
+  const pendingPaywallAfterDismissRef = useRef(false);
 
   useEffect(() => {
     if (!user?.id) {
@@ -69,14 +71,31 @@ export function PostLoginProUpsellModal() {
     setVisible(false);
   }, []);
 
-  const handleViewPlans = useCallback(() => {
-    setVisible(false);
-    // Dismiss this Modal first, then show RevenueCat’s paywall. Presenting back-to-back modals
-    // on iOS can fail; wait until interactions/animation settle (same pattern as other sheets).
+  const flushPendingPaywall = useCallback(() => {
+    if (!pendingPaywallAfterDismissRef.current) return;
+    pendingPaywallAfterDismissRef.current = false;
     InteractionManager.runAfterInteractions(() => {
       void presentPaywall();
     });
   }, [presentPaywall]);
+
+  /** iOS: Modal invokes this after dismiss animation completes. */
+  const handleModalDismiss = useCallback(() => {
+    if (Platform.OS === 'ios') flushPendingPaywall();
+  }, [flushPendingPaywall]);
+
+  /** Android: no reliable onDismiss; defer slightly after visible becomes false. */
+  useEffect(() => {
+    if (visible || Platform.OS !== 'android') return;
+    if (!pendingPaywallAfterDismissRef.current) return;
+    const t = setTimeout(() => flushPendingPaywall(), 450);
+    return () => clearTimeout(t);
+  }, [visible, flushPendingPaywall]);
+
+  const handleViewPlans = useCallback(() => {
+    pendingPaywallAfterDismissRef.current = true;
+    setVisible(false);
+  }, []);
 
   const handleOpenUpgradePage = useCallback(() => {
     setVisible(false);
@@ -90,6 +109,7 @@ export function PostLoginProUpsellModal() {
       visible={visible}
       animationType="fade"
       transparent
+      onDismiss={handleModalDismiss}
       onRequestClose={close}
     >
       <View style={styles.backdrop}>

@@ -2,7 +2,7 @@
   "expo": {
     "name": "RingTap",
     "slug": "ringtap",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ringtap",
@@ -19,7 +19,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "me.ringtap.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "associatedDomains": [
         "applinks:ringtap.me",
         "applinks:www.ringtap.me"

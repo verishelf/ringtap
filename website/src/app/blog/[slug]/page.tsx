@@ -1,5 +1,5 @@
-import { getPostBySlug, getAllSlugs } from "@/lib/blog";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { getAllSlugs, getPostBySlug } from "@/lib/blog";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

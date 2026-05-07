@@ -22,8 +22,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Layout } from '@/constants/theme';
-import { getMetAtLocation } from '@/lib/getMetAtLocation';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { getMetAtLocation } from '@/lib/getMetAtLocation';
 import type { RelationshipIntelligence } from '@/lib/api';
 
 const HOW_MET_OPTIONS = [
@@ -52,6 +53,7 @@ export type SaveContactSheetProps = {
 
 export function SaveContactSheet({ visible, onClose, onSave }: SaveContactSheetProps) {
   const colors = useThemeColors();
+  const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const [howMet, setHowMet] = useState('');
   const [howMetCustom, setHowMetCustom] = useState('');
@@ -231,15 +233,35 @@ export function SaveContactSheet({ visible, onClose, onSave }: SaveContactSheetP
                   {metAt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                 </Text>
               </Pressable>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={metAt}
-                  mode="datetime"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={handleDateChange}
-                  onTouchCancel={() => setShowDatePicker(false)}
-                />
-              )}
+              {showDatePicker &&
+                (Platform.OS === 'ios' ? (
+                  <View
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderRadius: Layout.radiusMd,
+                      overflow: 'hidden',
+                      marginBottom: Layout.tightGap,
+                    }}
+                  >
+                    <DateTimePicker
+                      value={metAt}
+                      mode="datetime"
+                      display="spinner"
+                      themeVariant={colorScheme === 'dark' ? 'dark' : 'light'}
+                      onChange={handleDateChange}
+                      onTouchCancel={() => setShowDatePicker(false)}
+                    />
+                  </View>
+                ) : (
+                  <DateTimePicker
+                    value={metAt}
+                    mode="datetime"
+                    display="default"
+                    themeVariant={colorScheme === 'dark' ? 'dark' : 'light'}
+                    onChange={handleDateChange}
+                    onTouchCancel={() => setShowDatePicker(false)}
+                  />
+                ))}
 
               {/* Notes */}
               <Text style={[styles.label, { color: colors.textSecondary, marginTop: Layout.rowGap }]}>Notes</Text>

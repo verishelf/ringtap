@@ -11,6 +11,7 @@ CREATE INDEX IF NOT EXISTS idx_notification_settings_user_id ON notification_set
 
 ALTER TABLE notification_settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own notification settings" ON notification_settings;
 CREATE POLICY "Users manage own notification settings"
   ON notification_settings FOR ALL
   USING (auth.uid() = user_id)

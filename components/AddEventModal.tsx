@@ -3,6 +3,7 @@
  */
 
 import { Layout } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { createMapEvent, updateMapEvent, uploadEventImage, type MapEvent } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,6 +44,7 @@ export function AddEventModal({
   onCreated,
 }: AddEventModalProps) {
   const colors = useThemeColors();
+  const colorScheme = useColorScheme();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [eventLocation, setEventLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -291,15 +293,35 @@ export function AddEventModal({
                 {eventDate.toLocaleDateString()} at {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </Text>
             </Pressable>
-            {showDatePicker && (
-              <DateTimePicker
-                value={eventDate}
-                mode="datetime"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={onDateChange}
-                minimumDate={new Date()}
-              />
-            )}
+            {showDatePicker &&
+              (Platform.OS === 'ios' ? (
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: Layout.radiusMd,
+                    overflow: 'hidden',
+                    marginBottom: Layout.inputMarginBottom,
+                  }}
+                >
+                  <DateTimePicker
+                    value={eventDate}
+                    mode="datetime"
+                    display="spinner"
+                    themeVariant={colorScheme === 'dark' ? 'dark' : 'light'}
+                    onChange={onDateChange}
+                    minimumDate={new Date()}
+                  />
+                </View>
+              ) : (
+                <DateTimePicker
+                  value={eventDate}
+                  mode="datetime"
+                  display="default"
+                  themeVariant={colorScheme === 'dark' ? 'dark' : 'light'}
+                  onChange={onDateChange}
+                  minimumDate={new Date()}
+                />
+              ))}
             {error ? <Text style={[styles.error, { color: colors.destructive }]}>{error}</Text> : null}
             <Pressable
               style={[styles.submit, { backgroundColor: colors.accent }]}
