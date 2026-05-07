@@ -580,17 +580,19 @@ export default function UsernameProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 gap-4 max-w-md">
-        <p className="text-destructive text-center text-sm">{error ?? 'Profile not found'}</p>
-        <div className="flex flex-wrap gap-3 justify-center">
-          <button
-            type="button"
-            onClick={() => fetchProfile()}
-            className="rounded-xl bg-accent px-5 py-2.5 text-background font-semibold hover:opacity-90"
-          >
-            Retry
-          </button>
-          <Link href="/" className="text-accent hover:underline py-2.5">Back to RingTap</Link>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md mx-auto flex flex-col items-center text-center gap-4">
+          <p className="text-destructive text-sm">{error ?? 'Profile not found'}</p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => fetchProfile()}
+              className="rounded-xl bg-accent px-5 py-2.5 text-background font-semibold hover:opacity-90"
+            >
+              Retry
+            </button>
+            <Link href="/" className="text-accent hover:underline py-2.5">Back to RingTap</Link>
+          </div>
         </div>
       </div>
     );
